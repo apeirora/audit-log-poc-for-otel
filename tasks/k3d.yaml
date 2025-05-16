@@ -1,0 +1,53 @@
+version: '3'
+
+description: Taskfile for managing k3d clusters (setup and teardown).
+
+includes:
+
+  tools:
+    desc: Install required tools (k3d, kubectl).
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+
+  create:
+    desc: Create a local k3d cluster.
+    deps:
+      - task: tools:install-k3d
+    platforms: [linux, darwin]
+    status:
+      - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
+    cmds:
+      - '{{ .K3D_CMD }} cluster create --no-lb otel-audit-log'
+
+  delete:
+    desc: Delete the local k3d cluster.
+    deps:
+      - task: tools:install-k3d
+    platforms: [linux, darwin]
+    status:
+      - '! {{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
+    cmds:
+      - '{{ .K3D_CMD }} cluster delete otel-audit-log'
+
+  start:
+    desc: Starts the local k3d cluster, if it is not already running.
+    deps:
+      - task: tools:install-k3d
+      - task: create
+    platforms: [linux, darwin]
+    status:
+      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+    cmds:
+      - '{{ .K3D_CMD }} cluster start otel-audit-log'
+
+  stop:
+    desc: Stops the local k3d cluster, if it is running.
+    deps:
+      - task: tools:install-k3d
+    platforms: [linux, darwin]
+    status:
+      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+    cmds:
+      - '{{ .K3D_CMD }} cluster stop otel-audit-log'

@@ -7,5 +7,5 @@ SPDX-PackageComment = "The code in this project may include calls to APIs (\"API
 [[annotations]]
 path = "*"
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2025 SAP SE or an SAP affiliate company and audit-log-poc-for-otel contributors"
-SPDX-License-Identifier = "Apache-2.0
+SPDX-FileCopyrightText = "2025 SAP SE or an SAP affiliate company and ApeiroRA contributors"
+SPDX-License-Identifier = "Apache-2.0"

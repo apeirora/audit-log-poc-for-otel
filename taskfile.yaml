@@ -1,0 +1,14 @@
+version: '3'
+
+description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
+
+includes:
+
+  kind:
+    desc: Manage Kind clusters (setup and teardown).
+    taskfile: ./tasks/kind.yaml
+    internal: true
+
+  otel:
+    desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
+    taskfile: ./tasks/otel.yaml

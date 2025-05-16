@@ -1,0 +1,63 @@
+version: '3'
+
+description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
+
+includes:
+
+  kind:
+    desc: Manage Kind clusters.
+    taskfile: ./kind.yaml
+    internal: true
+
+  k3d:
+    desc: Manage Kind clusters.
+    taskfile: ./k3d.yaml
+    aliases:
+      - cluster
+
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tools.yaml
+
+tasks:
+
+  download-otel-demo:
+    desc: Download the OpenTelemetry demo YAML file.
+    status:
+      - test -f work_dir/opentelemetry-demo.yaml
+    cmds:
+      - mkdir -p work_dir
+      - curl -o work_dir/opentelemetry-demo.yaml https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
+
+  demo:
+    desc: Install otel-demo in the local cluster.
+    deps:
+      - task: cluster:start
+      - task: tools:install-kubectl
+      - task: download-otel-demo
+    status:
+      - "{{ .KUBECTL_CMD }} get namespace otel-demo >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} create -f work_dir/opentelemetry-demo.yaml --namespace otel-demo"
+
+  delete-demo:
+    desc: Delete otel-demo from the local cluster.
+    deps:
+      - task: tools:install-kubectl
+    status:
+      - "! {{ .KUBECTL_CMD }} get namespace otel-demo >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete clusterroles grafana-clusterrole otel-collector prometheus"
+      - "{{ .KUBECTL_CMD }} delete clusterrolebindings grafana-clusterrolebinding otel-collector prometheus"
+      - "{{ .KUBECTL_CMD }} delete namespace otel-demo"
+
+  port-forward:
+    desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
+    deps:
+      - task: demo
+    preconditions:
+      - sh: '{{ .KUBECTL_CMD }} get svc/frontend-proxy --namespace otel-demo >/dev/null 2>&1'
+      - sh: '{{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running | grep -q frontend-proxy'
+        msg: "Please wait for the frontend-proxy pod to be in Running state."
+    cmds:
+      - "{{ .KUBECTL_CMD }} --namespace otel-demo port-forward svc/frontend-proxy 8080:8080"

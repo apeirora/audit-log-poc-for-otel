@@ -1,0 +1,83 @@
+version: '3'
+
+description: Taskfile for installing required tools (k3d, kubectl, kind).
+
+vars:
+  TOOL_DIR: "{{ .ROOT_DIR }}/.tools"
+  KIND_CMD: 
+    sh: |
+      if command -v kind >/dev/null 2>&1; then
+        command -v kind
+      else
+        echo {{ .TOOL_DIR }}/kind
+      fi
+  KUBECTL_CMD: 
+    sh: |
+      if command -v kubectl >/dev/null 2>&1; then
+        command -v kubectl
+      else
+        echo {{ .TOOL_DIR }}/kubectl
+      fi
+  K3D_CMD: 
+    sh: |
+      if command -v k3d >/dev/null 2>&1; then
+        command -v k3d
+      else
+        echo {{ .TOOL_DIR }}/k3d
+      fi
+
+tasks:
+
+  info:
+    desc: Show the environment variables and tool paths.    
+    cmds:
+      - 'echo environment OS: {{ OS }}, ARCH: {{ ARCH }}, ROOT_DIR: {{ .ROOT_DIR }}, TOOL_DIR: {{ .TOOL_DIR }}'
+      - 'echo tools in use: {{ .K3D_CMD }}, {{ .KUBECTL_CMD }}, {{ .KIND_CMD }}'
+
+  create-tool-dir:
+    internal: true
+    desc: Create the tool directory ({{ .TOOL_DIR }}) if it doesn't exist.
+    platforms: [linux, darwin]
+    status:
+      - test -d "{{ .TOOL_DIR }}"
+    cmds:
+      - mkdir -p "{{ .TOOL_DIR }}"
+
+  install-kind:
+    vars:
+      KIND_VERSION: "0.27.0"
+    deps: [ create-tool-dir ]
+    desc: "Install kind v{{ .KIND_VERSION }} to ({{ .TOOL_DIR }}/kind) if not already present"
+    platforms: [linux, darwin]
+    status:
+      - "kind || {{ .TOOL_DIR }}/kind"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" https://kind.sigs.k8s.io/dl/v{{ .KIND_VERSION }}/kind-{{ OS }}-{{ ARCH }}
+      - chmod +x "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" "{{ .TOOL_DIR }}/kind"
+
+  install-kubectl:
+    vars:
+      KUBECTL_VERSION: "1.33.0"
+    deps: [ create-tool-dir ]
+    desc: "Install kubectl {{ .KUBECTL_VERSION }} to ({{ .TOOL_DIR }}/kubectl) if not already present"
+    platforms: [linux, darwin]
+    status:
+      - kubectl || {{ .TOOL_DIR }}/kubectl
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "https://dl.k8s.io/release/v{{ .KUBECTL_VERSION }}/bin/{{ OS }}/{{ ARCH }}/kubectl"
+      - chmod +x "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "{{ .TOOL_DIR }}/kubectl"
+
+  install-k3d:
+    vars:
+      K3D_VERSION: "5.8.3"
+    deps: [ create-tool-dir ]
+    desc: "Install k3d v{{ .K3D_VERSION }} to ({{ .TOOL_DIR }}/k3d) if not already present"
+    platforms: [linux, darwin]
+    status:
+      - "k3d || {{ .TOOL_DIR }}/k3d"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "https://github.com/k3d-io/k3d/releases/download/v{{ .K3D_VERSION }}/k3d-{{ OS }}-{{ ARCH }}"
+      - chmod +x "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "{{ .TOOL_DIR }}/k3d"

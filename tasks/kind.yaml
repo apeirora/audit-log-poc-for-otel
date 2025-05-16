@@ -1,0 +1,47 @@
+version: '3'
+
+description: Taskfile for managing Kind clusters (setup and teardown).
+
+includes:
+
+  tools:
+    desc: Install required tools (kind, kubectl).
+    taskfile: ./tools.yaml
+
+tasks:
+
+  create:
+    desc: Create a local Kind cluster.
+    deps:
+      - task: tools:install-kind
+    platforms: [linux, darwin]
+    status:
+      - '{{ .KIND_CMD }} get clusters | grep -q otel-audit-log'
+    cmds:
+      - '{{ .KIND_CMD }} create cluster --name otel-audit-log'
+
+  delete:
+    desc: Delete the local Kind cluster.
+    deps:
+      - task: tools:install-kind
+    platforms: [linux, darwin]
+    status:
+      - '! {{ .KIND_CMD }} get clusters | grep -q otel-audit-log'
+    cmds:
+      - '{{ .KIND_CMD }} delete cluster --name otel-audit-log'
+
+  start:
+    desc: Starts the local Kind cluster, if it is not already running.
+    platforms: [linux, darwin]
+    status:
+      - docker ps --filter "name=otel-audit-log-control-plane" --format json | grep State\":\"running
+    cmds:
+      - docker unpause $(docker ps --filter "name=otel-audit-log-control-plane" --format json | jq -r .ID) >/dev/null 2>&1
+
+  stop:
+    desc: Stops the local Kind cluster, if it is running.
+    platforms: [linux, darwin]
+    status:
+      - docker ps --filter "name=otel-audit-log-control-plane" | grep "(Paused)"
+    cmds:
+      - docker pause $(docker ps --filter "name=otel-audit-log-control-plane" --format json | jq -r .ID) >/dev/null 2>&1
