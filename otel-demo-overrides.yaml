@@ -1,0 +1,77 @@
+# This file is used to override the default values in
+# https://raw.githubusercontent.com/open-telemetry/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-demo/values.yaml.
+components:
+  accounting:
+    enabled: false
+
+  ad:
+    enabled: true
+
+  cart:
+    enabled: false
+
+  checkout:
+    enabled: false
+
+  currency:
+    enabled: true
+
+  email:
+    enabled: false
+
+  fraud-detection:
+    enabled: false
+
+  frontend:
+    enabled: true
+
+  frontend-proxy:
+    enabled: true
+
+  image-provider:
+    enabled: true
+
+  load-generator:
+    enabled: true
+
+  payment:
+    enabled: false
+
+  product-catalog:
+    enabled: true
+
+  quote:
+    enabled: false
+
+  recommendation:
+    enabled: true
+    imageOverride:
+      repository: "skhalashatsap/otel-recommendation"
+      tag: "latest"
+
+  shipping:
+    enabled: false
+
+  flagd:
+    enabled: false
+
+  kafka:
+    enabled: false
+
+  valkey-cart:
+    enabled: false
+
+opentelemetry-collector:
+  enabled: true
+
+jaeger:
+  enabled: true
+
+prometheus:
+  enabled: true
+
+grafana:
+  enabled: true
+
+opensearch:
+  enabled: true
