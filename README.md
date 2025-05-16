@@ -1,6 +1,6 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/apeirora/audit-log-poc-for-otel)](https://api.reuse.software/info/github.com/apeirora/audit-log-poc-for-otel)
 
-# audit-log-poc-for-otel
+# Audit Log proof of concept for OpenTelemetry
 
 ## About this project
 
