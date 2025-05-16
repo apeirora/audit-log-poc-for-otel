@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,9 +21,6 @@ type recommendation struct {
 	pb.UnimplementedRecommendationServiceServer
 
 	catalogClient pb.ProductCatalogServiceClient
-	mu            sync.Mutex
-	cachedIDs     []string
-	firstRun      bool
 }
 
 func main() {
