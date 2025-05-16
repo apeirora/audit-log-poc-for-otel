@@ -17,7 +17,7 @@ import (
 	pb "github.com/apeirora/audit-log-poc-for-otel/recommendation/genproto/oteldemo"
 )
 
-type recommendation struct {
+type recommendationService struct {
 	pb.UnimplementedRecommendationServiceServer
 
 	catalogClient pb.ProductCatalogServiceClient
@@ -42,7 +42,7 @@ func run() error {
 
 	defer c.Close()
 
-	svc := &recommendation{
+	svc := &recommendationService{
 		catalogClient: pb.NewProductCatalogServiceClient(c),
 	}
 
@@ -84,7 +84,7 @@ func createClient(svcAddr string) (*grpc.ClientConn, error) {
 	return c, err
 }
 
-func (s *recommendation) ListRecommendations(ctx context.Context, req *pb.ListRecommendationsRequest) (*pb.ListRecommendationsResponse, error) {
+func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb.ListRecommendationsRequest) (*pb.ListRecommendationsResponse, error) {
 	log.Printf("ListRecommendations: received request with %+v", req.GetProductIds())
 
 	resp, err := s.catalogClient.ListProducts(context.Background(), &pb.Empty{})
@@ -126,14 +126,14 @@ func (s *recommendation) ListRecommendations(ctx context.Context, req *pb.ListRe
 	}, nil
 }
 
-func (s *recommendation) Check(ctx context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+func (s *recommendationService) Check(ctx context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
 	return &healthpb.HealthCheckResponse{Status: healthpb.HealthCheckResponse_SERVING}, nil
 }
 
-func (s *recommendation) List(context.Context, *healthpb.HealthListRequest) (*healthpb.HealthListResponse, error) {
+func (s *recommendationService) List(context.Context, *healthpb.HealthListRequest) (*healthpb.HealthListResponse, error) {
 	return &healthpb.HealthListResponse{}, nil
 }
 
-func (s *recommendation) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Health_WatchServer) error {
+func (s *recommendationService) Watch(_ *healthpb.HealthCheckRequest, _ healthpb.Health_WatchServer) error {
 	return nil // Not implemented
 }
