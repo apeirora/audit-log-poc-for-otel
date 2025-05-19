@@ -38,7 +38,7 @@ tasks:
       - task: create
     platforms: [linux, darwin]
     status:
-      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any')
     cmds:
       - '{{ .K3D_CMD }} cluster start otel-audit-log'
 
@@ -48,6 +48,6 @@ tasks:
       - task: tools:install-k3d
     platforms: [linux, darwin]
     status:
-      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
     cmds:
       - '{{ .K3D_CMD }} cluster stop otel-audit-log'
