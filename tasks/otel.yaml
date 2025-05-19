@@ -29,32 +29,38 @@ tasks:
       - mkdir -p work_dir
       - curl -o work_dir/opentelemetry-demo.yaml https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
 
-  demo:
+  demo-install:
     desc: Install otel-demo in the local cluster.
     deps:
       - task: cluster:start
-      - task: tools:install-kubectl
-      - task: download-otel-demo
+      - task: tools:install-helm
     status:
-      - "{{ .KUBECTL_CMD }} get namespace otel-demo >/dev/null 2>&1"
+      - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
-      - "{{ .KUBECTL_CMD }} create -f work_dir/opentelemetry-demo.yaml --namespace otel-demo"
+      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
+      - "{{ .HELM_CMD }} install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
-  delete-demo:
+  demo-status:
+    desc: Check the status of otel-demo in the local cluster.
+    deps:
+      - task: cluster:start
+      - task: tools:install-helm
+    cmds:
+      - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
+
+  demo-delete:
     desc: Delete otel-demo from the local cluster.
     deps:
       - task: tools:install-kubectl
     status:
-      - "! {{ .KUBECTL_CMD }} get namespace otel-demo >/dev/null 2>&1"
+      - "! {{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
-      - "{{ .KUBECTL_CMD }} delete clusterroles grafana-clusterrole otel-collector prometheus"
-      - "{{ .KUBECTL_CMD }} delete clusterrolebindings grafana-clusterrolebinding otel-collector prometheus"
-      - "{{ .KUBECTL_CMD }} delete namespace otel-demo"
+      - "{{ .HELM_CMD }} uninstall my-otel-demo --namespace otel-demo --ignore-not-found"
 
   port-forward:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     deps:
-      - task: demo
+      - task: demo-install
     preconditions:
       - sh: '{{ .KUBECTL_CMD }} get svc/frontend-proxy --namespace otel-demo >/dev/null 2>&1'
       - sh: '{{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running | grep -q frontend-proxy'
