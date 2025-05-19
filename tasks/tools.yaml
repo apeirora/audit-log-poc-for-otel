@@ -25,6 +25,20 @@ vars:
       else
         echo {{ .TOOL_DIR }}/k3d
       fi
+  HELM_CMD: 
+    sh: |
+      if command -v helm >/dev/null 2>&1; then
+        command -v helm
+      else
+        echo {{ .TOOL_DIR }}/helm
+      fi
+  K9S_CMD: 
+    sh: |
+      if command -v k9s >/dev/null 2>&1; then
+        command -v k9s
+      else
+        echo {{ .TOOL_DIR }}/k9s
+      fi
 
 tasks:
 
@@ -81,3 +95,33 @@ tasks:
       - curl -sSLo "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "https://github.com/k3d-io/k3d/releases/download/v{{ .K3D_VERSION }}/k3d-{{ OS }}-{{ ARCH }}"
       - chmod +x "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}"
       - ln -sf "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "{{ .TOOL_DIR }}/k3d"
+
+  install-helm:
+    vars:
+      HELM_VERSION: "3.17.3"
+    deps: [ create-tool-dir ]
+    desc: "Install helm v{{ .HELM_VERSION }} to ({{ .TOOL_DIR }}/helm) if not already present"
+    platforms: [linux, darwin]
+    status:
+      - "helm || {{ .TOOL_DIR }}/helm"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" "https://get.helm.sh/helm-v{{ .HELM_VERSION }}-{{ OS }}-{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" --strip-components=1 "{{ OS }}-{{ ARCH }}/helm"
+      - mv "{{ .TOOL_DIR }}/helm" "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}" "{{ .TOOL_DIR }}/helm"
+      - rm -f "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz"
+
+  install-k9s:
+    vars:
+      K9S_VERSION: "0.50.6"
+    deps: [ create-tool-dir ]
+    desc: "Install k9s v{{ .K9S_VERSION }} to ({{ .TOOL_DIR }}/k9s) if not already present"
+    platforms: [linux, darwin]
+    status:
+      - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" "https://github.com/derailed/k9s/releases/download/v{{ .K9S_VERSION }}/k9s_{{ OS }}_{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "k9s"
+      - mv "{{ .TOOL_DIR }}/k9s" "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}" "{{ .TOOL_DIR }}/k9s"
+      - rm -f "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz"
