@@ -19,6 +19,7 @@ tasks:
     status:
       - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
+      # FIXME: fork/exec /home/hilmar/otel/audit-log-poc-for-otel/.tools/k3d: text file busy
       - '{{ .K3D_CMD }} cluster create --no-lb otel-audit-log'
 
   delete:
