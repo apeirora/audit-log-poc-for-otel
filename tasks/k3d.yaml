@@ -53,3 +53,13 @@ tasks:
       - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
     cmds:
       - '{{ .K3D_CMD }} cluster stop otel-audit-log'
+
+  merge-kubeconfig:
+    desc: Merge the kubeconfig for the local k3d cluster into the current kubeconfig.
+    deps:
+      - task: create
+    platforms: [linux, darwin]
+    status:
+      - '{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log'
+    cmds:
+      - '{{ .K3D_CMD }} kubeconfig merge otel-audit-log'
