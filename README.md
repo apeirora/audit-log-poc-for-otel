@@ -2,7 +2,9 @@
 
 # Audit Log Proof of Concept for OpenTelemetry
 
-Audit-logging with OTel - how could this work?
+This proof of concept is part of an effort to make OpenTelemetry fit for audit logging purposes. We are building an end-to-end scenario to refine the challenges and requirements for audit logging in OTel and to showcase potential solutions.
+
+Read about the entire idea at [open-telemetry/community#2409](https://github.com/open-telemetry/community/pull/2409).
 
 ## About This Project
 
