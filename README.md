@@ -23,7 +23,7 @@ This PoC scenario provides an easy setup of an [OpenTelemetry Demo](https://open
 git clone https://github.com/apeirora/otel-audit-log-poc.git
 cd otel-audit-log-poc
 sudo snap install task --classic
-task otel:demo
+task
 # wait a couple of minutes until all images are downloaded and pods are running - feel free to check with k9s
 task otel:port-forward
 ```
