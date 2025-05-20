@@ -49,8 +49,9 @@ tasks:
       - 'echo tools in use: {{ .K3D_CMD }}, {{ .KUBECTL_CMD }}, {{ .KIND_CMD }}'
 
   create-tool-dir:
-    internal: true
     desc: Create the tool directory ({{ .TOOL_DIR }}) if it doesn't exist.
+    internal: true
+    run: once
     platforms: [linux, darwin]
     status:
       - test -d "{{ .TOOL_DIR }}"
@@ -60,8 +61,9 @@ tasks:
   install-kind:
     vars:
       KIND_VERSION: "0.27.0"
-    deps: [ create-tool-dir ]
     desc: "Install kind v{{ .KIND_VERSION }} to ({{ .TOOL_DIR }}/kind) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
     platforms: [linux, darwin]
     status:
       - "kind || {{ .TOOL_DIR }}/kind"
@@ -73,8 +75,9 @@ tasks:
   install-kubectl:
     vars:
       KUBECTL_VERSION: "1.33.0"
-    deps: [ create-tool-dir ]
     desc: "Install kubectl {{ .KUBECTL_VERSION }} to ({{ .TOOL_DIR }}/kubectl) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
     platforms: [linux, darwin]
     status:
       - kubectl || {{ .TOOL_DIR }}/kubectl
@@ -86,8 +89,9 @@ tasks:
   install-k3d:
     vars:
       K3D_VERSION: "5.8.3"
-    deps: [ create-tool-dir ]
     desc: "Install k3d v{{ .K3D_VERSION }} to ({{ .TOOL_DIR }}/k3d) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
     platforms: [linux, darwin]
     status:
       - "k3d || {{ .TOOL_DIR }}/k3d"
@@ -99,8 +103,9 @@ tasks:
   install-helm:
     vars:
       HELM_VERSION: "3.17.3"
-    deps: [ create-tool-dir ]
     desc: "Install helm v{{ .HELM_VERSION }} to ({{ .TOOL_DIR }}/helm) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
     platforms: [linux, darwin]
     status:
       - "helm || {{ .TOOL_DIR }}/helm"
@@ -114,8 +119,9 @@ tasks:
   install-k9s:
     vars:
       K9S_VERSION: "0.50.6"
-    deps: [ create-tool-dir ]
     desc: "Install k9s v{{ .K9S_VERSION }} to ({{ .TOOL_DIR }}/k9s) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
     platforms: [linux, darwin]
     status:
       - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
