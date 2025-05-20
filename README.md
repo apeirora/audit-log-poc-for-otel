@@ -1,10 +1,10 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/apeirora/audit-log-poc-for-otel)](https://api.reuse.software/info/github.com/apeirora/audit-log-poc-for-otel)
 
-# Audit Log proof of concept for OpenTelemetry
+# Audit Log Proof of Concept for OpenTelemetry
 
 Audit-logging with OTel - how could this work?
 
-## About this project
+## About This Project
 
 This PoC scenario provides an easy setup of an [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/) environment to test how log messages are delivered through multiple different systems.
 
@@ -15,7 +15,7 @@ This PoC scenario provides an easy setup of an [OpenTelemetry Demo](https://open
 * [task](https://taskfile.dev/)
 * optional: [k9s](https://k9scli.io/)
 
-### quick start linux
+### Quick Start Linux
 
 ```bash
 git clone https://github.com/apeirora/otel-audit-log-poc.git
@@ -26,7 +26,7 @@ task otel:demo
 task otel:port-forward
 ```
 
-### demo endpoints
+### Demo Endpoints
 
 With the frontend-proxy port-forward set up, you can access:
 
