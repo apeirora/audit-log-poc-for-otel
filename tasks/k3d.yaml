@@ -13,6 +13,7 @@ tasks:
 
   create:
     desc: Create a local k3d cluster.
+    run: once
     deps:
       - task: tools:install-k3d
     platforms: [linux, darwin]
@@ -20,7 +21,7 @@ tasks:
       - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
       # FIXME: fork/exec /home/hilmar/otel/audit-log-poc-for-otel/.tools/k3d: text file busy
-      - '{{ .K3D_CMD }} cluster create --no-lb otel-audit-log'
+      - '{{ .K3D_CMD }} cluster create otel-audit-log --no-lb --no-rollback --wait'
 
   delete:
     desc: Delete the local k3d cluster.
