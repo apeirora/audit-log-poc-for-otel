@@ -31,6 +31,7 @@ tasks:
 
   demo-install:
     desc: Install otel-demo in the local cluster.
+    run: once
     deps:
       - task: cluster:start
       - task: tools:install-helm
@@ -43,8 +44,7 @@ tasks:
   demo-status:
     desc: Check the status of otel-demo in the local cluster.
     deps:
-      - task: cluster:start
-      - task: tools:install-helm
+      - task: demo-install
     cmds:
       - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
 
@@ -53,7 +53,7 @@ tasks:
     deps:
       - task: tools:install-kubectl
     status:
-      - "! {{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
+      - "! {{ .HELM_CMD }} list --namespace otel-demo | grep -q my-otel-demo"
     cmds:
       - "{{ .HELM_CMD }} uninstall my-otel-demo --namespace otel-demo --ignore-not-found"
 
