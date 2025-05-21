@@ -13,13 +13,15 @@ tasks:
 
   create:
     desc: Create a local k3d cluster.
+    run: once
     deps:
       - task: tools:install-k3d
     platforms: [linux, darwin]
     status:
       - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
-      - '{{ .K3D_CMD }} cluster create --no-lb otel-audit-log'
+      # FIXME: fork/exec /home/hilmar/otel/audit-log-poc-for-otel/.tools/k3d: text file busy
+      - '{{ .K3D_CMD }} cluster create otel-audit-log --no-lb --no-rollback --wait'
 
   delete:
     desc: Delete the local k3d cluster.
@@ -38,7 +40,7 @@ tasks:
       - task: create
     platforms: [linux, darwin]
     status:
-      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any')
     cmds:
       - '{{ .K3D_CMD }} cluster start otel-audit-log'
 
@@ -48,6 +50,16 @@ tasks:
       - task: tools:install-k3d
     platforms: [linux, darwin]
     status:
-      - '{{ .K3D_CMD }} cluster list otel-audit-log | grep -q running'
+      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
     cmds:
       - '{{ .K3D_CMD }} cluster stop otel-audit-log'
+
+  merge-kubeconfig:
+    desc: Merge the kubeconfig for the local k3d cluster into the current kubeconfig.
+    deps:
+      - task: create
+    platforms: [linux, darwin]
+    status:
+      - '{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log'
+    cmds:
+      - '{{ .K3D_CMD }} kubeconfig merge otel-audit-log'
