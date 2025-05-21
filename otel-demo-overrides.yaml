@@ -53,7 +53,7 @@ components:
     enabled: false
 
   flagd:
-    enabled: false
+    enabled: true
 
   kafka:
     enabled: false
