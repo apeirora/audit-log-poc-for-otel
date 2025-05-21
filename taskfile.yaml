@@ -13,6 +13,10 @@ includes:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     taskfile: ./tasks/otel.yaml
 
+  recommendation:
+    desc: Builds the image of the recommendation service.
+    taskfile: ./tasks/recommendation.yaml
+
 tasks:
 
   default:
