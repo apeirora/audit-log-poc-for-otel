@@ -12,3 +12,22 @@ includes:
   otel:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     taskfile: ./tasks/otel.yaml
+
+tasks:
+
+  default:
+    desc: Install otel-demo in the local cluster.
+    deps: [ otel:demo-install, otel:demo-status ]
+    cmds:
+      - task -a
+
+  kube-context:
+    desc: Set the kube-context to the local k3d cluster.
+    deps:
+      - task: otel:tools:install-kubectl
+      - task: otel:cluster:merge-kubeconfig
+    status:
+      - '{{ .KUBECTL_CMD }} config current-context | grep -q k3d-otel-audit-log'
+    cmds:
+      - '{{ .KUBECTL_CMD }} config use-context k3d-otel-audit-log'
+      - '{{ .KUBECTL_CMD }} config get-contexts'
