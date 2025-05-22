@@ -4,76 +4,57 @@ description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 includes:
 
-  kind:
-    desc: Manage Kind clusters.
-    taskfile: ./kind.yaml
-    internal: true
-
-  k3d:
-    desc: Manage Kind clusters.
-    taskfile: ./k3d.yaml
-    aliases:
-      - cluster
-
   tools:
     desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tools.yaml
+    internal: true
 
 tasks:
-
-  download-otel-demo:
-    desc: Download the OpenTelemetry demo YAML file.
-    status:
-      - test -f work_dir/opentelemetry-demo.yaml
-    cmds:
-      - mkdir -p work_dir
-      - curl -o work_dir/opentelemetry-demo.yaml https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
 
   demo-install:
     desc: Install otel-demo in the local cluster.
     run: once
     deps:
-      - task: cluster:start
-      - task: tools:install-helm
+    - task: tools:install-helm
     status:
-      - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
+    - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
-      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
-      - "{{ .HELM_CMD }} install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
+    - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
+    - "{{ .HELM_CMD }} install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
   demo-upgrade:
     desc: Upgrade otel-demo in the local cluster.
     run: once
     deps:
-      - task: cluster:start
-      - task: tools:install-helm
+    - task: tools:install-helm
     cmds:
-      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
-      - "{{ .HELM_CMD }} upgrade --install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
+    - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
+    - "{{ .HELM_CMD }} upgrade --install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
   demo-status:
     desc: Check the status of otel-demo in the local cluster.
     deps:
-      - task: demo-install
+    - task: demo-install
     cmds:
-      - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
+    - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
 
   demo-delete:
     desc: Delete otel-demo from the local cluster.
     deps:
-      - task: tools:install-kubectl
+    - task: tools:install-helm
     status:
-      - "! {{ .HELM_CMD }} list --namespace otel-demo | grep -q my-otel-demo"
+    - "! {{ .HELM_CMD }} list --namespace otel-demo | grep -q my-otel-demo"
     cmds:
-      - "{{ .HELM_CMD }} uninstall my-otel-demo --namespace otel-demo --ignore-not-found"
+    - "{{ .HELM_CMD }} uninstall my-otel-demo --namespace otel-demo --ignore-not-found"
 
   port-forward:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     deps:
-      - task: demo-install
+    - task: demo-install
+    - task: tools:install-kubectl
     preconditions:
-      - sh: '{{ .KUBECTL_CMD }} get svc/frontend-proxy --namespace otel-demo >/dev/null 2>&1'
-      - sh: '{{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running | grep -q frontend-proxy'
-        msg: "Please wait for the frontend-proxy pod to be in Running state."
+    - sh: '{{ .KUBECTL_CMD }} get svc/frontend-proxy --namespace otel-demo >/dev/null 2>&1'
+    - sh: '{{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running | grep -q frontend-proxy'
+      msg: "Please wait for the frontend-proxy pod to be in Running state."
     cmds:
-      - "{{ .KUBECTL_CMD }} --namespace otel-demo port-forward svc/frontend-proxy 8080:8080"
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo port-forward svc/frontend-proxy 8080:8080"
