@@ -4,35 +4,35 @@ description: Taskfile for installing required tools (k3d, kubectl, kind).
 
 vars:
   TOOL_DIR: "{{ .ROOT_DIR }}/.tools"
-  KIND_CMD: 
+  KIND_CMD:
     sh: |
       if command -v kind >/dev/null 2>&1; then
         command -v kind
       else
         echo {{ .TOOL_DIR }}/kind
       fi
-  KUBECTL_CMD: 
+  KUBECTL_CMD:
     sh: |
       if command -v kubectl >/dev/null 2>&1; then
         command -v kubectl
       else
         echo {{ .TOOL_DIR }}/kubectl
       fi
-  K3D_CMD: 
+  K3D_CMD:
     sh: |
       if command -v k3d >/dev/null 2>&1; then
         command -v k3d
       else
         echo {{ .TOOL_DIR }}/k3d
       fi
-  HELM_CMD: 
+  HELM_CMD:
     sh: |
       if command -v helm >/dev/null 2>&1; then
         command -v helm
       else
         echo {{ .TOOL_DIR }}/helm
       fi
-  K9S_CMD: 
+  K9S_CMD:
     sh: |
       if command -v k9s >/dev/null 2>&1; then
         command -v k9s
@@ -43,20 +43,20 @@ vars:
 tasks:
 
   info:
-    desc: Show the environment variables and tool paths.    
+    desc: Show the environment variables and tool paths.
     cmds:
-      - 'echo environment OS: {{ OS }}, ARCH: {{ ARCH }}, ROOT_DIR: {{ .ROOT_DIR }}, TOOL_DIR: {{ .TOOL_DIR }}'
-      - 'echo tools in use: {{ .K3D_CMD }}, {{ .KUBECTL_CMD }}, {{ .KIND_CMD }}'
+    - 'echo environment OS: {{ OS }}, ARCH: {{ ARCH }}, ROOT_DIR: {{ .ROOT_DIR }}, TOOL_DIR: {{ .TOOL_DIR }}'
+    - 'echo tools in use: {{ .K3D_CMD }}, {{ .KUBECTL_CMD }}, {{ .KIND_CMD }}'
 
   create-tool-dir:
     desc: Create the tool directory ({{ .TOOL_DIR }}) if it doesn't exist.
     internal: true
     run: once
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - test -d "{{ .TOOL_DIR }}"
+    - test -d "{{ .TOOL_DIR }}"
     cmds:
-      - mkdir -p "{{ .TOOL_DIR }}"
+    - mkdir -p "{{ .TOOL_DIR }}"
 
   install-kind:
     vars:
@@ -64,13 +64,13 @@ tasks:
     desc: "Install kind v{{ .KIND_VERSION }} to ({{ .TOOL_DIR }}/kind) if not already present"
     run: once
     deps: [ create-tool-dir ]
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - "kind || {{ .TOOL_DIR }}/kind"
+    - "kind || {{ .TOOL_DIR }}/kind"
     cmds:
-      - curl -sSLo "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" https://kind.sigs.k8s.io/dl/v{{ .KIND_VERSION }}/kind-{{ OS }}-{{ ARCH }}
-      - chmod +x "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}"
-      - ln -sf "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" "{{ .TOOL_DIR }}/kind"
+    - curl -sSLo "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" https://kind.sigs.k8s.io/dl/v{{ .KIND_VERSION }}/kind-{{ OS }}-{{ ARCH }}
+    - chmod +x "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}"
+    - ln -sf "{{ .TOOL_DIR }}/kind_v{{ .KIND_VERSION }}" "{{ .TOOL_DIR }}/kind"
 
   install-kubectl:
     vars:
@@ -78,13 +78,13 @@ tasks:
     desc: "Install kubectl {{ .KUBECTL_VERSION }} to ({{ .TOOL_DIR }}/kubectl) if not already present"
     run: once
     deps: [ create-tool-dir ]
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - kubectl || {{ .TOOL_DIR }}/kubectl
+    - kubectl || {{ .TOOL_DIR }}/kubectl
     cmds:
-      - curl -sSLo "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "https://dl.k8s.io/release/v{{ .KUBECTL_VERSION }}/bin/{{ OS }}/{{ ARCH }}/kubectl"
-      - chmod +x "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}"
-      - ln -sf "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "{{ .TOOL_DIR }}/kubectl"
+    - curl -sSLo "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "https://dl.k8s.io/release/v{{ .KUBECTL_VERSION }}/bin/{{ OS }}/{{ ARCH }}/kubectl"
+    - chmod +x "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}"
+    - ln -sf "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "{{ .TOOL_DIR }}/kubectl"
 
   install-k3d:
     vars:
@@ -92,13 +92,13 @@ tasks:
     desc: "Install k3d v{{ .K3D_VERSION }} to ({{ .TOOL_DIR }}/k3d) if not already present"
     run: once
     deps: [ create-tool-dir ]
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - "k3d || {{ .TOOL_DIR }}/k3d"
+    - "k3d || {{ .TOOL_DIR }}/k3d"
     cmds:
-      - curl -sSLo "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "https://github.com/k3d-io/k3d/releases/download/v{{ .K3D_VERSION }}/k3d-{{ OS }}-{{ ARCH }}"
-      - chmod +x "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}"
-      - ln -sf "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "{{ .TOOL_DIR }}/k3d"
+    - curl -sSLo "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "https://github.com/k3d-io/k3d/releases/download/v{{ .K3D_VERSION }}/k3d-{{ OS }}-{{ ARCH }}"
+    - chmod +x "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}"
+    - ln -sf "{{ .TOOL_DIR }}/k3d_v{{ .K3D_VERSION }}" "{{ .TOOL_DIR }}/k3d"
 
   install-helm:
     vars:
@@ -106,15 +106,15 @@ tasks:
     desc: "Install helm v{{ .HELM_VERSION }} to ({{ .TOOL_DIR }}/helm) if not already present"
     run: once
     deps: [ create-tool-dir ]
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - "helm || {{ .TOOL_DIR }}/helm"
+    - "helm || {{ .TOOL_DIR }}/helm"
     cmds:
-      - curl -sSLo "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" "https://get.helm.sh/helm-v{{ .HELM_VERSION }}-{{ OS }}-{{ ARCH }}.tar.gz"
-      - tar -xzf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" --strip-components=1 "{{ OS }}-{{ ARCH }}/helm"
-      - mv "{{ .TOOL_DIR }}/helm" "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}"
-      - ln -sf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}" "{{ .TOOL_DIR }}/helm"
-      - rm -f "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz"
+    - curl -sSLo "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" "https://get.helm.sh/helm-v{{ .HELM_VERSION }}-{{ OS }}-{{ ARCH }}.tar.gz"
+    - tar -xzf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" --strip-components=1 "{{ OS }}-{{ ARCH }}/helm"
+    - mv "{{ .TOOL_DIR }}/helm" "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}"
+    - ln -sf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}" "{{ .TOOL_DIR }}/helm"
+    - rm -f "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz"
 
   install-k9s:
     vars:
@@ -122,12 +122,12 @@ tasks:
     desc: "Install k9s v{{ .K9S_VERSION }} to ({{ .TOOL_DIR }}/k9s) if not already present"
     run: once
     deps: [ create-tool-dir ]
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     status:
-      - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
+    - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
     cmds:
-      - curl -sSLo "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" "https://github.com/derailed/k9s/releases/download/v{{ .K9S_VERSION }}/k9s_{{ OS }}_{{ ARCH }}.tar.gz"
-      - tar -xzf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "k9s"
-      - mv "{{ .TOOL_DIR }}/k9s" "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}"
-      - ln -sf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}" "{{ .TOOL_DIR }}/k9s"
-      - rm -f "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz"
+    - curl -sSLo "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" "https://github.com/derailed/k9s/releases/download/v{{ .K9S_VERSION }}/k9s_{{ OS }}_{{ ARCH }}.tar.gz"
+    - tar -xzf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "k9s"
+    - mv "{{ .TOOL_DIR }}/k9s" "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}"
+    - ln -sf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}" "{{ .TOOL_DIR }}/k9s"
+    - rm -f "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz"

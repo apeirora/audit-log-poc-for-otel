@@ -15,51 +15,55 @@ tasks:
     desc: Create a local k3d cluster.
     run: once
     deps:
-      - task: tools:install-k3d
-    platforms: [linux, darwin]
+    - task: tools:install-k3d
+    platforms: [ linux, darwin ]
     status:
-      - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
+    - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
-      # FIXME: fork/exec /home/hilmar/otel/audit-log-poc-for-otel/.tools/k3d: text file busy
-      - '{{ .K3D_CMD }} cluster create otel-audit-log --no-lb --no-rollback --wait'
+    - '{{ .K3D_CMD }} cluster create otel-audit-log --no-lb --no-rollback --wait'
 
   delete:
     desc: Delete the local k3d cluster.
     deps:
-      - task: tools:install-k3d
-    platforms: [linux, darwin]
+    - task: tools:install-k3d
+    platforms: [ linux, darwin ]
     status:
-      - '! {{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
+    - '! {{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
-      - '{{ .K3D_CMD }} cluster delete otel-audit-log'
+    - '{{ .K3D_CMD }} cluster delete otel-audit-log'
 
   start:
     desc: Starts the local k3d cluster, if it is not already running.
     deps:
-      - task: tools:install-k3d
-      - task: create
-    platforms: [linux, darwin]
+    - task: tools:install-k3d
+    - task: create
+    - task: merge-kubeconfig
+    platforms: [ linux, darwin ]
     status:
-      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any')
+    - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any')
     cmds:
-      - '{{ .K3D_CMD }} cluster start otel-audit-log'
+    - '{{ .K3D_CMD }} cluster start otel-audit-log --wait'
+    # let's wait for the cluster to be really ready, otherwise you might face the following
+    # Error: INSTALLATION FAILED: Kubernetes cluster unreachable: Get "http://localhost:8080/version": dial tcp 127.0.0.1:8080: connect: connection refused
+    - sleep 2
 
   stop:
     desc: Stops the local k3d cluster, if it is running.
     deps:
-      - task: tools:install-k3d
-    platforms: [linux, darwin]
+    - task: tools:install-k3d
+    platforms: [ linux, darwin ]
     status:
-      - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
+    - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
     cmds:
-      - '{{ .K3D_CMD }} cluster stop otel-audit-log'
+    - '{{ .K3D_CMD }} cluster stop otel-audit-log'
 
   merge-kubeconfig:
     desc: Merge the kubeconfig for the local k3d cluster into the current kubeconfig.
     deps:
-      - task: create
-    platforms: [linux, darwin]
+    - task: create
+    - task: tools:install-kubectl
+    platforms: [ linux, darwin ]
     status:
-      - '{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log'
+    - '{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log'
     cmds:
-      - '{{ .K3D_CMD }} kubeconfig merge otel-audit-log'
+    - '{{ .K3D_CMD }} kubeconfig merge otel-audit-log --kubeconfig-merge-default --kubeconfig-switch-context --update'
