@@ -7,7 +7,6 @@ COPY go.sum go.sum
 
 RUN go mod download
 
-COPY genproto/oteldemo/ genproto/oteldemo/
 COPY main.go main.go
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o recommendation main.go

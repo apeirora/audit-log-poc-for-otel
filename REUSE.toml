@@ -9,9 +9,3 @@ path = "**"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2025 SAP SE or an SAP affiliate company and ApeiroRA contributors"
 SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
-path = "src/recommendation/genproto/oteldemo/*"
-precedence = "aggregate"
-SPDX-FileCopyrightText = "Copyright 2020 Google LLC"
-SPDX-License-Identifier = "Apache-2.0"
