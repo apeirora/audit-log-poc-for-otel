@@ -35,6 +35,8 @@ tasks:
     deps:
       - task: cluster:start
       - task: tools:install-helm
+    status:
+      - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
       - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
       - "{{ .HELM_CMD }} install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
