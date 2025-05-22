@@ -22,6 +22,15 @@ tasks:
 
   build:
     desc: Builds the image of the recommendation service.
-    platforms: [linux, darwin]
+    platforms: [ linux, darwin ]
     cmds:
-      - '{{ .BUILD_CMD }} build --file src/recommendation/Dockerfile --tag otel-recommendation src/recommendation/ {{if eq .CONTAINER_CMD "podman" }} --env RECOMMENDATION_PORT=8080 {{ end }}'
+    - '{{ .BUILD_CMD }} build --file src/recommendation/Dockerfile --tag otel-recommendation src/recommendation/ {{if eq .CONTAINER_CMD "podman" }} --env RECOMMENDATION_PORT=8080 {{ end }}'
+
+  push:
+    desc: Push the built recommendation image to ghcr.io/apeirora/audit-log-poc-for-otel.
+    platforms: [ linux, darwin ]
+    deps:
+    - build
+    cmds:
+    - '{{ .BUILD_CMD }} tag otel-recommendation ghcr.io/apeirora/audit-log-poc-for-otel/recommendation:latest'
+    - '{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/recommendation:latest'
