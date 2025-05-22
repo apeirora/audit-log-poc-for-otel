@@ -28,6 +28,14 @@ task
 task otel:port-forward
 ```
 
+In case you're facing any errors, you can easily check which other tasks are defined: `task -a`
+
+For example if you want to use `kind` instead of `k3d` for your cluster setup, then you can do the following:
+
+```bash
+task kind:start otel:demo-install
+```
+
 ### Demo Endpoints
 
 With the frontend-proxy port-forward set up, you can access:
