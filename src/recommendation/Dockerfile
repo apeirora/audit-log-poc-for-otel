@@ -16,6 +16,8 @@ FROM gcr.io/distroless/static-debian12:nonroot
 
 WORKDIR /usr/src/app/
 
+LABEL org.opencontainers.image.source https://github.com/apeirora/audit-log-poc-for-otel
+
 COPY --from=builder /usr/src/app/recommendation/ ./
 
 EXPOSE ${RECOMMENDATION_PORT}
