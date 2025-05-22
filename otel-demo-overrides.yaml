@@ -53,7 +53,24 @@ components:
     enabled: false
 
   flagd:
-    enabled: false
+    enabled: true
+    sidecarContainers:
+      - name: flagd-ui
+        useDefault:
+          env: true
+        service:
+          port: 4000
+        env:
+          - name: FLAGD_METRICS_EXPORTER
+            value: otel
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://$(OTEL_COLLECTOR_NAME):4318
+        resources:
+          limits:
+            memory: 300Mi
+        volumeMounts:
+          - name: config-rw
+            mountPath: /app/data
 
   kafka:
     enabled: false
