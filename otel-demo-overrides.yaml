@@ -46,7 +46,7 @@ components:
   recommendation:
     enabled: true
     imageOverride:
-      repository: "skhalashatsap/otel-recommendation"
+      repository: "ghcr.io/apeirora/audit-log-poc-for-otel/recommendation"
       tag: "latest"
 
   shipping:
