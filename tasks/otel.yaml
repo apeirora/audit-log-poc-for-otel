@@ -41,6 +41,16 @@ tasks:
       - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
       - "{{ .HELM_CMD }} install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
+  demo-upgrade:
+    desc: Upgrade otel-demo in the local cluster.
+    run: once
+    deps:
+      - task: cluster:start
+      - task: tools:install-helm
+    cmds:
+      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts"
+      - "{{ .HELM_CMD }} upgrade --install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
+
   demo-status:
     desc: Check the status of otel-demo in the local cluster.
     deps:
