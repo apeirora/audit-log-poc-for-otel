@@ -28,7 +28,6 @@ tasks:
     deps:
     - task: tools:install-helm
     cmds:
-    - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
     - "{{ .HELM_CMD }} upgrade --install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
   demo-status:
