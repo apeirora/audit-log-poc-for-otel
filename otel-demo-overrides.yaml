@@ -1,9 +1,5 @@
 # This file is used to override the default values in
 # https://raw.githubusercontent.com/open-telemetry/opentelemetry-helm-charts/refs/heads/main/charts/opentelemetry-demo/values.yaml.
-default:
-  image:
-    pullPolicy: Always
-
 components:
   accounting:
     enabled: false
@@ -52,6 +48,7 @@ components:
     imageOverride:
       repository: "ghcr.io/apeirora/audit-log-poc-for-otel/recommendation"
       tag: "latest"
+      pullPolicy: Always
 
   shipping:
     enabled: false
