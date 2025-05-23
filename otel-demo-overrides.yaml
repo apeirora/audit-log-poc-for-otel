@@ -48,6 +48,7 @@ components:
     imageOverride:
       repository: "ghcr.io/apeirora/audit-log-poc-for-otel/recommendation"
       tag: "latest"
+      pullPolicy: Always
 
   shipping:
     enabled: false
