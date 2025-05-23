@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	pb "github.com/open-telemetry/opentelemetry-demo/src/checkout/genproto/oteldemo"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -88,7 +89,9 @@ func run() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	var srv = grpc.NewServer()
+	var srv = grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 
 	pb.RegisterRecommendationServiceServer(srv, svc)
 	healthpb.RegisterHealthServer(srv, svc)
@@ -227,6 +230,7 @@ func getEnvVar(envKey string) (string, error) {
 func createClient(svcAddr string) (*grpc.ClientConn, error) {
 	c, err := grpc.NewClient(svcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to %s service, err: %+v", svcAddr, err)
