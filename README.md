@@ -27,7 +27,16 @@ task
 # wait a couple of minutes until all images are downloaded and pods are running - feel free to check with k9s
 task otel:port-forward
 ```
+### Quick Start on mac
 
+```bash
+brew install go-task/tap/go-task
+git clone https://github.com/apeirora/otel-audit-log-poc.git
+cd audit-logpoc-for-otel
+task # run the app 
+task otel:port-forward #check http://localhost:8080
+#to stop port forwarding type ctrl + c in the terminal
+```
 In case you're facing any errors, you can easily check which other tasks are defined: `task -a`
 
 For example if you want to use `kind` instead of `k3d` for your cluster setup, then you can do the following:
