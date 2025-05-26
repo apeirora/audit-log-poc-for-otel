@@ -1,4 +1,4 @@
-name: CI
+name: Recommendation
 
 on:
   push:
@@ -9,8 +9,11 @@ jobs:
   # test locally with: `act -s GITHUB_TOKEN=$(gh auth token) --env github.actor=$USER`
   # get 'act': https://nektosact.com/installation/index.html
   build-and-push-recommendation:    
-    name: "Discover Go Modules"
+    name: Build and Push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Install Task
         uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
