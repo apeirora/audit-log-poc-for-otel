@@ -3,7 +3,9 @@ name: Recommendation
 on:
   push:
     branches:
-    - main
+      - main
+    paths:
+      - 'src/recommendation/**'
 
 jobs:
   # test locally with: `act -s GITHUB_TOKEN=$(gh auth token) --env github.actor=$USER`
