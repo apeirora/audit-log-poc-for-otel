@@ -248,7 +248,7 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	rec.AddAttributes(
 		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", req.GetProductIds())),
 	)
-	logger.Emit(ctx, log.Record(rec))
+	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
 	resp, err := s.catalogClient.ListProducts(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -265,7 +265,7 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	rec.AddAttributes(
 		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", allProductIDs)),
 	)
-	logger.Emit(ctx, log.Record(rec))
+	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
 	inputSet := make(map[string]struct{})
 	for _, id := range req.GetProductIds() {
@@ -292,7 +292,7 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	rec.AddAttributes(
 		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", filtered)),
 	)
-	logger.Emit(ctx, log.Record(rec))
+	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
 	return &pb.ListRecommendationsResponse{
 		ProductIds: filtered,
