@@ -36,7 +36,7 @@ var (
 
 	tracer = otel.Tracer("")
 	meter  = otel.Meter("")
-	logger = global.GetLoggerProvider().Logger("")
+	logger = global.GetLoggerProvider().Logger("unused")
 )
 
 type recommendationService struct {
@@ -151,6 +151,9 @@ func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, er
 	}
 	shutdownFuncs = append(shutdownFuncs, loggerProvider.Shutdown)
 	global.SetLoggerProvider(loggerProvider)
+
+	logger = loggerProvider.Logger("AUDIT_RECOMMENDATION_SERVICE", // We can set a custom logger name for AUDIT purposes
+		log.WithInstrumentationAttributes(attribute.String("AUDIT", "RECOMMENDATION_SERVICE"))) // We can set a custom attributes for AUDIT purposes
 
 	return
 }
