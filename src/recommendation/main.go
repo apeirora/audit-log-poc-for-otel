@@ -248,6 +248,8 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	rec.AddAttributes(
 		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", req.GetProductIds())),
 	)
+	rec.SetEventName("AUDIT_RECOMMENDATION_LIST_REQUEST") // We can set a custom event name for AUDIT purposes
+
 	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
 	resp, err := s.catalogClient.ListProducts(context.Background(), &pb.Empty{})
