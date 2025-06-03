@@ -1,0 +1,53 @@
+exporters:
+  debug:
+    verbosity: detailed
+  opensearch:
+    http:
+      endpoint: http://opensearch:9200
+      tls:
+        insecure: true
+    logs_index: otel
+extensions:
+  health_check:
+    endpoint: ${env:MY_POD_IP}:13133
+processors:
+  memory_limiter:
+    check_interval: 5s
+    limit_percentage: 80
+    spike_limit_percentage: 25
+  resource:
+    attributes:
+    - action: insert
+      from_attribute: k8s.pod.uid
+      key: service.instance.id
+  transform:
+    error_mode: ignore
+    trace_statements:
+    - context: span
+      statements:
+      - replace_pattern(name, "\\?.*", "")
+      - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: ${env:MY_POD_IP}:4317
+      http:
+        cors:
+          allowed_origins:
+          - http://*
+          - https://*
+        endpoint: ${env:MY_POD_IP}:4318
+service:
+  extensions:
+  - health_check
+  pipelines:
+    logs:
+      exporters:
+      - opensearch
+      - debug
+      processors:
+      - memory_limiter
+      - resource
+      receivers:
+      - otlp

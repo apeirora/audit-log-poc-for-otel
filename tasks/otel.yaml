@@ -2,6 +2,18 @@ version: '3'
 
 description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
+vars:
+  WOKR_DIR: "{{ .ROOT_DIR }}/work_dir"
+  COLLECTOR_IP:
+    sh: |
+      {{ .KUBECTL_CMD }} get nodes -o yaml | yq '.items[] | select(.metadata.name | test("otel-audit-log")) | .metadata.annotations."alpha.kubernetes.io/provided-node-ip"'
+  COLLECTOR_HTTP:
+    sh: |
+      {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp-http") | .nodePort'
+  COLLECTOR_GRPC:
+    sh: |
+      {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp") | .nodePort'
+
 includes:
 
   tools:
@@ -57,3 +69,43 @@ tasks:
       msg: "Please wait for the frontend-proxy pod to be in Running state."
     cmds:
     - "{{ .KUBECTL_CMD }} --namespace otel-demo port-forward svc/frontend-proxy 8080:8080"
+
+  tweak-config:
+    desc: Tweak the otel-collector configuration in the otel-demo namespace.
+    deps:
+    - task: create-work-dir
+    - task: demo-install
+    - task: tools:install-kubectl
+    cmds:
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get configmap otel-collector > {{ .WOKR_DIR }}/otel-collector-configmap.yaml"
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get service otel-collector > {{ .WOKR_DIR }}/otel-collector-service.yaml"
+    - yq eval '.data.relay = load_str("{{ .ROOT_DIR }}/otel-collector/config.yaml")' {{ .WOKR_DIR }}/otel-collector-configmap.yaml > {{ .WOKR_DIR }}/otel-collector-configmap-new.yaml
+    - yq eval '.spec.ports |= map(select(.name == "otlp" or .name == "otlp-http"))' {{ .WOKR_DIR }}/otel-collector-service.yaml > {{ .WOKR_DIR }}/otel-collector-service-new.yaml
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WOKR_DIR }}/otel-collector-configmap-new.yaml"
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WOKR_DIR }}/otel-collector-service-new.yaml"
+    - "{{ .KUBECTL_CMD }} --namespace otel-demo rollout restart deployment otel-collector"
+
+  create-work-dir:
+    desc: Create the work directory ({{ .WOKR_DIR }}) if it doesn't exist.
+    internal: true
+    run: once
+    platforms: [ linux, darwin ]
+    status:
+      - test -d "{{ .WOKR_DIR }}"
+    cmds:
+      - mkdir -p "{{ .WOKR_DIR }}"
+
+  busybox:
+    desc: Run a busybox container in the otel-demo namespace.
+    deps:
+    - task: tools:install-kubectl
+    cmds:
+    - "{{ .KUBECTL_CMD }} run run -it --rm --restart=Never --namespace otel-demo --image=busybox -- sh"
+
+  export-collector:
+    desc: Shows the otel-collector service details (IP address and ports).
+    cmds:
+     - |
+      echo export OTEL_EXPORTER_OTLP_ENDPOINT={{ .COLLECTOR_IP }} && \
+      echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC={{ .COLLECTOR_IP }}:{{ .COLLECTOR_GRPC }} && \
+      echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP={{ .COLLECTOR_IP }}:{{ .COLLECTOR_HTTP }}
