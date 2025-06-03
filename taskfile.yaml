@@ -26,6 +26,10 @@ includes:
     desc: Builds the image of the recommendation service.
     taskfile: ./tasks/recommendation.yaml
 
+  go:
+    desc: Build the go application.
+    taskfile: ./tasks/go.yaml
+
 tasks:
 
   default:
