@@ -17,6 +17,8 @@ tasks:
     deps:
     - task: tools:install-k3d
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ K3D_CMD ]
     status:
     - '{{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
@@ -27,6 +29,8 @@ tasks:
     deps:
     - task: tools:install-k3d
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ K3D_CMD ]
     status:
     - '! {{ .K3D_CMD }} cluster list | grep -q otel-audit-log'
     cmds:
@@ -39,6 +43,8 @@ tasks:
     - task: create
     - task: merge-kubeconfig
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ K3D_CMD ]
     status:
     - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any')
     cmds:
@@ -52,6 +58,8 @@ tasks:
     deps:
     - task: tools:install-k3d
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ K3D_CMD ]
     status:
     - eval $({{ .K3D_CMD }} cluster list otel-audit-log --output json | jq '[.[].nodes[] | select(.role=="server") | .State.Running] | any | not')
     cmds:
@@ -62,6 +70,8 @@ tasks:
     deps:
     - task: create
     - task: tools:install-kubectl
+    requires:
+      vars: [ K3D_CMD, KUBECTL_CMD ]
     platforms: [ linux, darwin ]
     status:
     - '{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log'
