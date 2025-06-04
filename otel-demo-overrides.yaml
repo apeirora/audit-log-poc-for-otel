@@ -5,7 +5,7 @@ components:
     enabled: false
 
   ad:
-    enabled: true
+    enabled: false
 
   cart:
     enabled: false
@@ -14,7 +14,7 @@ components:
     enabled: false
 
   currency:
-    enabled: true
+    enabled: false
 
   email:
     enabled: false
@@ -32,7 +32,7 @@ components:
     enabled: true
 
   load-generator:
-    enabled: true
+    enabled: false
 
   payment:
     enabled: false
@@ -77,16 +77,83 @@ components:
     enabled: false
 
   valkey-cart:
-    enabled: false
+    enabled: true
 
 opentelemetry-collector:
   enabled: true
+ #   - 4317:4317 # OTLP gRPC receiver
+ #   - 4318:4318 # OTLP http receiver
+  image:
+    repository: "otel/opentelemetry-collector-contrib"
+  fullnameOverride: otel-collector
+  mode: deployment
+  presets:
+    kubernetesAttributes:
+      enabled: false
+  resources:
+    limits:
+      memory: 200Mi
+  service:
+    type: NodePort
+  ports:
+    metrics:
+      enabled: false
+  podAnnotations:
+    opentelemetry_community_demo: "true"
+  config:
+    receivers:
+      otlp:
+        protocols:
+          http:
+            # Since this collector needs to receive data from the web, enable cors for all origins
+            # `allowed_origins` can be refined for your deployment domain
+            cors:
+              allowed_origins:
+                - "http://*"
+                - "https://*"
+      httpcheck/frontend-proxy:
+        targets:
+          - endpoint: http://frontend-proxy:8080
+
+    exporters:
+      debug:
+        verbosity: detailed
+      opensearch:
+        logs_index: otel
+        http:
+          endpoint: http://opensearch:9200
+          tls:
+            insecure: true
+
+    processors:
+      # This processor is used to help limit high cardinality on next.js span names
+      # When this PR is merged (and released) we can remove this transform processor
+      # https://github.com/vercel/next.js/pull/64852
+      transform:
+        error_mode: ignore
+        trace_statements:
+          - context: span
+            statements:
+              # could be removed when https://github.com/vercel/next.js/pull/64852 is fixed upstream
+              - replace_pattern(name, "\\?.*", "")
+              - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
+      resource:
+        attributes:
+          - key: service.instance.id
+            from_attribute: k8s.pod.uid
+            action: insert
+
+    service:
+      pipelines:
+        logs:
+          processors: [memory_limiter, resource, batch]
+          exporters: [opensearch, debug]
 
 jaeger:
-  enabled: true
+  enabled: false
 
 prometheus:
-  enabled: true
+  enabled: false
 
 grafana:
   enabled: true
