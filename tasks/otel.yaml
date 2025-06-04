@@ -4,15 +4,22 @@ description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 vars:
   WOKR_DIR: "{{ .ROOT_DIR }}/work_dir"
+  CLUSTER:
+    sh: |
+      if {{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1; then
+        echo true
+      else
+        echo false
+      fi
   COLLECTOR_IP:
     sh: |
-      {{ .KUBECTL_CMD }} get nodes -o yaml | yq '.items[] | select(.metadata.name | test("otel-audit-log")) | .metadata.annotations."alpha.kubernetes.io/provided-node-ip"'
+      {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} get nodes -o yaml | yq '.items[] | select(.metadata.name | test("otel-audit-log")) | .metadata.annotations."alpha.kubernetes.io/provided-node-ip"' {{ end }}
   COLLECTOR_HTTP:
     sh: |
-      {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp-http") | .nodePort'
+      {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp-http") | .nodePort' {{ end }}
   COLLECTOR_GRPC:
     sh: |
-      {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp") | .nodePort'
+      {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp") | .nodePort' {{ end }}
 
 includes:
 
@@ -28,6 +35,11 @@ tasks:
     run: once
     deps:
     - task: tools:install-helm
+    requires:
+      vars: [ HELM_CMD ]
+    preconditions:
+    - sh: '{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1'
+      msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
     status:
     - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
@@ -39,6 +51,8 @@ tasks:
     run: once
     deps:
     - task: tools:install-helm
+    requires:
+      vars: [ HELM_CMD ]
     cmds:
     - "{{ .HELM_CMD }} upgrade --install --values otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
 
@@ -46,6 +60,8 @@ tasks:
     desc: Check the status of otel-demo in the local cluster.
     deps:
     - task: demo-install
+    requires:
+      vars: [ HELM_CMD ]
     cmds:
     - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
 
@@ -53,6 +69,8 @@ tasks:
     desc: Delete otel-demo from the local cluster.
     deps:
     - task: tools:install-helm
+    requires:
+      vars: [ HELM_CMD ]
     status:
     - "! {{ .HELM_CMD }} list --namespace otel-demo | grep -q my-otel-demo"
     cmds:
@@ -63,6 +81,8 @@ tasks:
     deps:
     - task: demo-install
     - task: tools:install-kubectl
+    requires:
+      vars: [ KUBECTL_CMD ]
     preconditions:
     - sh: '{{ .KUBECTL_CMD }} get svc/frontend-proxy --namespace otel-demo >/dev/null 2>&1'
     - sh: '{{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running | grep -q frontend-proxy'
@@ -76,6 +96,8 @@ tasks:
     - task: create-work-dir
     - task: demo-install
     - task: tools:install-kubectl
+    requires:
+      vars: [ KUBECTL_CMD ]
     cmds:
     - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get configmap otel-collector > {{ .WOKR_DIR }}/otel-collector-configmap.yaml"
     - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get service otel-collector > {{ .WOKR_DIR }}/otel-collector-service.yaml"
@@ -90,22 +112,28 @@ tasks:
     internal: true
     run: once
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ WOKR_DIR ]
     status:
-      - test -d "{{ .WOKR_DIR }}"
+    - test -d "{{ .WOKR_DIR }}"
     cmds:
-      - mkdir -p "{{ .WOKR_DIR }}"
+    - mkdir -p "{{ .WOKR_DIR }}"
 
   busybox:
     desc: Run a busybox container in the otel-demo namespace.
     deps:
     - task: tools:install-kubectl
+    requires:
+      vars: [ KUBECTL_CMD ]
     cmds:
     - "{{ .KUBECTL_CMD }} run run -it --rm --restart=Never --namespace otel-demo --image=busybox -- sh"
 
   export-collector:
     desc: Shows the otel-collector service details (IP address and ports).
+    requires:
+      vars: [ COLLECTOR_IP, COLLECTOR_GRPC, COLLECTOR_HTTP ]
     cmds:
-     - |
+    - |
       echo export OTEL_EXPORTER_OTLP_ENDPOINT={{ .COLLECTOR_IP }} && \
       echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC={{ .COLLECTOR_IP }}:{{ .COLLECTOR_GRPC }} && \
       echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP={{ .COLLECTOR_IP }}:{{ .COLLECTOR_HTTP }}

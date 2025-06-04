@@ -16,6 +16,8 @@ tasks:
     deps:
     - task: tools:install-kind
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ KIND_CMD ]
     status:
     - '{{ .KIND_CMD }} get clusters | grep -q otel-audit-log'
     cmds:
@@ -26,6 +28,8 @@ tasks:
     deps:
     - task: tools:install-kind
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ KIND_CMD ]
     status:
     - '! {{ .KIND_CMD }} get clusters | grep -q otel-audit-log'
     cmds:

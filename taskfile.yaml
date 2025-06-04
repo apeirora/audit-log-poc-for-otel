@@ -34,11 +34,11 @@ tasks:
 
   default:
     desc: Create and start local kubernetes cluster and install otel-demo.
+    ignore_error: true
     deps:
     - task: cluster:start
-    - task: otel:demo-install
-    - task: otel:demo-status
     cmds:
+    - task: otel:demo-status
     - task -a
 
   kube-context:

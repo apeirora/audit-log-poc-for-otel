@@ -53,6 +53,8 @@ tasks:
     internal: true
     run: once
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - test -d "{{ .TOOL_DIR }}"
     cmds:
@@ -65,6 +67,8 @@ tasks:
     run: once
     deps: [ create-tool-dir ]
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - "kind || {{ .TOOL_DIR }}/kind"
     cmds:
@@ -79,6 +83,8 @@ tasks:
     run: once
     deps: [ create-tool-dir ]
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - kubectl || {{ .TOOL_DIR }}/kubectl
     cmds:
@@ -93,6 +99,8 @@ tasks:
     run: once
     deps: [ create-tool-dir ]
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - "k3d || {{ .TOOL_DIR }}/k3d"
     cmds:
@@ -107,6 +115,8 @@ tasks:
     run: once
     deps: [ create-tool-dir ]
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - "helm || {{ .TOOL_DIR }}/helm"
     cmds:
@@ -123,6 +133,8 @@ tasks:
     run: once
     deps: [ create-tool-dir ]
     platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
     status:
     - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
     cmds:
