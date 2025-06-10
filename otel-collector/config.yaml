@@ -10,7 +10,7 @@ exporters:
     sending_queue:
       enabled: true  # When disabled, the export happens immediately. If the receiver isn't available, the logs will be lost.
       queue_size: 1000000
-      block_on_queue_full: true
+      # block_on_queue_full: true  # not supported by opensearch exporter - https://github.com/hilmarf/opentelemetry-collector-contrib/tree/main/exporter/opensearchexporter
       storage: file_storage  # Without storage, the queue is in memory and will be lost on restart.
     retry_on_failure:
       enabled: true
