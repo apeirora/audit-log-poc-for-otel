@@ -21,6 +21,11 @@ alternateConfig:
           - otlp
         exporters:
           - debug
+resources:
+  limits:
+    memory: 512Mi
+  requests:
+    memory: 256Mi
 image:
   repository: otel/opentelemetry-collector-k8s
 mode: deployment
