@@ -126,6 +126,15 @@ tasks:
     cmds:
       - "{{ .KUBECTL_CMD }} run run -it --rm --restart=Never --namespace otel-demo --image=busybox -- sh"
 
+  alpine-sidecar:
+    desc: Run a
+    deps:
+    - task: tools:install-kubectl
+    requires:
+      vars: [ KUBECTL_CMD ]
+    cmds:
+    - "{{ .KUBECTL_CMD }} exec -it $({{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running -o name | grep otel-collector) -c alpine-sidecar --namespace otel-demo -- /bin/sh"
+
   export-collector:
     desc: Shows the otel-collector service details (IP address and ports).
     requires:
