@@ -81,6 +81,12 @@ components:
 
 opentelemetry-collector:
   enabled: true
+  extraVolumeMounts:
+  - name: collector-volume
+    mountPath: /collector-volume
+  extraVolumes:
+  - name: collector-volume
+    emptyDir: {}  # Only temporary storage in node filesystem
 
 jaeger:
   enabled: true
