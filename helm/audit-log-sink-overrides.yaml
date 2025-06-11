@@ -28,4 +28,5 @@ resources:
     memory: 256Mi
 image:
   repository: otel/opentelemetry-collector-k8s
+  tag: latest
 mode: deployment
