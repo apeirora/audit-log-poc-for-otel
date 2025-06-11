@@ -37,7 +37,7 @@ tasks:
       vars: [HELM_CMD]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask k3d:start"
     status:
       - "{{ .HELM_CMD }} list --namespace otel-demo -o json | jq -r '.[].status' | grep -q deployed"
     cmds:
@@ -135,3 +135,17 @@ tasks:
         echo export OTEL_EXPORTER_OTLP_ENDPOINT={{ .COLLECTOR_IP }} && \
         echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC={{ .COLLECTOR_IP }}:{{ .COLLECTOR_GRPC }} && \
         echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP={{ .COLLECTOR_IP }}:{{ .COLLECTOR_HTTP }}
+
+  audit-log-sink:
+    desc: Install audit-log-sink in the local cluster.
+    run: once
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask k3d:start"
+    cmds:
+      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
+      - "{{ .HELM_CMD }} install --values helm/audit-log-sink-overrides.yaml audit-log-sink open-telemetry/opentelemetry-collector --namespace otel-demo --create-namespace"
