@@ -94,15 +94,28 @@ func run() (err error) {
 }
 
 func rolldice(w http.ResponseWriter, r *http.Request) {
-	roll := 1 + rand.Intn(6)
+	roll := 1 + rand.Intn(100)
 
 	var msg string
-	if player := r.PathValue("player"); player != "" {
+	player := r.PathValue("player")
+	if player != "" {
 		msg = fmt.Sprintf("%s is rolling the dice", player)
 	} else {
 		msg = "Anonymous player is rolling the dice"
 	}
-	slogger.InfoContext(r.Context(), msg, "result", roll, "AUDIT-USER", r.PathValue("player"))
+	slogger.InfoContext(r.Context(), msg, "result", roll, "AUDIT-USER", player)
+
+	// In your run() function, before starting the goroutine:
+	factor := getFactor()
+	go func() {
+		for i := 0; i < factor; i++ {
+			rec := olog.Record{}
+			rec.SetSeverity(olog.SeverityInfo)
+			rec.SetBody(olog.StringValue(fmt.Sprintf("dice: %d, user: %s - bulk log message #%d", roll, player, 1+i)))
+			logger.Emit(context.Background(), rec)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
 
 	resp := strconv.Itoa(roll) + "\n"
 	if _, err := io.WriteString(w, resp); err != nil {
@@ -128,6 +141,19 @@ func newHTTPHandler() http.Handler {
 	// Add HTTP instrumentation for the whole server.
 	handler := otelhttp.NewHandler(mux, "/")
 	return handler
+}
+
+const defaultFactor = 1
+
+// getFactor retrieves the factor for log messages per request from the environment variable.
+// If the variable (LOG_MESSAGES_PER_REQUEST) is not set or invalid, it returns the default factor.
+func getFactor() int {
+	if val, ok := os.LookupEnv("LOG_MESSAGES_PER_REQUEST"); ok {
+		if n, err := strconv.Atoi(val); err == nil && n > 0 {
+			return n
+		}
+	}
+	return defaultFactor
 }
 
 // setupOTelSDK bootstraps the OpenTelemetry pipeline.
@@ -200,8 +226,9 @@ func newLoggerProvider(ctx context.Context) (*sdklog.LoggerProvider, error) {
 	if grpcEndpoint == "" {
 		grpcEndpoint = "localhost:4317" // Default gRPC endpoint
 	}
-	grpcExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpoint(grpcEndpoint),
-		otlploggrpc.WithInsecure( /* fixes "transport: authentication handshake failed: tls: first record does not look like a TLS handshake" */ ))
+	//	grpcExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpointURL(grpcEndpoint),
+	//		otlploggrpc.WithInsecure( /* fixes "transport: authentication handshake failed: tls: first record does not look like a TLS handshake" */ ))
+	grpcExporter, err := otlploggrpc.New(ctx, otlploggrpc.WithEndpointURL(grpcEndpoint+"/v1/logs"))
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +237,8 @@ func newLoggerProvider(ctx context.Context) (*sdklog.LoggerProvider, error) {
 	if httpEndpoint == "" {
 		httpEndpoint = "localhost:4318" // Default HTTP endpoint
 	}
-	httpExporter, err := otlploghttp.New(ctx, otlploghttp.WithEndpoint(httpEndpoint), otlploghttp.WithInsecure( /* don't know how to setup https */ ))
+	//	httpExporter, err := otlploghttp.New(ctx, otlploghttp.WithEndpointURL(httpEndpoint), otlploghttp.WithInsecure( /* don't know how to setup https */ ))
+	httpExporter, err := otlploghttp.New(ctx, otlploghttp.WithEndpointURL(httpEndpoint+"/v1/logs"))
 	if err != nil {
 		return nil, err
 	}
