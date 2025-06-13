@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.sap.otel</groupId>
+	<artifactId>e</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>dice-java</name>
+	<description>OTel demo project with Spring Boot</description>
+	<url/>
+	<licenses>
+		<license/>
+	</licenses>
+	<developers>
+		<developer/>
+	</developers>
+	<scm>
+		<connection/>
+		<developerConnection/>
+		<tag/>
+		<url/>
+	</scm>
+	<properties>
+		<java.version>24</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-otlp</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-sdk</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-exporter-otlp</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+				<!-- https://github.com/micrometer-metrics/micrometer/blob/bc2dcb789b12365a2ac3282e8fb1ba99f47e42ed/docs/modules/ROOT/pages/implementations/otlp.adoc -->
+					<jvmArguments>
+						-Dotel.exporter.otlp.endpoint="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}"
+						-Dotel.exporter.otlp.logs.endpoint="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/logs"
+						-Dotel.exporter.otlp.traces.endpoint="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/traces"
+						-Dmanagement.otlp.metrics.export.url="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/metrics"
+					</jvmArguments>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<mainClass>org.springframework.boot.loader.JarLauncher</mainClass>
+					<arguments></arguments>
+					<systemProperties>
+						<systemProperty>
+							<key>otel.exporter.otlp.endpoint</key>
+							<value>http://${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}</value>
+						</systemProperty>
+						<systemProperty>
+							<key>otel.exporter.otlp.logs.endpoint</key>
+							<value>http://${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/logs</value>
+						</systemProperty>
+						<systemProperty>
+							<key>otel.exporter.otlp.traces.endpoint</key>
+							<value>http://${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/traces</value>
+						</systemProperty>
+						<systemProperty>
+							<key>management.metrics.export.otlp.endpoint</key>
+							<value>http://${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}</value>
+						</systemProperty>
+					</systemProperties>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<repositories>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+
+</project>
