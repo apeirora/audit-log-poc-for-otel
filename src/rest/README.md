@@ -6,7 +6,7 @@ Dummy rest application that logs requests using OpenTelemetry.
 
 ```bash
 eval "$(task otel:export-collector --silent)"
-cd src/dice-go
+cd src/rest
 go mod tidy
 go run main.go
 ```

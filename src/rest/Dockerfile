@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY main.go main.go
 
-RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o dice-go main.go
+RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o rest main.go
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
@@ -17,7 +17,7 @@ WORKDIR /usr/src/app/
 
 LABEL org.opencontainers.image.source=https://github.com/apeirora/audit-log-poc-for-otel
 
-COPY --from=builder /usr/src/app/dice-go/ ./
+COPY --from=builder /usr/src/app/rest/ ./
 
 EXPOSE ${REST_PORT}
-ENTRYPOINT [ "./dice-go" ]
+ENTRYPOINT [ "./rest" ]
