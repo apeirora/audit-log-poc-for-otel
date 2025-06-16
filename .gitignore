@@ -2,6 +2,7 @@
 **/.project
 **/.classpath
 **/.settings/
+**/bin/
 
 # where tasks store binary tools (e.g. kind, kubectl, etc.)
 /.tools/
