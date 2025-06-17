@@ -47,41 +47,10 @@ Ensuring audit logs are reliably captured and transmitted is critical for compli
 | **Processors**            | Sub-components within Otel Collector (filtering, enriching, batching).|
 | **AuditLog Services V3 Exporter** | Sends the finalized log data to external Audit Log endpoint via internet. |
 
-### 4.2 Data Flow
-
-1. **Data Generation:** Recommendation Service records log entries via Otel SDK.
-2. **Data Transmission:** SDK Exporter sends logs to Otel Collector.
-3. **Data Processing:** In Otel Collector, processors filter, batch, and format logs.
-4. **Data Export:** Processed logs are exported to AuditLog Services V3 API endpoint.
 
 ### 4.3 Architecture Diagram
+lucid chart link : https://lucid.app/lucidchart/7a9fa1de-2640-4a2d-a038-0f7284a0800f/edit?page=p92ebrH0iSU9r&invitationId=inv_812faa02-bebb-4df2-aec3-882d5b027543#
 
-```plaintext
-+----------------------+
-| Recommendation       |
-|   Service            |
-| (Otel SDK + Exporter)|
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Otel Collector       |
-|  - Receivers         |
-|  - Processors        |
-|  - Exporters         |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Audit Log Services   |
-|       V3 Endpoint    |
-+----------------------+
-Data Flow:
-
-Service Log Event →
-SDK Exporter →
-Otel Collector (Processing Chain) →
-AuditLog V3 Exporter (over Internet)
 5. ARCHITECTURE DECISIONS
 
 Use OpenTelemetry SDK within application code for cross-vendor and standardized telemetry generation.
@@ -90,6 +59,7 @@ Employ processors (filtering, batching) for scaling and compliance with remote A
 Decouple network transmission from application code, handing over all egress responsibilities to Otel Collector.
 Instrument with checkpoints and monitoring at each component boundary for reliability assessment.
 Select AuditLog Services V3 Exporter due to organizational integration requirements.
+
 6. OPEN POINTS
 
 Otel SDK & Collector Version Compatibility: Need to validate if all required features and data formats are supported.
@@ -97,6 +67,7 @@ API Rate Limits & Back-pressure: How will surges and API slowdowns/throttling be
 Data Privacy & Security: Ensure logging data is sanitized/encrypted as required before egress.
 Collector Failure Modes: What happens to logs if Otel Collector crashes or network partition occurs?
 Lossy Operations in Processors: Need clear bounds on filtering/batching impacts to log completeness.
+
 7. CONCLUSION AND NEXT STEPS
 
 This POC will validate the comprehensive logging flow’s reliability and highlight improvements for audit log delivery. Next steps include:
@@ -106,6 +77,7 @@ Executing validation and stress tests.
 Analyzing end-to-end message integrity/loss metrics.
 Tuning collector/processors for optimal throughput and minimal loss.
 Compiling a findings and recommendations report for broader system rollout.
+
 8. DECISION PROTOCOL
 
 Decisions Tracked: All key design changes/choices documented in versioned change log.
