@@ -9,7 +9,7 @@
 
 # where you can store your temporary local files
 /work_dir/
-/tmp/
+**/tmp/
 
 # java build files
 **/target/
