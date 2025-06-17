@@ -51,7 +51,7 @@ Ensuring audit logs are reliably captured and transmitted is critical for compli
 ### 4.3 Architecture Diagram
 lucid chart link : https://lucid.app/lucidchart/7a9fa1de-2640-4a2d-a038-0f7284a0800f/edit?page=p92ebrH0iSU9r&invitationId=inv_812faa02-bebb-4df2-aec3-882d5b027543#
 
-5. ARCHITECTURE DECISIONS
+## 5. ARCHITECTURE DECISIONS
 
 Use OpenTelemetry SDK within application code for cross-vendor and standardized telemetry generation.
 Externalize processing to Otel Collector for operational flexibility without code deployment.
@@ -60,7 +60,7 @@ Decouple network transmission from application code, handing over all egress res
 Instrument with checkpoints and monitoring at each component boundary for reliability assessment.
 Select AuditLog Services V3 Exporter due to organizational integration requirements.
 
-6. OPEN POINTS
+## 6. OPEN POINTS
 
 Otel SDK & Collector Version Compatibility: Need to validate if all required features and data formats are supported.
 API Rate Limits & Back-pressure: How will surges and API slowdowns/throttling be gracefully handled?
@@ -68,7 +68,7 @@ Data Privacy & Security: Ensure logging data is sanitized/encrypted as required 
 Collector Failure Modes: What happens to logs if Otel Collector crashes or network partition occurs?
 Lossy Operations in Processors: Need clear bounds on filtering/batching impacts to log completeness.
 
-7. CONCLUSION AND NEXT STEPS
+## 7. CONCLUSION AND NEXT STEPS
 
 This POC will validate the comprehensive logging flow’s reliability and highlight improvements for audit log delivery. Next steps include:
 
@@ -78,12 +78,12 @@ Analyzing end-to-end message integrity/loss metrics.
 Tuning collector/processors for optimal throughput and minimal loss.
 Compiling a findings and recommendations report for broader system rollout.
 
-8. DECISION PROTOCOL
+## 8. DECISION PROTOCOL
 
 Decisions Tracked: All key design changes/choices documented in versioned change log.
-Approval: Lead architect, DevOps, and business stakeholders must sign off on go/no-go for each phase.
 Review Frequency: Weekly checkpoints during POC, rolling up to steering committee.
-9. APPENDIX
+
+## 9. APPENDIX
 
 References to OpenTelemetry documentation
 Diagrams (link/attachments)
