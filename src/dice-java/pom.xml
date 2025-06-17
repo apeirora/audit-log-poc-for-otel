@@ -8,22 +8,41 @@
 		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 	<groupId>com.sap.otel</groupId>
-	<artifactId>e</artifactId>
+	<artifactId>dice</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>dice-java</name>
 	<description>OTel demo project with Spring Boot</description>
-	<url/>
+	<url>https://github.com/apeirora/audit-log-poc-for-otel/tree/main/src</url>
+	<organization>
+		<name>SAP SE</name>
+		<url>https://www.sap.com/</url>
+	</organization>
+	<issueManagement>
+		<url>https://github.com/apeirora/audit-log-poc-for-otel/issues</url>
+		<system>github</system>
+	</issueManagement>
 	<licenses>
-		<license/>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
 	</licenses>
 	<developers>
-		<developer/>
+		<developer>
+			<id>hilmarf</id>
+			<name>Hilmar Falkenberg</name>
+			<email>hilmar.falkenberg@sap.com</email>
+			<organization>SAP SE</organization>
+			<organizationUrl>https://www.sap.com/</organizationUrl>
+		</developer>
 	</developers>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:https://github.com/apeirora/audit-log-poc-for-otel.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/apeirora/audit-log-poc-for-otel.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/apeirora/audit-log-poc-for-otel</url>
 	</scm>
 	<properties>
 		<java.version>24</java.version>
@@ -64,7 +83,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-				<!-- https://github.com/micrometer-metrics/micrometer/blob/bc2dcb789b12365a2ac3282e8fb1ba99f47e42ed/docs/modules/ROOT/pages/implementations/otlp.adoc -->
+					<!-- https://github.com/micrometer-metrics/micrometer/blob/bc2dcb789b12365a2ac3282e8fb1ba99f47e42ed/docs/modules/ROOT/pages/implementations/otlp.adoc -->
 					<jvmArguments>
 						-Dotel.exporter.otlp.endpoint="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}"
 						-Dotel.exporter.otlp.logs.endpoint="${env.OTEL_EXPORTER_OTLP_ENDPOINT_HTTP}/v1/logs"
