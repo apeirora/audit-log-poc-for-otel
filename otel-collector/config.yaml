@@ -58,11 +58,19 @@ service:
   - file_storage
   pipelines:
     logs:
-      exporters:
-      - opensearch
-      - debug
+      receivers:
+      - otlp
       processors:
       - memory_limiter
       - resource
-      receivers:
-      - otlp
+      exporters:
+      - opensearch
+      - debug
+#    metrics:
+#      receivers:
+#      - otlp
+#      processors:
+#      - memory_limiter
+#      - resource
+#      exporters:
+#      - debug
