@@ -105,7 +105,7 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 	}
 	slogger.InfoContext(r.Context(), msg, "result", roll, "AUDIT-USER", player)
 
-	// In your run() function, before starting the goroutine:
+	// Emit some log records (see getFactor()) using the global logger.
 	factor := getFactor()
 	go func() {
 		for i := 0; i < factor; i++ {
