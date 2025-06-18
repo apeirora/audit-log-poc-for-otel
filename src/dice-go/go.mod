@@ -1,4 +1,4 @@
-module github.com/apeirora/audit-log-poc-for-otel/rest
+module github.com/apeirora/audit-log-poc-for-otel/dice-go
 
 go 1.24.3
 

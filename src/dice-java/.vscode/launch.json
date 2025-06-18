@@ -1,0 +1,26 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Current File",
+      "request": "launch",
+      "mainClass": "${file}"
+    },
+    {
+      "type": "java",
+      "name": "DemoApplication",
+      "request": "launch",
+      "mainClass": "com.sap.otel.demo.DemoApplication",
+      "projectName": "dice",
+      "env": {
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://172.19.0.2",
+        "OTEL_EXPORTER_OTLP_ENDPOINT_HTTP": "http://172.19.0.2:31002",
+        "OTEL_EXPORTER_OTLP_ENDPOINT_GRPC": "http://172.19.0.2:30086"
+      }
+    }
+  ]
+}

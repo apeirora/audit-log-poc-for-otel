@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: demo
+server:
+  port: 8082
+
+management:
+  metrics:
+    export:
+      enabled: false
+      otlp:
+        endpoint: http://172.19.0.2:31002
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+otel:
+  exporter:
+    otlp:
+      endpoint: http://172.19.0.2:31002
+      logs:
+        endpoint: http://172.19.0.2:31002/v1/logs
