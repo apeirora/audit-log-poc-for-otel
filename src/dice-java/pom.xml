@@ -46,6 +46,7 @@
 	</scm>
 	<properties>
 		<java.version>24</java.version>
+		<opentelemetry.version>1.51.0</opentelemetry.version>
 	</properties>
 
 	<dependencies>
