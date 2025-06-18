@@ -32,8 +32,8 @@ task otel:port-forward
 ```bash
 brew install go-task/tap/go-task
 git clone https://github.com/apeirora/otel-audit-log-poc.git
-cd audit-logpoc-for-otel
-task # run the app 
+cd audit-log-poc-for-otel
+task # run the app
 task otel:port-forward #check http://localhost:8080
 #to stop port forwarding type ctrl + c in the terminal
 ```
