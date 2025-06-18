@@ -2,6 +2,7 @@ package com.sap.otel.demo;
 
 import java.util.Random;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,12 +23,14 @@ public class DiceController {
 
 	private final Random random = new Random();
 	private final Logger otelLogger;
+	private final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
 
 	// Number of log messages per request, configurable via environment variable: LOG_MESSAGES_PER_REQUEST
 	private final int logMessagesPerRequest;
 
 	public DiceController(@Value("${LOG_MESSAGES_PER_REQUEST:1}") int logMessagesPerRequest,
 			@Qualifier("otelLoggerProvider") @Autowired LoggerProvider loggerProvider) {
+		log.debug("DiceController initialized with logMessagesPerRequest={}", logMessagesPerRequest);
 		// LoggerProvider loggerProvider = GlobalOpenTelemetry.get().getLogsBridge(); // actually returns LoggerProvider.noop()
 		this.otelLogger = loggerProvider.loggerBuilder("AUDIT_JAVA_SERVICE").build();
 		this.logMessagesPerRequest = logMessagesPerRequest;
@@ -42,6 +45,7 @@ public class DiceController {
 	 */
 	@GetMapping({ "/rolldice", "/rolldice/{player}" })
 	public String rollDice(@PathVariable(value = "player", required = false) String player) {
+		log.debug("rollDice called with player={}", player);
 		int roll = 1 + random.nextInt(100);
 		String user = player != null ? player : "Anonymous";
 		String msg = user + " is rolling the dice";
