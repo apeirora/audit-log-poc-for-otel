@@ -4,13 +4,17 @@ description: This file defines the tasks for code formatting across various lang
 
 vars:
   SPELLCHECK_ON: md,txt,html
+  PRETTIER_CONFIG: .github/config/prettier.json
+  PRETTIER_FILES: js,ts,jsx,tsx,css,scss,md,json
+  MARKDOWNLINT_CONFIG: .github/config/.markdownlint.json
 
 tasks:
   format:
     desc: Format all code files in the repository
     cmds:
-      - npx --yes prettier --write '**/*.{js,ts,jsx,tsx,css,scss,md,yml,yaml,json}' || true
-      - npx --yes markdownlint-cli2 '**/*.md' --config .github/config/.markdownlint.json --fix || true
+      - npx --yes prettier --config {{.PRETTIER_CONFIG}} --write '**/*.{ {{.PRETTIER_FILES}} }' || true
+      - npx --yes prettier --write '**/*.{yml,yaml}' || true
+      - npx --yes markdownlint-cli2 '**/*.md' --config {{.MARKDOWNLINT_CONFIG}} --fix || true
       - "[ -d src ] && gofmt -w src || true"
       - '[ -d src ] && find src -name "*.java" -exec java -jar google-java-format.jar --replace {} + || true'
       - '[ -d src ] && find src -name "*.go" -exec gofmt -w {} + || true'
@@ -19,8 +23,9 @@ tasks:
   lint:
     desc: Lint all code and markdown files in the repository
     cmds:
-      - "npx --yes prettier --check '**/*.{js,ts,jsx,tsx,css,scss,md,yml,yaml,json}' || (echo '❌ Prettier check failed! Please format your code with: task code:format' && exit 1)"
-      - npx --yes markdownlint-cli2 '**/*.md' --config .github/config/.markdownlint.json || (echo "❌ Markdownlint check failed! Please fix Markdown issues." && exit 1)
+      - "npx --yes prettier --config {{.PRETTIER_CONFIG}} --check '**/*.{ {{.PRETTIER_FILES}} }' || (echo '❌ Prettier check failed! Please format your code with: task code:format' && exit 1)"
+      - npx --yes prettier --check '**/*.{yml,yaml}'
+      - npx --yes markdownlint-cli2 '**/*.md' --config {{.MARKDOWNLINT_CONFIG}} || (echo "❌ Markdownlint check failed! Please fix Markdown issues." && exit 1)
     silent: false
 
   spellcheck:
