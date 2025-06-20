@@ -2,8 +2,22 @@ name: Lint code
 
 on:
   pull_request:
+    paths:
+      - "**/*.md"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.go"
+      - "**/*.java"
   push:
     branches: [main]
+    paths:
+      - "**/*.md"
+      - "**/*.json"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - "**/*.go"
+      - "**/*.java"
 
 jobs:
   code-lint:

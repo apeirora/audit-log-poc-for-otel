@@ -2,8 +2,16 @@ name: Spell Check
 
 on:
   pull_request:
+    paths:
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/*.html"
   push:
     branches: [main]
+    paths:
+      - "**/*.md"
+      - "**/*.txt"
+      - "**/*.html"
 
 jobs:
   spellcheck:
