@@ -1,16 +1,15 @@
-version: '3'
+version: "3"
 
 description: This file defines the tasks for Go development, including code formatting and linting.
 
 tasks:
-
   check:
     cmds:
-    - go -C {{ .PWD }} get -tool golang.org/x/tools/cmd/goimports
-    - go -C {{ .PWD }} get -tool mvdan.cc/gofumpt
-    - go -C {{ .PWD }} get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
-    - go -C {{ .PWD }} mod tidy
-    - go -C {{ .PWD }} tool goimports -w .
-    - go -C {{ .PWD }} tool gofumpt -w .
-    - go -C {{ .PWD }} vet ./...
-    - go -C {{ .PWD }} tool golangci-lint run --new --fix
+      - go -C {{ .PWD }} get -tool golang.org/x/tools/cmd/goimports
+      - go -C {{ .PWD }} get -tool mvdan.cc/gofumpt
+      - go -C {{ .PWD }} get -tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
+      - go -C {{ .PWD }} mod tidy
+      - go -C {{ .PWD }} tool goimports -w .
+      - go -C {{ .PWD }} tool gofumpt -w .
+      - go -C {{ .PWD }} vet ./...
+      - go -C {{ .PWD }} tool golangci-lint run --new --fix

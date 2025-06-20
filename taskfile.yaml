@@ -1,9 +1,8 @@
-version: '3'
+version: "3"
 
 description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
 
 includes:
-
   tools:
     desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tasks/tools.yaml
@@ -16,7 +15,7 @@ includes:
     desc: Manage Kind clusters (setup and teardown).
     taskfile: ./tasks/k3d.yaml
     aliases:
-    - cluster
+      - cluster
 
   otel:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
@@ -39,18 +38,18 @@ tasks:
     desc: Create and start local kubernetes cluster and install otel-demo.
     ignore_error: true
     deps:
-    - task: cluster:start
+      - task: cluster:start
     cmds:
-    - task: otel:demo-status
-    - task -a
+      - task: otel:demo-status
+      - task -a
 
   kube-context:
     desc: Set the kube-context to the local k3d cluster.
     deps:
-    - task: tools:install-kubectl
-    - task: k3d:merge-kubeconfig
+      - task: tools:install-kubectl
+      - task: k3d:merge-kubeconfig
     status:
-    - '{{ .KUBECTL_CMD }} config current-context | grep -q k3d-otel-audit-log'
+      - "{{ .KUBECTL_CMD }} config current-context | grep -q k3d-otel-audit-log"
     cmds:
-    - '{{ .KUBECTL_CMD }} config use-context k3d-otel-audit-log'
-    - '{{ .KUBECTL_CMD }} config get-contexts'
+      - "{{ .KUBECTL_CMD }} config use-context k3d-otel-audit-log"
+      - "{{ .KUBECTL_CMD }} config get-contexts"

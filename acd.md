@@ -2,18 +2,18 @@
 
 ## Table of Contents
 
-1. [EXECUTIVE SUMMARY](#1-executive-summary)  
-2. [INTRODUCTION](#2-introduction)  
-3. [BUSINESS CASE](#3-business-case)  
-4. [ARCHITECTURE OVERVIEW](#4-architecture-overview)  
-   - 4.1 [System Components](#41-system-components)  
-   - 4.2 [Data Flow](#42-data-flow)  
-   - 4.3 [Architecture Diagram](#43-architecture-diagram)  
-5. [ARCHITECTURE DECISIONS](#5-architecture-decisions)  
-6. [OPEN POINTS](#6-open-points)  
-7. [CONCLUSION AND NEXT STEPS](#7-conclusion-and-next-steps)  
-8. [DECISION PROTOCOL](#8-decision-protocol)  
-9. [APPENDIX](#9-appendix)  
+1. [EXECUTIVE SUMMARY](#1-executive-summary)
+2. [INTRODUCTION](#2-introduction)
+3. [BUSINESS CASE](#3-business-case)
+4. [ARCHITECTURE OVERVIEW](#4-architecture-overview)
+   - 4.1 [System Components](#41-system-components)
+   - 4.2 [Data Flow](#42-data-flow)
+   - 4.3 [Architecture Diagram](#43-architecture-diagram)
+5. [ARCHITECTURE DECISIONS](#5-architecture-decisions)
+6. [OPEN POINTS](#6-open-points)
+7. [CONCLUSION AND NEXT STEPS](#7-conclusion-and-next-steps)
+8. [DECISION PROTOCOL](#8-decision-protocol)
+9. [APPENDIX](#9-appendix)
 
 ---
 
@@ -39,16 +39,16 @@ Ensuring audit logs are reliably captured and transmitted is critical for compli
 
 ### 4.1 System Components
 
-| Component                 | Description                                                         |
-|---------------------------|---------------------------------------------------------------------|
-| **Recommendation Service**| Microservice instrumented with Otel SDK for log generation.         |
-| **SDK Exporter**          | In-process module that forwards log data to Otel Collector.         |
-| **Otel Collector**        | Middleware node aggregating, processing, and routing logs.          |
-| **Processors**            | Sub-components within Otel Collector (filtering, enriching, batching).|
+| Component                         | Description                                                               |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| **Recommendation Service**        | Microservice instrumented with Otel SDK for log generation.               |
+| **SDK Exporter**                  | In-process module that forwards log data to Otel Collector.               |
+| **Otel Collector**                | Middleware node aggregating, processing, and routing logs.                |
+| **Processors**                    | Sub-components within Otel Collector (filtering, enriching, batching).    |
 | **AuditLog Services V3 Exporter** | Sends the finalized log data to external Audit Log endpoint via internet. |
 
-
 ### 4.3 Architecture Diagram
+
 lucid chart link : https://lucid.app/lucidchart/7a9fa1de-2640-4a2d-a038-0f7284a0800f/edit?page=p92ebrH0iSU9r&invitationId=inv_812faa02-bebb-4df2-aec3-882d5b027543#
 
 ## 5. ARCHITECTURE DECISIONS

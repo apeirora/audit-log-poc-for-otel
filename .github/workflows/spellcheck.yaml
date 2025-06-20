@@ -3,7 +3,7 @@ name: Spell Check
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   spellcheck:
@@ -17,5 +17,5 @@ jobs:
           suggestions: true
           incremental_files_only: ${{ github.event_name == 'pull_request' }}
           # files: '**/*.{md,txt,js,ts,java,go,py,html,css,yaml,yml}'
-          files: '**/*.{md,txt,html}'
+          files: "**/*.{md,txt,html}"
           config: .github/config/cspell.json

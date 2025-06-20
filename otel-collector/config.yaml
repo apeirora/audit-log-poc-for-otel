@@ -8,14 +8,14 @@ exporters:
         insecure: true
     logs_index: otel
     sending_queue:
-      enabled: true  # When disabled, the export happens immediately. If the receiver isn't available, the logs will be lost.
+      enabled: true # When disabled, the export happens immediately. If the receiver isn't available, the logs will be lost.
       queue_size: 1000000
       # block_on_queue_full: true  # not supported by opensearch exporter - https://github.com/hilmarf/opentelemetry-collector-contrib/tree/main/exporter/opensearchexporter
-      storage: file_storage  # Without storage, the queue is in memory and will be lost on restart.
+      storage: file_storage # Without storage, the queue is in memory and will be lost on restart.
       num_consumers: 1
     retry_on_failure:
       enabled: true
-      max_elapsed_time: 0s  # endless retries
+      max_elapsed_time: 0s # endless retries
       max_interval: 30s
 
 extensions:
@@ -31,16 +31,16 @@ processors:
     spike_limit_percentage: 25
   resource:
     attributes:
-    - action: insert
-      from_attribute: k8s.pod.uid
-      key: service.instance.id
+      - action: insert
+        from_attribute: k8s.pod.uid
+        key: service.instance.id
   transform:
     error_mode: ignore
     trace_statements:
-    - context: span
-      statements:
-      - replace_pattern(name, "\\?.*", "")
-      - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
+      - context: span
+        statements:
+          - replace_pattern(name, "\\?.*", "")
+          - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
 receivers:
   otlp:
     protocols:
@@ -49,20 +49,20 @@ receivers:
       http:
         cors:
           allowed_origins:
-          - http://*
-          - https://*
+            - http://*
+            - https://*
         endpoint: ${env:MY_POD_IP}:4318
 service:
   extensions:
-  - health_check
-  - file_storage
+    - health_check
+    - file_storage
   pipelines:
     logs:
       exporters:
-      - opensearch
-      - debug
+        - opensearch
+        - debug
       processors:
-      - memory_limiter
-      - resource
+        - memory_limiter
+        - resource
       receivers:
-      - otlp
+        - otlp

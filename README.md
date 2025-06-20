@@ -12,10 +12,10 @@ This PoC scenario provides an easy setup of an [OpenTelemetry Demo](https://open
 
 ## Requirements and Setup
 
-* [git](https://git-scm.com/)
-* [docker](https://www.docker.com/) or [podman](https://podman.io/)
-* [task](https://taskfile.dev/)
-* optional: [k9s](https://k9scli.io/)
+- [git](https://git-scm.com/)
+- [docker](https://www.docker.com/) or [podman](https://podman.io/)
+- [task](https://taskfile.dev/)
+- optional: [k9s](https://k9scli.io/)
 
 ### Quick Start Linux
 
@@ -27,6 +27,7 @@ task
 # wait a couple of minutes until all images are downloaded and pods are running - feel free to check with k9s
 task otel:port-forward
 ```
+
 ### Quick Start on mac
 
 ```bash
@@ -37,6 +38,7 @@ task # run the app
 task otel:port-forward #check http://localhost:8080
 #to stop port forwarding type ctrl + c in the terminal
 ```
+
 In case you're facing any errors, you can easily check which other tasks are defined: `task -a`
 
 For example if you want to use `kind` instead of `k3d` for your cluster setup, then you can do the following:

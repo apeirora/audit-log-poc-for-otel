@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'src/recommendation/**'
+      - "src/recommendation/**"
 
 jobs:
   # test locally with: `act -s GITHUB_TOKEN=$(gh auth token) --env github.actor=$USER`
   # get 'act': https://nektosact.com/installation/index.html
-  build-and-push-recommendation:    
+  build-and-push-recommendation:
     name: Build and Push
     runs-on: ubuntu-latest
     permissions:

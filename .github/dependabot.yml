@@ -1,28 +1,27 @@
 version: 2
 
 updates:
+  - package-ecosystem: "github-actions"
+    directories: "/*"
+    groups:
+      ci:
+        patterns:
+          - "*"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
 
-- package-ecosystem: "github-actions"
-  directories: "/*"
-  groups:
-    ci:
-      patterns:
-      - "*"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
+  - package-ecosystem: "gomod"
+    directories: "/*"
+    groups:
+      go:
+        update-types: ["minor", "patch"]
+    schedule:
+      interval: "weekly"
+      day: "sunday"
 
-- package-ecosystem: "gomod"
-  directories: "/*"
-  groups:
-    go:
-      update-types: [ "minor", "patch" ]
-  schedule:
-    interval: "weekly"
-    day: "sunday"
-
-- package-ecosystem: docker
-  directories: "/*"
-  schedule:
-    interval: "weekly"
-    day: "sunday"
+  - package-ecosystem: docker
+    directories: "/*"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
