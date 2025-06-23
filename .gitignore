@@ -1,9 +1,15 @@
 # eclipse project files
-/.project
+**/.project
+**/.classpath
+**/.settings/
+**/bin/
 
 # where tasks store binary tools (e.g. kind, kubectl, etc.)
 /.tools/
 
 # where you can store your temporary local files
 /work_dir/
-/tmp/
+**/tmp/
+
+# java build files
+**/target/
