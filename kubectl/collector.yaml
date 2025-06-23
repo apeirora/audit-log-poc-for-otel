@@ -59,7 +59,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: collector
+  name: otel-collector
   namespace: otel-demo
 spec:
   selector:
