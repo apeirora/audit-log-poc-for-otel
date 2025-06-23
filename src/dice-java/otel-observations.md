@@ -1,26 +1,29 @@
+<!-- markdownlint-disable-file MD013 -->
+
 # What has been observed so far
 
 ## when the collector can't be reached
 
-io.opentelemetry.exporter.sender.okhttp.internal.RetryInterceptor.intercept(RetryInterceptor.java:96) ~[opentelemetry-exporter-sender-okhttp-1.49.0.jar:1.49.0]
+io.opentelemetry.exporter.sender.okhttp.internal.RetryInterceptor.intercept(RetryInterceptor.java:96)
+~[opentelemetry-exporter-sender-okhttp-1.49.0.jar:1.49.0]
 
 ```text
 java.io.InterruptedIOException: timeout
-	at okhttp3.internal.connection.RealCall.timeoutExit(RealCall.kt:398) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.connection.RealCall.callDone(RealCall.kt:360) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.connection.RealCall.noMoreExchanges$okhttp(RealCall.kt:325) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:209) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:517) ~[okhttp-4.12.0.jar:na]
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1095) ~[na:na]
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:619) ~[na:na]
-	at java.base/java.lang.Thread.run(Thread.java:1447) ~[na:na]
+ at okhttp3.internal.connection.RealCall.timeoutExit(RealCall.kt:398) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.connection.RealCall.callDone(RealCall.kt:360) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.connection.RealCall.noMoreExchanges$okhttp(RealCall.kt:325) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:209) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:517) ~[okhttp-4.12.0.jar:na]
+ at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1095) ~[na:na]
+ at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:619) ~[na:na]
+ at java.base/java.lang.Thread.run(Thread.java:1447) ~[na:na]
 Caused by: java.io.IOException: Canceled
-	at okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:72) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[okhttp-4.12.0.jar:na]
-	at io.opentelemetry.exporter.sender.okhttp.internal.RetryInterceptor.intercept(RetryInterceptor.java:96) ~[opentelemetry-exporter-sender-okhttp-1.49.0.jar:1.49.0]
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[okhttp-4.12.0.jar:na]
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201) ~[okhttp-4.12.0.jar:na]
-	... 4 common frames omitted
+ at okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:72) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[okhttp-4.12.0.jar:na]
+ at io.opentelemetry.exporter.sender.okhttp.internal.RetryInterceptor.intercept(RetryInterceptor.java:96) ~[opentelemetry-exporter-sender-okhttp-1.49.0.jar:1.49.0]
+ at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:109) ~[okhttp-4.12.0.jar:na]
+ at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:201) ~[okhttp-4.12.0.jar:na]
+ ... 4 common frames omitted
 ```
 
 ```text
