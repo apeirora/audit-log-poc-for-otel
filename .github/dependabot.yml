@@ -2,7 +2,8 @@ version: 2
 
 updates:
   - package-ecosystem: "github-actions"
-    directories: "/.github/workflows"
+    directories:
+      - "/.github/workflows"
     groups:
       ci:
         patterns:
@@ -12,7 +13,8 @@ updates:
       day: "sunday"
 
   - package-ecosystem: "gomod"
-    directories: "/src/*"
+    directories:
+      - "/src/*"
     groups:
       go:
         update-types: ["minor", "patch"]
@@ -21,7 +23,8 @@ updates:
       day: "sunday"
 
   - package-ecosystem: docker
-    directories: "/src/*"
+    directories:
+      - "/src/*"
     schedule:
       interval: "weekly"
       day: "sunday"
