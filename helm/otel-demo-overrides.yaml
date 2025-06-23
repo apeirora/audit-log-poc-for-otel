@@ -150,18 +150,18 @@ opentelemetry-collector:
           exporters: [opensearch, debug]
 
   extraVolumeMounts:
-  - name: collector-volume
-    mountPath: /collector-volume
-  extraVolumes:
-  - name: collector-volume
-    emptyDir: {}  # Only temporary storage in node filesystem
-  extraContainers:
-  - name: alpine-sidecar
-    image: alpine:latest
-    command: ["/bin/sh", "-c", "sleep infinity"]
-    volumeMounts:
     - name: collector-volume
       mountPath: /collector-volume
+  extraVolumes:
+    - name: collector-volume
+      emptyDir: {} # Only temporary storage in node filesystem
+  extraContainers:
+    - name: alpine-sidecar
+      image: alpine:latest
+      command: ["/bin/sh", "-c", "sleep infinity"]
+      volumeMounts:
+        - name: collector-volume
+          mountPath: /collector-volume
 
 jaeger:
   enabled: false
