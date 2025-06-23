@@ -62,12 +62,16 @@ metadata:
   name: otel-collector
   namespace: otel-demo
 spec:
+  type: NodePort
   selector:
     app: collector
   ports:
-    - name: grpc
+    - name: otlp
+      appProtocol: grpc
       port: 4317
       targetPort: 4317
-    - name: http
+      nodePort: 30317
+    - name: otlp-http
       port: 4318
       targetPort: 4318
+      nodePort: 30318
