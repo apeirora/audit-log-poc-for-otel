@@ -129,11 +129,11 @@ tasks:
   alpine-sidecar:
     desc: Run a
     deps:
-    - task: tools:install-kubectl
+      - task: tools:install-kubectl
     requires:
-      vars: [ KUBECTL_CMD ]
+      vars: [KUBECTL_CMD]
     cmds:
-    - "{{ .KUBECTL_CMD }} exec -it $({{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running -o name | grep otel-collector) -c alpine-sidecar --namespace otel-demo -- /bin/sh"
+      - "{{ .KUBECTL_CMD }} exec -it $({{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running -o name | grep otel-collector) -c alpine-sidecar --namespace otel-demo -- /bin/sh"
 
   export-collector:
     desc: Shows the otel-collector service details (IP address and ports).
@@ -141,9 +141,9 @@ tasks:
       vars: [COLLECTOR_IP, COLLECTOR_GRPC, COLLECTOR_HTTP]
     cmds:
       - |
-        echo export OTEL_EXPORTER_OTLP_ENDPOINT={{ .COLLECTOR_IP }} && \
-        echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC={{ .COLLECTOR_IP }}:{{ .COLLECTOR_GRPC }} && \
-        echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP={{ .COLLECTOR_IP }}:{{ .COLLECTOR_HTTP }}
+        echo export OTEL_EXPORTER_OTLP_ENDPOINT="http://{{ .COLLECTOR_IP }}" && \
+        echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC="http://{{ .COLLECTOR_IP }}:{{ .COLLECTOR_GRPC }}" && \
+        echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP="http://{{ .COLLECTOR_IP }}:{{ .COLLECTOR_HTTP }}"
 
   audit-log-sink:
     desc: Install audit-log-sink in the local cluster.
