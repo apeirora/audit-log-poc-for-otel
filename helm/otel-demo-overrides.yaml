@@ -5,7 +5,7 @@ components:
     enabled: false
 
   ad:
-    enabled: false
+    enabled: true
 
   cart:
     enabled: false
@@ -14,7 +14,7 @@ components:
     enabled: false
 
   currency:
-    enabled: false
+    enabled: true
 
   email:
     enabled: false
@@ -32,7 +32,7 @@ components:
     enabled: true
 
   load-generator:
-    enabled: false
+    enabled: true
 
   payment:
     enabled: false
@@ -77,7 +77,7 @@ components:
     enabled: false
 
   valkey-cart:
-    enabled: true
+    enabled: false
 
 opentelemetry-collector:
   enabled: true
@@ -164,10 +164,10 @@ opentelemetry-collector:
           mountPath: /collector-volume
 
 jaeger:
-  enabled: false
+  enabled: true
 
 prometheus:
-  enabled: false
+  enabled: true
 
 grafana:
   enabled: true
