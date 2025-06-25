@@ -58,11 +58,11 @@ logging practices.
 ```mermaid
 flowchart TD
     user-1(["user"])
-    user-1 -.-> | http | client-1["client app \n (java)"]
+    user-1 -.-> | http | client-1["client app (java)"]
     user-2(["user"])
-    user-2 -.-> | http | client-2["client app \n (go)"]
+    user-2 -.-> | http | client-2["client app (go)"]
     user-3(["user"])
-    user-3 -.-> | http | client-3["client app \n (node.js)"]
+    user-3 -.-> | http | client-3["client app (node.js)"]
 
     client-1 -- "OTLP" --> collector_receiver
     client-2 -- "OTLP" --> collector_receiver
@@ -80,7 +80,7 @@ flowchart TD
     %% Log Sink Subgraph
     subgraph log_sink["log-sink"]
         log_sink_receiver["OTLP receiver"]
-        log_sink_exporter["any \n persistent storage"]
+        log_sink_exporter["any persistent storage"]
         log_sink_receiver -.-> | out of scope | log_sink_exporter
     end
 ```
