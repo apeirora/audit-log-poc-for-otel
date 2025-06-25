@@ -12,8 +12,6 @@
 6. [OPEN POINTS](#6-open-points)
 7. [CONCLUSION AND NEXT STEPS](#7-conclusion-and-next-steps)
 8. [DECISION PROTOCOL](#8-decision-protocol)
-9. [APPENDIX](#9-appendix)
-
 ---
 
 ## 1. EXECUTIVE SUMMARY
