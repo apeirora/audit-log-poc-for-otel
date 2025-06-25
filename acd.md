@@ -54,7 +54,7 @@ standardize logging practices.
 
 ### 4.3 Architecture Diagram
 
-![Architecture Overview] (ArchitectureOverview.png)
+! [Architecture Overview] (ArchitectureOverview.png)
 
 
 ## 5. ARCHITECTURE DECISIONS
