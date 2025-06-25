@@ -85,8 +85,6 @@ flowchart TD
     end
 ```
 
-![Architecture Overview](https://github.com/apeirora/audit-log-poc-for-otel/blob/main/ArchitectureOverview.png)
-
 ## 5. ARCHITECTURE DECISIONS
 
 Use OpenTelemetry SDK within application code for cross-vendor and standardized telemetry generation. Externalize processing to Otel
