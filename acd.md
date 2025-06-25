@@ -53,7 +53,37 @@ logging practices.
 
 ### 4.3 Architecture Diagram
 
-![Architecture Overview](https://github.com/apeirora/audit-log-poc-for-otel/blob/main/ArchitectureOverview.png)
+<!-- https://www.mermaidchart.com/play -->
+
+```mermaid
+flowchart TD
+    user-1(["user"])
+    user-1 -.-> | http | client-1["client app (java)"]
+    user-2(["user"])
+    user-2 -.-> | http | client-2["client app (go)"]
+    user-3(["user"])
+    user-3 -.-> | http | client-3["client app (node.js)"]
+
+    client-1 -- "OTLP" --> collector_receiver
+    client-2 -- "OTLP" --> collector_receiver
+    client-3 -- "OTLP" --> collector_receiver
+
+    %% Collector Subgraph
+    subgraph collector["OTel collector"]
+        collector_receiver["OTLP receiver"]
+        collector_exporter["OTLP exporter"]
+        collector_receiver --> collector_exporter
+    end
+
+    collector_exporter -- "OTLP" --> log_sink_receiver
+
+    %% Log Sink Subgraph
+    subgraph log_sink["log-sink"]
+        log_sink_receiver["OTLP receiver"]
+        log_sink_exporter["any persistent storage"]
+        log_sink_receiver -.-> | out of scope | log_sink_exporter
+    end
+```
 
 ## 5. ARCHITECTURE DECISIONS
 
