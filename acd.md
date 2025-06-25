@@ -54,7 +54,7 @@ standardize logging practices.
 
 ### 4.3 Architecture Diagram
 
-! [Architecture Overview] (ArchitectureOverview.png)
+![Architecture Overview](https://github.com/apeirora/audit-log-poc-for-otel/blob/main/ArchitectureOverview.png)
 
 
 ## 5. ARCHITECTURE DECISIONS
