@@ -12,6 +12,7 @@ exporters:
       queue_size: 10
       # block_on_queue_full: true  # not supported by opensearch exporter - https://github.com/hilmarf/opentelemetry-collector-contrib/tree/main/exporter/opensearchexporter
       storage: file_storage # Without storage, the queue is in memory and will be lost on restart.
+      sizer: requests
       num_consumers: 1
     retry_on_failure:
       enabled: true
@@ -22,7 +23,7 @@ extensions:
   health_check:
     endpoint: ${env:MY_POD_IP}:13133
   file_storage:
-    directory: /collector-volume
+    directory: /tmp/collector-volume
     create_directory: true
 processors:
   memory_limiter:

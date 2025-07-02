@@ -1,0 +1,33 @@
+# base: https://github.com/open-telemetry/opentelemetry-collector-releases/blob/main/distributions/otelcol-otlp/manifest.yaml
+dist:
+  name: otelcol-audit
+  description: OpenTelemetry Collector (Audit-Logging)
+  output_path: ./_build
+
+receivers:
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.128.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.128.0
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.128.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.128.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.128.0
+
+extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.128.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage v0.128.0
+
+providers:
+  # defaultStableOtelColVersion https://github.com/open-telemetry/opentelemetry-collector/blob/HEAD/cmd/builder/internal/builder/config.go#L21-L22
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.34.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.34.0
+  #- gomod: go.opentelemetry.io/collector/confmap/provider/httpprovider v1.34.0
+  #- gomod: go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.34.0
+  #- gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.34.0
+
+exporters:
+  # defaultBetaOtelColVersion https://github.com/open-telemetry/opentelemetry-collector/blob/HEAD/cmd/builder/internal/builder/config.go#L21-L22
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.128.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.128.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/opensearchexporter v0.128.0
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.128.0
