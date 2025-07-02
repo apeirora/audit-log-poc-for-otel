@@ -12,7 +12,14 @@ RUN mvn package -DskipTests
 
 # --- Run Stage ---
 FROM sapmachine:24-jre-alpine
+
+ARG REST_PORT=8080
+ENV REST_PORT=${REST_PORT}
+
+LABEL org.opencontainers.image.source=https://github.com/apeirora/audit-log-poc-for-otel
+
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080
+
+EXPOSE ${REST_PORT}
 ENTRYPOINT ["java", "-jar", "app.jar"]
