@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dice-go
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dice-go
+  template:
+    metadata:
+      labels:
+        app: dice-go
+    spec:
+      containers:
+        - name: dice-go
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-go:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dice-go
+  namespace: otel-demo
+spec:
+  selector:
+    app: dice-go
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
