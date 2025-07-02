@@ -40,7 +40,7 @@ var (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Printf("Failed to run recommendation service: %v\n", err)
+		fmt.Printf("Failed to run dice-go service: %v\n", err)
 		log.Fatalln(err)
 		os.Exit(1)
 	}
@@ -207,12 +207,12 @@ func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, er
 		Endpoints:                10.42.0.81:4318
 	*/
 
-	logger = loggerProvider.Logger("AUDIT_RECOMMENDATION_SERVICE", // We can set a custom logger name for AUDIT purposes
-		olog.WithInstrumentationAttributes(attribute.String("AUDIT", "RECOMMENDATION_SERVICE"))) // We can set a custom attributes for AUDIT purposes
+	logger = loggerProvider.Logger("DICE_GO_SERVICE", // We can set a custom logger name for AUDIT purposes
+		olog.WithInstrumentationAttributes(attribute.String("AUDIT", "DICE_GO_SERVICE"))) // We can set a custom attributes for AUDIT purposes
 
 	rec := olog.Record{}
 	rec.SetSeverity(olog.SeverityInfo)
-	rec.SetBody(olog.StringValue("test log message: Recommendation service started"))
+	rec.SetBody(olog.StringValue("test log message: dice-go service started"))
 	rec.AddAttributes(olog.KeyValueFromAttribute(attribute.String("AUDIT-key-2", "KeyValueFromAttribute")))
 	logger.Emit(ctx, rec)
 
