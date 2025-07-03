@@ -17,8 +17,15 @@ spec:
         - name: dice-java
           image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest
           imagePullPolicy: IfNotPresent
+          env:
+            - name: REST_PORT
+              value: "8082"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_GRPC
+              value: "http://otel-collector:4317"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_HTTP
+              value: "http://otel-collector:4318"
           ports:
-            - containerPort: 8080
+            - containerPort: 8082
 ---
 apiVersion: v1
 kind: Service
@@ -30,6 +37,7 @@ spec:
     app: dice-java
   ports:
     - protocol: TCP
-      port: 8080
-      targetPort: 8080
-  type: ClusterIP
+      port: 8082
+      targetPort: 8082
+      nodePort: 30382
+  type: NodePort
