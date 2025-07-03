@@ -12,7 +12,7 @@ RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o dice-go
 # --- Run Stage ---
 FROM gcr.io/distroless/static-debian12:nonroot
 
-ARG REST_PORT=8080
+ARG REST_PORT=8081
 ENV REST_PORT=${REST_PORT}
 
 LABEL org.opencontainers.image.source=https://github.com/apeirora/audit-log-poc-for-otel

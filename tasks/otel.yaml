@@ -3,7 +3,7 @@ version: "3"
 description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 vars:
-  WOKR_DIR: "{{ .ROOT_DIR }}/work_dir"
+  WORK_DIR: "{{ .ROOT_DIR }}/work_dir"
   CLUSTER:
     sh: |
       if {{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1; then
@@ -97,25 +97,25 @@ tasks:
     requires:
       vars: [KUBECTL_CMD]
     cmds:
-      - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get configmap otel-collector > {{ .WOKR_DIR }}/otel-collector-configmap.yaml"
-      - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get service otel-collector > {{ .WOKR_DIR }}/otel-collector-service.yaml"
-      - yq eval '.data.relay = load_str("{{ .ROOT_DIR }}/otel-collector/config.yaml")' {{ .WOKR_DIR }}/otel-collector-configmap.yaml > {{ .WOKR_DIR }}/otel-collector-configmap-new.yaml
-      - yq eval '.spec.ports |= map(select(.name == "otlp" or .name == "otlp-http"))' {{ .WOKR_DIR }}/otel-collector-service.yaml > {{ .WOKR_DIR }}/otel-collector-service-new.yaml
-      - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WOKR_DIR }}/otel-collector-configmap-new.yaml"
-      - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WOKR_DIR }}/otel-collector-service-new.yaml"
+      - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get configmap otel-collector > {{ .WORK_DIR }}/otel-collector-configmap.yaml"
+      - "{{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get service otel-collector > {{ .WORK_DIR }}/otel-collector-service.yaml"
+      - yq eval '.data.relay = load_str("{{ .ROOT_DIR }}/otel-collector/config.yaml")' {{ .WORK_DIR }}/otel-collector-configmap.yaml > {{ .WORK_DIR }}/otel-collector-configmap-new.yaml
+      - yq eval '.spec.ports |= map(select(.name == "otlp" or .name == "otlp-http"))' {{ .WORK_DIR }}/otel-collector-service.yaml > {{ .WORK_DIR }}/otel-collector-service-new.yaml
+      - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WORK_DIR }}/otel-collector-configmap-new.yaml"
+      - "{{ .KUBECTL_CMD }} --namespace otel-demo apply --filename {{ .WORK_DIR }}/otel-collector-service-new.yaml"
       - "{{ .KUBECTL_CMD }} --namespace otel-demo rollout restart deployment otel-collector"
 
   create-work-dir:
-    desc: Create the work directory ({{ .WOKR_DIR }}) if it doesn't exist.
+    desc: Create the work directory ({{ .WORK_DIR }}) if it doesn't exist.
     internal: true
     run: once
     platforms: [linux, darwin]
     requires:
-      vars: [WOKR_DIR]
+      vars: [WORK_DIR]
     status:
-      - test -d "{{ .WOKR_DIR }}"
+      - test -d "{{ .WORK_DIR }}"
     cmds:
-      - mkdir -p "{{ .WOKR_DIR }}"
+      - mkdir -p "{{ .WORK_DIR }}"
 
   busybox:
     desc: Run a busybox container in the otel-demo namespace.
@@ -178,3 +178,31 @@ tasks:
       - "{{ .KUBECTL_CMD }} wait --for=condition=available --timeout=120s deployment/log-sink -n otel-demo"
       - "{{ .KUBECTL_CMD }} apply --filename kubectl/collector.yaml"
       - "{{ .KUBECTL_CMD }} rollout restart deployment/collector -n otel-demo"
+
+  deploy-dice-go:
+    desc: Deploy dice-go app in the local cluster.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/namespace.yaml"
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/dice-go.yaml"
+      - "{{ .KUBECTL_CMD }} rollout restart deployment/dice-go -n otel-demo"
+
+  deploy-dice-java:
+    desc: Deploy dice-java app in the local cluster.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/namespace.yaml"
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/dice-java.yaml"
+      - "{{ .KUBECTL_CMD }} rollout restart deployment/dice-java -n otel-demo"

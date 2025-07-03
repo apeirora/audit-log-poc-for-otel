@@ -1,0 +1,109 @@
+version: "3"
+
+description: Taskfile to build our custom services (OTel clients) and deploy them to a local cluster.
+
+vars:
+  BUILD_CMD:
+    sh: |
+      if command -v docker >/dev/null 2>&1; then
+        command -v docker
+      elif command -v podman >/dev/null 2>&1; then
+        command -v podman
+      fi
+  CONTAINER_CMD:
+    sh: |
+      if echo "{{ .BUILD_CMD }}" | grep -q podman; then
+        echo "podman"
+      else
+        echo "docker"
+      fi
+
+tasks:
+  build-recommendation:
+    desc: Builds the image of the recommendation service.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    cmds:
+      - '{{ .BUILD_CMD }} build --file src/recommendation/Dockerfile --tag otel-recommendation src/recommendation/ {{if eq .CONTAINER_CMD "podman" }} --env RECOMMENDATION_PORT=8080 {{ end }}'
+
+  push-recommendation:
+    desc: Push recommendation image to ghcr.io/apeirora/audit-log-poc-for-otel.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD]
+    deps:
+      - build
+    cmds:
+      - "{{ .BUILD_CMD }} tag otel-recommendation ghcr.io/apeirora/audit-log-poc-for-otel/recommendation:latest"
+      - "{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/recommendation:latest"
+
+  build-dice-go:
+    desc: Builds dice-go image.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    cmds:
+      - "{{ .BUILD_CMD }} build --file src/dice-go/Dockerfile --tag dice-go src/dice-go/"
+
+  push-dice-go:
+    desc: Push dice-go image to ghcr.io/apeirora/audit-log-poc-for-otel.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD]
+    deps:
+      - build
+    cmds:
+      - "{{ .BUILD_CMD }} tag dice-go ghcr.io/apeirora/audit-log-poc-for-otel/dice-go:latest"
+      - "{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/dice-go:latest"
+
+  build-dice-java:
+    desc: Builds dice-java image.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    cmds:
+      - "{{ .BUILD_CMD }} build --file src/dice-java/Dockerfile --tag dice-java src/dice-java/"
+
+  push-dice-java:
+    desc: Push dice-java image to ghcr.io/apeirora/audit-log-poc-for-otel.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD]
+    deps:
+      - build
+    cmds:
+      - "{{ .BUILD_CMD }} tag dice-java ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest"
+      - "{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest"
+
+  build:
+    desc: Builds all OTel client images.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    deps:
+      - build-recommendation
+      - build-dice-go
+      - build-dice-java
+
+  push:
+    desc: Pushes all OTel client images to the registry.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD]
+    deps:
+      - build
+      - push-recommendation
+      - push-dice-go
+      - push-dice-java
+
+  default:
+    desc: Builds and pushes all OTel client images.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    deps:
+      - build
+      - push
+    status:
+      - "echo 'All OTel client images built and pushed successfully.'"
