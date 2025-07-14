@@ -2,6 +2,7 @@ spring:
   application:
     name: demo
 server:
+  address: 0.0.0.0
   port: 8082
 
 management:
@@ -9,7 +10,7 @@ management:
     export:
       enabled: false
       otlp:
-        endpoint: http://172.19.0.2:31002
+        endpoint: http://172.19.0.2:30318
   otlp:
     metrics:
       export:
@@ -18,6 +19,6 @@ management:
 otel:
   exporter:
     otlp:
-      endpoint: http://172.19.0.2:31002
+      endpoint: http://172.19.0.2:30318
       logs:
-        endpoint: http://172.19.0.2:31002/v1/logs
+        endpoint: http://172.19.0.2:30318/v1/logs
