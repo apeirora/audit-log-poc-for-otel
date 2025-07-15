@@ -20,7 +20,7 @@ tasks:
     status:
       - "{{ .ITIOCTL_CMD }} proxy-status | grep -q SYNCED"
     cmds:
-      - "{{ .ISTIOCTL_CMD }} install"
+      - "{{ .ISTIOCTL_CMD }} install --set values.sidecarInjectorWebhook.enableNamespacesByDefault=true"
 
   uninstall:
     desc: Uninstall istio control plane from the current cluster.
