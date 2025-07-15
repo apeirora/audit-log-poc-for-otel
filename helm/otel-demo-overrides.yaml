@@ -99,6 +99,7 @@ opentelemetry-collector:
     metrics:
       enabled: false
   podAnnotations:
+    prometheus.io/scrape: "true"
     opentelemetry_community_demo: "true"
   config:
     receivers:
@@ -168,6 +169,9 @@ jaeger:
 
 prometheus:
   enabled: true
+  server:
+    podAnnotations:
+      sidecar.istio.io/inject: "false"
 
 grafana:
   enabled: true

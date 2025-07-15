@@ -33,3 +33,13 @@ tasks:
       - "! {{ .ISTIOCTL_CMD }} proxy-status | grep -q SYNCED"
     cmds:
       - "{{ .ISTIOCTL_CMD }} uninstall --purge"
+
+  enable-fault-injection:
+    desc: Enable fault injection in the current cluster.
+    deps:
+      - task: tools:install-kubectl
+    platforms: [linux, darwin]
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/otel-collector-fault-injection.yaml"
