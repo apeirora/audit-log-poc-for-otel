@@ -39,6 +39,13 @@ vars:
       else
         echo {{ .TOOL_DIR }}/k9s
       fi
+  ISTIOCTL_CMD:
+    sh: |
+      if command -v istioctl >/dev/null 2>&1; then
+        command -v istioctl
+      else
+        echo {{ .TOOL_DIR }}/istioctl
+      fi
 
 tasks:
   info:
@@ -142,3 +149,28 @@ tasks:
       - mv "{{ .TOOL_DIR }}/k9s" "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}"
       - ln -sf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}" "{{ .TOOL_DIR }}/k9s"
       - rm -f "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz"
+
+  install-istioctl:
+    vars:
+      ISTIO_VERSION: "1.26.2"
+      ISTIO_OS:
+        sh: |
+          if [ "{{ OS }}" = "darwin" ]; then
+            echo osx
+          else
+            echo linux
+          fi
+    desc: "Install istioctl v{{ .ISTIO_VERSION }} to ({{ .TOOL_DIR }}/istioctl) if not already present"
+    run: once
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
+    requires:
+      vars: [TOOL_DIR]
+    status:
+      - "istioctl version --remote=false || {{ .TOOL_DIR }}/istioctl version --remote=false"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}.tar.gz" "https://github.com/istio/istio/releases/download/{{ .ISTIO_VERSION }}/istioctl-{{ .ISTIO_VERSION }}-{{ .ISTIO_OS }}-{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "istioctl"
+      - mv "{{ .TOOL_DIR }}/istioctl" "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}" "{{ .TOOL_DIR }}/istioctl"
+      - rm -f "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}.tar.gz"
