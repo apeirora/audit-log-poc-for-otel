@@ -27,6 +27,8 @@ components:
 
   frontend-proxy:
     enabled: true
+    podAnnotations:
+      sidecar.istio.io/inject: "false"
 
   image-provider:
     enabled: true
