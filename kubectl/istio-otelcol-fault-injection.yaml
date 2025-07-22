@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: otel-collector-fault-injection
+  namespace: otel-demo
+spec:
+  hosts:
+    - otel-collector
+  http:
+    - fault:
+        abort:
+          percentage:
+            value: 50.0
+          httpStatus: 500
+      route:
+        - destination:
+            host: otel-collector

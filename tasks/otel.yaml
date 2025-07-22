@@ -32,6 +32,10 @@ includes:
     desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tools.yaml
     internal: true
+  istio:
+    desc: Install and manage Istio in the local cluster.
+    taskfile: ./istio.yaml
+    internal: true
 
 tasks:
   demo-install:
@@ -39,6 +43,7 @@ tasks:
     run: once
     deps:
       - task: tools:install-helm
+      - task: istio:install
     requires:
       vars: [HELM_CMD]
     preconditions:
@@ -49,6 +54,8 @@ tasks:
     cmds:
       - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
       - "{{ .HELM_CMD }} install --values helm/otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-otelcol-fault-injection.yaml"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-permissive-mtls.yaml"
 
   demo-upgrade:
     desc: Upgrade otel-demo in the local cluster.
@@ -59,6 +66,8 @@ tasks:
       vars: [HELM_CMD]
     cmds:
       - "{{ .HELM_CMD }} upgrade --install --values helm/otel-demo-overrides.yaml my-otel-demo open-telemetry/opentelemetry-demo --namespace otel-demo --create-namespace"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-otelcol-fault-injection.yaml"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-permissive-mtls.yaml"
 
   demo-status:
     desc: Check the status of otel-demo in the local cluster.
@@ -79,6 +88,8 @@ tasks:
       - "! {{ .HELM_CMD }} list --namespace otel-demo | grep -q my-otel-demo"
     cmds:
       - "{{ .HELM_CMD }} uninstall my-otel-demo --namespace otel-demo --ignore-not-found"
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/istio-otelcol-fault-injection.yaml"
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/istio-permissive-mtls.yaml"
 
   port-forward:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.

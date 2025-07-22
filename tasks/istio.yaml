@@ -1,0 +1,35 @@
+version: "3"
+
+description: Taskfile for managing k3d clusters (setup and teardown).
+
+includes:
+  tools:
+    desc: Install required tools (istioctl).
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Install istio control plane in the current cluster.
+    run: once
+    deps:
+      - task: tools:install-istioctl
+    platforms: [linux, darwin]
+    requires:
+      vars: [ISTIOCTL_CMD]
+    status:
+      - "{{ .ITIOCTL_CMD }} proxy-status | grep -q SYNCED"
+    cmds:
+      - "{{ .ISTIOCTL_CMD }} install  --set values.sidecarInjectorWebhook.enableNamespacesByDefault=true"
+
+  uninstall:
+    desc: Uninstall istio control plane from the current cluster.
+    deps:
+      - task: tools:install-istioctl
+    platforms: [linux, darwin]
+    requires:
+      vars: [ISTIOCTL_CMD]
+    status:
+      - "! {{ .ISTIOCTL_CMD }} proxy-status | grep -q SYNCED"
+    cmds:
+      - "{{ .ISTIOCTL_CMD }} uninstall --purge"
