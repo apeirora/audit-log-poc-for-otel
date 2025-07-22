@@ -33,14 +33,3 @@ tasks:
       - "! {{ .ISTIOCTL_CMD }} proxy-status | grep -q SYNCED"
     cmds:
       - "{{ .ISTIOCTL_CMD }} uninstall --purge"
-
-  configure:
-    desc: Deploy Istio CRs - enable fault injection for OTel Collector and enable permissive mTLS.
-    deps:
-      - task: tools:install-kubectl
-    platforms: [linux, darwin]
-    requires:
-      vars: [KUBECTL_CMD]
-    cmds:
-      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-otelcol-fault-injection.yaml"
-      - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-permissive-mtls.yaml"
