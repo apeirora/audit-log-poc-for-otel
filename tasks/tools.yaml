@@ -174,3 +174,16 @@ tasks:
       - mv "{{ .TOOL_DIR }}/istioctl" "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}"
       - ln -sf "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}" "{{ .TOOL_DIR }}/istioctl"
       - rm -f "{{ .TOOL_DIR }}/istioctl_v{{ .ISTIO_VERSION }}.tar.gz"
+
+  install-google-java-format:
+    vars:
+      GJF_VERSION: "1.28.0"
+    desc: "Install google-java-format v{{ .GJF_VERSION }} to ({{ .TOOL_DIR }}/google-java-format.jar) if not already present"
+    run: once
+    deps: [create-tool-dir]
+    requires:
+      vars: [TOOL_DIR]
+    status:
+      - "[ -f {{ .TOOL_DIR }}/google-java-format.jar ]"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/google-java-format.jar" "https://github.com/google/google-java-format/releases/download/v{{ .GJF_VERSION }}/google-java-format-{{ .GJF_VERSION }}-all-deps.jar"
