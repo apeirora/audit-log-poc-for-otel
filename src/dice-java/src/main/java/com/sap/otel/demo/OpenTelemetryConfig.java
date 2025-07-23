@@ -6,10 +6,12 @@ import io.opentelemetry.exporter.logging.SystemOutLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.common.export.RetryPolicy;
 import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 import io.opentelemetry.sdk.resources.Resource;
+import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -37,8 +39,21 @@ public class OpenTelemetryConfig {
     String httpEndpoint =
         System.getenv().getOrDefault("OTEL_EXPORTER_OTLP_ENDPOINT_HTTP", "http://localhost:4318");
     System.out.println("Using OTLP HTTP endpoint: " + httpEndpoint);
+
+    RetryPolicy retryPolicy =
+        RetryPolicy.builder()
+            .setMaxAttempts(5)
+            .setInitialBackoff(Duration.ofSeconds(30))
+            .setMaxBackoff(Duration.ofSeconds(30))
+            .setBackoffMultiplier(3)
+            .build();
+
     LogRecordExporter httpExporter =
-        OtlpHttpLogRecordExporter.builder().setEndpoint(httpEndpoint).build();
+        OtlpHttpLogRecordExporter.builder()
+            .setEndpoint(httpEndpoint)
+            .setRetryPolicy(retryPolicy)
+            .setConnectTimeout(Duration.ofSeconds(1))
+            .build();
 
     // Stdout exporter
     LogRecordExporter stdoutExporter = SystemOutLogRecordExporter.create();
