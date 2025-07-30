@@ -1,0 +1,28 @@
+version: "3"
+
+description: Taskfile for running end-to-end tests.
+
+includes:
+  tools:
+    desc: Install required tools.
+    taskfile: ./tools.yaml
+    internal: true
+
+  install:
+    desc: Install all required components for end-to-end testing.
+    run: once
+    deps:
+      - task: tools:install-kubectl
+      - task: demo-delete
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/log-sink.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/log-sink -n otel-demo --timeout=120s"
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/collector.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/collector -n otel-demo --timeout=120s"
+      - "{{ .KUBECTL_CMD }} apply --filename kubectl/dice-go.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/dice-go -n otel-demo --timeout=120s"
