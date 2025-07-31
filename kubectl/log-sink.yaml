@@ -46,6 +46,11 @@ spec:
           image: otel/opentelemetry-collector-contrib:latest
           # googleclientauth jaegerremotesampling k8s_observer file_storage pprof jaeger_encoding opamp awsproxy health_check ecs_observer kafkatopics_observer ack asapclient basicauth otlp_encoding redis_storage zpages awscloudwatchmetricstreams_encoding json_log_encoding zipkin_encoding headers_setter oauth2client azureauth bearertokenauth docker_observer ecs_task_observer host_observer oidc sigv4auth db_storage http_forwarder sumologic k8s_leader_elector
           args: ["--config=/conf/config.yaml"]
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           volumeMounts:
             - name: config
               mountPath: /conf

@@ -26,6 +26,9 @@ data:
           receivers: [otlp]
           processors: []
           exporters: [otlp]
+      telemetry:
+        logs:
+          level: debug
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,6 +49,11 @@ spec:
           # image: otel/opentelemetry-collector:latest  # contains only [zpages, health_check, pprof] extensions
           image: otel/opentelemetry-collector-contrib:latest
           args: ["--config=/conf/config.yaml"]
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           volumeMounts:
             - name: config
               mountPath: /conf

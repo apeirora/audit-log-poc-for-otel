@@ -1,26 +1,21 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: loggen-go
   labels:
     app: loggen-go
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: loggen-go
   template:
-    metadata:
-      labels:
-        app: loggen-go
     spec:
       containers:
         - name: loggen-go
           image: ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT_GRPC
+            - name: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
               value: "http://otel-collector:4317"
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
           resources:
             limits:
               cpu: 100m
@@ -28,4 +23,4 @@ spec:
             requests:
               cpu: 50m
               memory: 32Mi
-      restartPolicy: Always
+      restartPolicy: OnFailure
