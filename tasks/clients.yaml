@@ -76,6 +76,25 @@ tasks:
       - "{{ .BUILD_CMD }} tag dice-java ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest"
       - "{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest"
 
+  build-loggen-go:
+    desc: Builds loggen-go image.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD, CONTAINER_CMD]
+    cmds:
+      - "{{ .BUILD_CMD }} build --file src/loggen-go/Dockerfile --tag loggen-go src/loggen-go/"
+
+  push-loggen-go:
+    desc: Push loggen-go image to ghcr.io/apeirora/audit-log-poc-for-otel.
+    platforms: [linux, darwin]
+    requires:
+      vars: [BUILD_CMD]
+    deps:
+      - build
+    cmds:
+      - "{{ .BUILD_CMD }} tag loggen-go ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest"
+      - "{{ .BUILD_CMD }} push ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest"
+
   build:
     desc: Builds all OTel client images.
     platforms: [linux, darwin]
@@ -85,6 +104,7 @@ tasks:
       - build-recommendation
       - build-dice-go
       - build-dice-java
+      - build-loggen-go
 
   push:
     desc: Pushes all OTel client images to the registry.
