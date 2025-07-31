@@ -46,7 +46,7 @@ export OTEL_EXPORTER_OTLP_INSECURE=true
 
 The tool emits 10 log records with a simple message and a `log-count` attribute. Example log record:
 
-```
+```bash
 {
   "severity": "INFO",
   "body": "test",
