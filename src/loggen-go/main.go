@@ -1,4 +1,4 @@
-package mai
+package main
 
 import (
 	"context"
@@ -55,6 +55,8 @@ func run() (err error) {
 
 	done := make(chan struct{})
 	go func() {
+		fmt.Println("Starting log emission...")
+
 		logCount := 10
 		for i := 1; i <= logCount; i++ {
 			func() {
