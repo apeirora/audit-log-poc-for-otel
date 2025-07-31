@@ -1,0 +1,29 @@
+version: "3"
+
+description: Taskfile for running end-to-end tests.
+
+includes:
+  tools:
+    desc: Install required tools.
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Install all required components for end-to-end testing.
+    run: once
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "if ! {{ .KUBECTL_CMD }} get ns e2e >/dev/null 2>&1; then {{ .KUBECTL_CMD }} create ns e2e; fi"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/log-sink.yaml -n e2e"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/log-sink -n e2e --timeout=120s"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/collector.yaml -n e2e"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/collector -n e2e --timeout=120s"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/loggen-go.yaml -n e2e"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/loggen-go -n e2e --timeout=120s"
