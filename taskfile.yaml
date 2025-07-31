@@ -25,6 +25,10 @@ includes:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     taskfile: ./tasks/otel-demo.yaml
 
+  dice:
+    desc: Install and manage the dice applications (dice-go and dice-java).
+    taskfile: ./tasks/dice.yaml
+
   e2e:
     desc: Run end-to-end tests.
     taskfile: ./tasks/e2e.yaml
