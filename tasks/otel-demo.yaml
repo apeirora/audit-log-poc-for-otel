@@ -20,12 +20,6 @@ vars:
   COLLECTOR_GRPC:
     sh: |
       {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp") | .nodePort' {{ end }}
-  DICE_PORT_GO:
-    sh: |
-      {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc dice-go | yq '.spec.ports[] | .nodePort' {{ end }}
-  DICE_PORT_JAVA:
-    sh: |
-      {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace otel-demo --output yaml get svc dice-java | yq '.spec.ports[] | .nodePort' {{ end }}
 
 includes:
   tools:
@@ -38,7 +32,7 @@ includes:
     internal: true
 
 tasks:
-  demo-install:
+  install:
     desc: Install otel-demo in the local cluster.
     run: once
     deps:
@@ -57,7 +51,7 @@ tasks:
       - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-otelcol-fault-injection.yaml"
       - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-permissive-mtls.yaml"
 
-  demo-upgrade:
+  upgrade:
     desc: Upgrade otel-demo in the local cluster.
     run: once
     deps:
@@ -69,16 +63,16 @@ tasks:
       - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-otelcol-fault-injection.yaml"
       - "{{ .KUBECTL_CMD }} apply -f kubectl/istio-permissive-mtls.yaml"
 
-  demo-status:
+  status:
     desc: Check the status of otel-demo in the local cluster.
     deps:
-      - task: demo-install
+      - task: install
     requires:
       vars: [HELM_CMD]
     cmds:
       - "{{ .HELM_CMD }} status --namespace otel-demo my-otel-demo"
 
-  demo-delete:
+  delete:
     desc: Delete otel-demo from the local cluster.
     deps:
       - task: tools:install-helm
@@ -94,7 +88,7 @@ tasks:
   port-forward:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     deps:
-      - task: demo-install
+      - task: install
       - task: tools:install-kubectl
     requires:
       vars: [KUBECTL_CMD]
@@ -109,7 +103,7 @@ tasks:
     desc: Tweak the otel-collector configuration in the otel-demo namespace.
     deps:
       - task: create-work-dir
-      - task: demo-install
+      - task: install
       - task: tools:install-kubectl
     requires:
       vars: [KUBECTL_CMD]
@@ -161,78 +155,3 @@ tasks:
         echo export OTEL_EXPORTER_OTLP_ENDPOINT="http://{{ .NODE_IP }}" && \
         echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC="http://{{ .NODE_IP }}:{{ .COLLECTOR_GRPC }}" && \
         echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP="http://{{ .NODE_IP }}:{{ .COLLECTOR_HTTP }}"
-
-  audit-log-sink:
-    desc: Install audit-log-sink in the local cluster.
-    run: once
-    deps:
-      - task: tools:install-helm
-    requires:
-      vars: [HELM_CMD]
-    preconditions:
-      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
-    cmds:
-      - "{{ .HELM_CMD }} repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1"
-      - "{{ .HELM_CMD }} install --values helm/audit-log-sink-overrides.yaml audit-log-sink open-telemetry/opentelemetry-collector --namespace otel-demo --create-namespace"
-
-  simple-setup:
-    desc: Install a simple setup of otel-collector and otel-collector-sink in the local cluster.
-    run: once
-    deps:
-      - task: tools:install-kubectl
-      - task: demo-delete
-    requires:
-      vars: [KUBECTL_CMD]
-    preconditions:
-      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
-    cmds:
-      - "{{ .HELM_CMD }} uninstall audit-log-sink --namespace otel-demo --ignore-not-found"
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/namespace.yaml"
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/log-sink.yaml"
-      - "{{ .KUBECTL_CMD }} rollout restart deployment/log-sink -n otel-demo"
-      - "{{ .KUBECTL_CMD }} wait --for=condition=available --timeout=120s deployment/log-sink -n otel-demo"
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/collector.yaml"
-      - "{{ .KUBECTL_CMD }} rollout restart deployment/collector -n otel-demo"
-
-  deploy-dice-go:
-    desc: Deploy dice-go app in the local cluster.
-    deps:
-      - task: tools:install-kubectl
-    requires:
-      vars: [KUBECTL_CMD, NODE_IP, DICE_PORT_GO]
-    preconditions:
-      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
-    cmds:
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/namespace.yaml"
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/dice-go.yaml"
-      - "{{ .KUBECTL_CMD }} rollout restart deployment/dice-go -n otel-demo"
-      - echo export DICE_URL_GO="http://{{ .NODE_IP }}:{{ .DICE_PORT_GO }}/rolldice/$USER"
-
-  deploy-dice-java:
-    desc: Deploy dice-java app in the local cluster.
-    deps:
-      - task: tools:install-kubectl
-    requires:
-      vars: [KUBECTL_CMD, NODE_IP, DICE_PORT_JAVA]
-    preconditions:
-      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
-    cmds:
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/namespace.yaml"
-      - "{{ .KUBECTL_CMD }} apply --filename kubectl/dice-java.yaml"
-      - "{{ .KUBECTL_CMD }} rollout restart deployment/dice-java -n otel-demo"
-      - echo export DICE_URL_JAVA="http://{{ .NODE_IP }}:{{ .DICE_PORT_JAVA }}/rolldice/$USER"
-
-  throw-dice:
-    desc: Throw a dice using the dice-go or dice-java app.
-    requires:
-      vars: [NODE_IP, DICE_PORT_GO, DICE_PORT_JAVA]
-    deps:
-      - task: deploy-dice-go
-      - task: deploy-dice-java
-    cmds:
-      - curl -s "http://{{ .NODE_IP }}:{{ .DICE_PORT_GO }}/rolldice/$USER"
-      - curl -s "http://{{ .NODE_IP }}:{{ .DICE_PORT_JAVA }}/rolldice/$USER"

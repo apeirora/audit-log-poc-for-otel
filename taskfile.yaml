@@ -21,9 +21,9 @@ includes:
     desc: Install and manage Istio in the local cluster.
     taskfile: ./tasks/istio.yaml
 
-  otel:
+  otel-demo:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
-    taskfile: ./tasks/otel.yaml
+    taskfile: ./tasks/otel-demo.yaml
 
   e2e:
     desc: Run end-to-end tests.
