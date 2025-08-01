@@ -20,7 +20,7 @@ tasks:
     status:
       - "{{ .K3D_CMD }} cluster list | grep -q otel-audit-log"
     cmds:
-      - "{{ .K3D_CMD }} cluster create otel-audit-log --no-lb --no-rollback --wait"
+      - '{{ .K3D_CMD }} cluster create otel-audit-log -p "30000-30500:30000-30500@server:0" --no-rollback --wait'
 
   delete:
     desc: Delete the local k3d cluster.

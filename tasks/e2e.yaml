@@ -28,7 +28,6 @@ tasks:
       - "{{ .KUBECTL_CMD }} rollout status deployment/log-sink -n {{ .E2E_NS }} --timeout=120s"
       - "{{ .KUBECTL_CMD }} apply -f kubectl/collector.yaml -n {{ .E2E_NS }}"
       - "{{ .KUBECTL_CMD }} rollout status deployment/collector -n {{ .E2E_NS }} --timeout=120s"
-      - "{{ .KUBECTL_CMD }} apply -f kubectl/loggen-go.yaml -n {{ .E2E_NS }}"
 
   create-namespace:
     desc: Create the e2e namespace if it doesn't exist.
@@ -38,6 +37,15 @@ tasks:
       - "{{ .KUBECTL_CMD }} get ns {{ .E2E_NS }} >/dev/null 2>&1"
     cmds:
       - "{{ .KUBECTL_CMD }} create ns {{ .E2E_NS }} --dry-run=client -o yaml | {{ .KUBECTL_CMD }} apply -f -"
+
+  run:
+    desc: Run the loggen Job for end-to-end testing (can be run repeatedly)
+    requires:
+      vars: [KUBECTL_CMD, E2E_NS]
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete job loggen-go -n {{ .E2E_NS }} --ignore-not-found"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/loggen-go.yaml -n {{ .E2E_NS }}"
+      - "{{ .KUBECTL_CMD }} wait --for=condition=complete --timeout=120s job/loggen-go -n {{ .E2E_NS }}"
 
   uninstall:
     desc: Uninstall all components deployed for end-to-end testing.
@@ -51,3 +59,13 @@ tasks:
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
     cmds:
       - "{{ .KUBECTL_CMD }} delete ns {{ .E2E_NS }} --ignore-not-found"
+
+  verify:
+    desc: Port-forward nginx, curl received_logs.json, and run jq query for missing counters
+    requires:
+      vars: [KUBECTL_CMD, E2E_NS]
+    cmds:
+      - |
+        curl -s http://localhost:30080/received_logs.json > received_logs.json
+        echo "Printing missing counters:"
+        comm -23 <(seq 1 10) <(jq -r '.resourceLogs[].scopeLogs[].logRecords[].attributes[] | select(.key=="log-count") | .value.stringValue' received_logs.json | sort -n | uniq)

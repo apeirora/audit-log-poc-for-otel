@@ -3,7 +3,6 @@ version: "3"
 description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 vars:
-  WORK_DIR: "{{ .ROOT_DIR }}/work_dir"
   DICE_NS: "dice"
   CLUSTER:
     sh: |
