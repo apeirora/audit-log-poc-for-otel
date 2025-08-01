@@ -6,6 +6,11 @@ vars:
   E2E_NS: "e2e"
 
 includes:
+  misc:
+    desc: Miscellaneous utility tasks.
+    taskfile: ./misc.yaml
+    internal: true
+
   tools:
     desc: Install required tools.
     taskfile: ./tools.yaml
@@ -62,10 +67,15 @@ tasks:
 
   verify:
     desc: Port-forward nginx, curl received_logs.json, and run jq query for missing counters
+    deps:
+      - task: misc:create-work-dir
     requires:
       vars: [KUBECTL_CMD, E2E_NS]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
     cmds:
       - |
-        curl -s http://localhost:30080/received_logs.json > received_logs.json
+        curl -s http://localhost:30080/received_logs.json > {{ .WORK_DIR }}/received_logs.json
         echo "Printing missing counters:"
-        comm -23 <(seq 1 10) <(jq -r '.resourceLogs[].scopeLogs[].logRecords[].attributes[] | select(.key=="log-count") | .value.stringValue' received_logs.json | sort -n | uniq)
+        comm -23 <(seq 1 10) <(jq -r '.resourceLogs[].scopeLogs[].logRecords[].attributes[] | select(.key=="log-count") | .value.stringValue' {{ .WORK_DIR }}/received_logs.json | sort -n | uniq)

@@ -3,7 +3,6 @@ version: "3"
 description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 vars:
-  WORK_DIR: "{{ .ROOT_DIR }}/work_dir"
   OTEL_DEMO_NS: "otel-demo"
   CLUSTER:
     sh: |
@@ -114,7 +113,7 @@ tasks:
   tweak-config:
     desc: Tweak the otel-collector configuration in the otel-demo namespace.
     deps:
-      - task: create-work-dir
+      - task: misc::create-work-dir
       - task: install
       - task: tools:install-kubectl
     requires:
@@ -127,17 +126,6 @@ tasks:
       - "{{ .KUBECTL_CMD }} apply -f {{ .WORK_DIR }}/otel-collector-configmap-new.yaml -n {{ .OTEL_DEMO_NS }}"
       - "{{ .KUBECTL_CMD }} apply -f {{ .WORK_DIR }}/otel-collector-service-new.yaml -n {{ .OTEL_DEMO_NS }}"
       - "{{ .KUBECTL_CMD }} rollout restart deployment/otel-collector -n {{ .OTEL_DEMO_NS }}"
-
-  create-work-dir:
-    desc: Create the work directory ({{ .WORK_DIR }}) if it doesn't exist.
-    run: once
-    platforms: [linux, darwin]
-    requires:
-      vars: [WORK_DIR]
-    status:
-      - test -d "{{ .WORK_DIR }}"
-    cmds:
-      - mkdir -p "{{ .WORK_DIR }}"
 
   busybox:
     desc: Run a busybox container in the otel-demo namespace.

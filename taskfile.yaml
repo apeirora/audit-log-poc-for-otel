@@ -45,6 +45,10 @@ includes:
     desc: Format all code files in the repository.
     taskfile: ./tasks/code.yaml
 
+  misc:
+    desc: Miscellaneous utility tasks.
+    taskfile: ./tasks/misc.yaml
+
 tasks:
   default:
     desc: Create and start local kubernetes cluster and install otel-demo.
