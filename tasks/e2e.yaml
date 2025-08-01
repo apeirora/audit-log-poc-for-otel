@@ -4,6 +4,8 @@ description: Taskfile for running end-to-end tests.
 
 vars:
   E2E_NS: "e2e"
+  LOG_SINK_PORT: "30080"
+  MAX_COUNTER: "100"
 
 includes:
   misc:
@@ -66,16 +68,16 @@ tasks:
       - "{{ .KUBECTL_CMD }} delete ns {{ .E2E_NS }} --ignore-not-found"
 
   verify:
-    desc: Port-forward nginx, curl received_logs.json, and run jq query for missing counters
+    desc: Retrieve received logs from log-sink and query for missing counters.
     deps:
       - task: misc:create-work-dir
     requires:
-      vars: [KUBECTL_CMD, E2E_NS]
+      vars: [KUBECTL_CMD, WORK_DIR, E2E_NS, LOG_SINK_PORT, MAX_COUNTER]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
     cmds:
       - |
-        curl -s http://localhost:30080/received_logs.json > {{ .WORK_DIR }}/received_logs.json
+        curl -s http://localhost:{{ .LOG_SINK_PORT }}/received_logs.json > {{ .WORK_DIR }}/received_logs.json
         echo "Printing missing counters:"
-        comm -23 <(seq 1 10) <(jq -r '.resourceLogs[].scopeLogs[].logRecords[].attributes[] | select(.key=="log-count") | .value.stringValue' {{ .WORK_DIR }}/received_logs.json | sort -n | uniq)
+        comm -23 <(seq 1 {{ .MAX_COUNTER }}) <(jq -r '.resourceLogs[].scopeLogs[].logRecords[].attributes[] | select(.key=="log-count") | .value.stringValue' {{ .WORK_DIR }}/received_logs.json | sort -n | uniq)
