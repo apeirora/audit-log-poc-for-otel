@@ -4,8 +4,6 @@ description: Taskfile for running end-to-end tests.
 
 vars:
   E2E_NS: "e2e"
-  LOG_SINK_PORT: "30080"
-  MAX_COUNTER: "100"
 
 includes:
   misc:
@@ -76,6 +74,11 @@ tasks:
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    vars:
+      MAX_COUNTER: "10"
+      LOG_SINK_PORT:
+        sh: |
+          {{ .KUBECTL_CMD }} -n {{ .E2E_NS }} -o yaml get svc log-sink-nginx | yq '.spec.ports[] | .nodePort'
     cmds:
       - |
         curl -s http://localhost:{{ .LOG_SINK_PORT }}/received_logs.json > {{ .WORK_DIR }}/received_logs.json
