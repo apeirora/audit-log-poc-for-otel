@@ -4,22 +4,6 @@ description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
 
 vars:
   OTEL_DEMO_NS: "otel-demo"
-  CLUSTER:
-    sh: |
-      if {{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1; then
-        echo true
-      else
-        echo false
-      fi
-  # NODE_IP:
-  #   sh: |
-  #     {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} get nodes -o yaml | yq '.items[] | select(.metadata.name | test("otel-audit-log")) | .metadata.annotations."alpha.kubernetes.io/provided-node-ip"' {{ end }}
-  # COLLECTOR_HTTP:
-  #   sh: |
-  #     {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace {{ .OTEL_DEMO_NS }} --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp-http") | .nodePort' {{ end }}
-  # COLLECTOR_GRPC:
-  #   sh: |
-  #     {{ if eq .CLUSTER "true" }} {{ .KUBECTL_CMD }} --namespace {{ .OTEL_DEMO_NS }} --output yaml get svc otel-collector | yq '.spec.ports[] | select(.name == "otlp") | .nodePort' {{ end }}
 
 includes:
   tools:
@@ -144,13 +128,3 @@ tasks:
       vars: [KUBECTL_CMD]
     cmds:
       - "{{ .KUBECTL_CMD }} exec -it $({{ .KUBECTL_CMD }} get pods --namespace otel-demo --field-selector=status.phase=Running -o name | grep otel-collector) -c alpine-sidecar --namespace otel-demo -- /bin/sh"
-
-  # export-collector:
-  #   desc: Shows the otel-collector service details (IP address and ports).
-  #   requires:
-  #     vars: [NODE_IP, COLLECTOR_GRPC, COLLECTOR_HTTP]
-  #   cmds:
-  #     - |
-  #       echo export OTEL_EXPORTER_OTLP_ENDPOINT="http://{{ .NODE_IP }}" && \
-  #       echo export OTEL_EXPORTER_OTLP_ENDPOINT_GRPC="http://{{ .NODE_IP }}:{{ .COLLECTOR_GRPC }}" && \
-  #       echo export OTEL_EXPORTER_OTLP_ENDPOINT_HTTP="http://{{ .NODE_IP }}:{{ .COLLECTOR_HTTP }}"

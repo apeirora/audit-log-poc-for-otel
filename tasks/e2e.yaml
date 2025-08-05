@@ -44,7 +44,7 @@ tasks:
       - "{{ .KUBECTL_CMD }} create ns {{ .E2E_NS }} --dry-run=client -o yaml | {{ .KUBECTL_CMD }} apply -f -"
 
   run:
-    desc: Run the loggen Job for end-to-end testing (can be run repeatedly)
+    desc: Run the loggen Job for end-to-end testing (can be run repeatedly). Make sure to run `task install` first.
     requires:
       vars: [KUBECTL_CMD, E2E_NS]
     cmds:
@@ -66,7 +66,7 @@ tasks:
       - "{{ .KUBECTL_CMD }} delete ns {{ .E2E_NS }} --ignore-not-found"
 
   verify:
-    desc: Retrieve received logs from log-sink and query for missing counters.
+    desc: Retrieve received logs from log-sink and query for missing counters. Make sure to run `task install` and `task run` first.
     deps:
       - task: misc:create-work-dir
     requires:
