@@ -89,7 +89,7 @@ func run() error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	var srv = grpc.NewServer(
+	srv := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 

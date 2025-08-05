@@ -21,9 +21,17 @@ includes:
     desc: Install and manage Istio in the local cluster.
     taskfile: ./tasks/istio.yaml
 
-  otel:
+  otel-demo:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
-    taskfile: ./tasks/otel.yaml
+    taskfile: ./tasks/otel-demo.yaml
+
+  dice:
+    desc: Install and manage the dice applications (dice-go and dice-java).
+    taskfile: ./tasks/dice.yaml
+
+  e2e:
+    desc: Run end-to-end tests.
+    taskfile: ./tasks/e2e.yaml
 
   clients:
     desc: Builds the OTel clients - services in different languages.
@@ -36,6 +44,10 @@ includes:
   code:
     desc: Format all code files in the repository.
     taskfile: ./tasks/code.yaml
+
+  misc:
+    desc: Miscellaneous utility tasks.
+    taskfile: ./tasks/misc.yaml
 
 tasks:
   default:

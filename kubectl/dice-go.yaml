@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dice-go
-  namespace: otel-demo
 spec:
   replicas: 1
   selector:
@@ -31,7 +30,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dice-go
-  namespace: otel-demo
 spec:
   selector:
     app: dice-go
