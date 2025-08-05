@@ -84,7 +84,7 @@ func run() error {
 		return err
 	}
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", port))
 	if err != nil {
 		return fmt.Errorf("failed to listen: %v", err)
 	}

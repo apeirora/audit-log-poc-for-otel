@@ -4,6 +4,12 @@
 **/.settings/
 **/bin/
 
+# VS Code files
+.vscode/
+
+# IntelliJ IDEA files
+.idea/
+
 # where tasks store binary tools (e.g. kind, kubectl, etc.)
 /.tools/
 
@@ -13,3 +19,6 @@
 
 # java build files
 **/target/
+
+# potentially generated file
+/src/file-sink/received-logs.txt
