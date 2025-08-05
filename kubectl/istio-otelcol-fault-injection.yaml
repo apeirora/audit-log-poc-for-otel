@@ -2,7 +2,6 @@ apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
   name: otel-collector-fault-injection
-  namespace: otel-demo
 spec:
   hosts:
     - otel-collector

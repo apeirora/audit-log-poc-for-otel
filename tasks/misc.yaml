@@ -1,0 +1,18 @@
+version: "3"
+
+description: Miscellaneous utility tasks.
+
+vars:
+  WORK_DIR: "{{ .ROOT_DIR }}/work_dir"
+
+tasks:
+  create-work-dir:
+    desc: Create the work directory ({{ .WORK_DIR }}) if it doesn't exist.
+    run: once
+    platforms: [linux, darwin]
+    requires:
+      vars: [WORK_DIR]
+    status:
+      - test -d "{{ .WORK_DIR }}"
+    cmds:
+      - mkdir -p "{{ .WORK_DIR }}"

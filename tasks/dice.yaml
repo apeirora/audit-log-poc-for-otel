@@ -1,0 +1,98 @@
+version: "3"
+
+description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
+
+vars:
+  DICE_NS: "dice"
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tools.yaml
+    internal: true
+  istio:
+    desc: Install and manage Istio in the local cluster.
+    taskfile: ./istio.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Install both dice-go and dice-java apps in the local cluster.
+    deps:
+      - task: tools:install-kubectl
+      - task: create-namespace
+      - task: install-dice-go
+      - task: install-dice-java
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/log-sink.yaml -n {{ .DICE_NS }}"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/log-sink -n {{ .DICE_NS }} --timeout=120s"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/collector.yaml -n {{ .DICE_NS }}"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/collector -n {{ .DICE_NS }} --timeout=120s"
+
+  install-dice-go:
+    desc: Deploy dice-go app in the local cluster.
+    deps:
+      - task: tools:install-kubectl
+      - task: create-namespace
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -n {{ .DICE_NS }} -f kubectl/dice-go.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/dice-go -n {{ .DICE_NS }} --timeout=120s"
+
+  install-dice-java:
+    desc: Deploy dice-java app in the local cluster.
+    deps:
+      - task: tools:install-kubectl
+      - task: create-namespace
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -n {{ .DICE_NS }} -f kubectl/dice-java.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status deployment/dice-java -n {{ .DICE_NS }} --timeout=120s"
+
+  create-namespace:
+    desc: Create the dice namespace if it doesn't exist.
+    requires:
+      vars: [KUBECTL_CMD, DICE_NS]
+    status:
+      - "{{ .KUBECTL_CMD }} get ns {{ .DICE_NS }} >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} create ns {{ .DICE_NS }} --dry-run=client -o yaml | {{ .KUBECTL_CMD }} apply -f -"
+
+  uninstall:
+    desc: Uninstall all dice apps and resources by deleting the namespace.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD, DICE_NS]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete ns {{ .DICE_NS }} --ignore-not-found"
+
+  throw:
+    desc: Throw a dice using the dice-go or dice-java app.
+    vars:
+      DICE_PORT_GO:
+        sh: |
+          {{ .KUBECTL_CMD }} -n {{ .DICE_NS }} -o yaml get svc dice-go | yq '.spec.ports[] | .nodePort'
+      DICE_PORT_JAVA:
+        sh: |
+          {{ .KUBECTL_CMD }} -n {{ .DICE_NS }} -o yaml get svc dice-java | yq '.spec.ports[] | .nodePort'
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - curl -s "http://localhost:{{ .DICE_PORT_GO }}/rolldice/$USER"
+      - curl -s "http://localhost:{{ .DICE_PORT_JAVA }}/rolldice/$USER"
