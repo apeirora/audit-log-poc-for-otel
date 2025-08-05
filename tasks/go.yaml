@@ -2,8 +2,27 @@ version: "3"
 
 description: This file defines the tasks for Go development, including code formatting and linting.
 
+vars:
+  GO_MODULES:
+    sh: find {{ .ROOT_DIR }} -name go.mod -exec dirname {} \; | sed 's|{{ .ROOT_DIR }}/||' | sort
+
 tasks:
+  go_modules:
+    desc: List all Go Modules available in this project
+    cmd: echo "{{ .GO_MODULES }}"
+    silent: true
+
+  check-all:
+    desc: Run checks on all Go modules found in the project.
+    parallel: true
+    ignore_error: true
+    cmds:
+      - for: { var: GO_MODULES }
+        vars: { PWD: "{{.ITEM}}" }
+        task: check
+
   check:
+    desc: Setup Go projects for formatting and linting code. Run this in your Go project directory.
     cmds:
       - go -C {{ .PWD }} get -tool golang.org/x/tools/cmd/goimports
       - go -C {{ .PWD }} get -tool mvdan.cc/gofumpt
