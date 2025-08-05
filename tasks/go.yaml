@@ -18,7 +18,7 @@ tasks:
     ignore_error: true
     cmds:
       - for: { var: GO_MODULES }
-        vars: { PWD: '{{.ITEM}}' }
+        vars: { PWD: "{{.ITEM}}" }
         task: check
 
   check:

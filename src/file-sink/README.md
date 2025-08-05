@@ -1,6 +1,7 @@
 # file-sink
 
-A minimal OpenTelemetry OTLP log receiver for demonstration and testing purposes. This service receives OTLP log data via gRPC and HTTP and writes all received logs to a local file.
+A minimal OpenTelemetry OTLP log receiver for demonstration and testing purposes. This service receives OTLP log data via gRPC and HTTP and
+writes all received logs to a local file.
 
 ## Features
 
