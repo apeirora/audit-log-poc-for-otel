@@ -1,9 +1,9 @@
 # Robustness Improvements for OpenTelemetry Java Client
 
-<!-- markdownlint-disable MD024 -->
+This document describes planned improvements to make the OpenTelemetry Java Client more robust. The main goal is to give developers better
+control and ways to react to export errors, so that audit log messages are not lost.
 
 - [Robustness Improvements for OpenTelemetry Java Client](#robustness-improvements-for-opentelemetry-java-client)
-  - [Overview](#overview)
   - [Problem Statement](#problem-statement)
     - [Current Situation](#current-situation)
     - [Impact](#impact)
@@ -34,25 +34,14 @@
     - [Best Practices](#best-practices)
   - [Alternative Approaches](#alternative-approaches)
     - [1. Event-Based Error Handling](#1-event-based-error-handling)
-      - [Concept](#concept-1)
     - [2. Dedicated Fallback Exporter](#2-dedicated-fallback-exporter)
-      - [Concept](#concept-2)
     - [3. Retry Mechanism with Exponential Backoff](#3-retry-mechanism-with-exponential-backoff)
-      - [Concept](#concept-3)
     - [4. Circuit Breaker Pattern](#4-circuit-breaker-pattern)
-      - [Concept](#concept-4)
     - [5. Dead Letter Queue Pattern](#5-dead-letter-queue-pattern)
-      - [Concept](#concept-5)
     - [6. Metrics-Based Monitoring Approach](#6-metrics-based-monitoring-approach)
-      - [Concept](#concept-6)
   - [Hybrid Approaches](#hybrid-approaches)
     - [Recommended Combination for Enterprise Environments](#recommended-combination-for-enterprise-environments)
   - [Conclusion](#conclusion)
-
-## Overview
-
-This document describes planned improvements to make the OpenTelemetry Java Client more robust. The main goal is to give developers better
-control and ways to react to export errors, so that audit log messages are not lost.
 
 ## Problem Statement
 
@@ -244,8 +233,6 @@ Besides the error consumer pattern, there are other ways to improve robustness:
 
 ### 1. Event-Based Error Handling
 
-#### Concept
-
 Event-based error handling uses an event bus to publish export errors as events. Instead of handling errors directly in the log processor,
 errors are sent as events to a central event bus. Apps can register event handlers to react to these errors. This decouples error detection
 from error handling and makes integration easier.
@@ -289,8 +276,6 @@ public void handleLogExportFailure(LogExportFailedEvent event) {
 
 ### 2. Dedicated Fallback Exporter
 
-#### Concept
-
 Implement a fallback mechanism at exporter level:
 
 ```java
@@ -325,8 +310,6 @@ public class FallbackLogRecordExporter implements LogRecordExporter {
 - No context-specific handling
 
 ### 3. Retry Mechanism with Exponential Backoff
-
-#### Concept
 
 Built-in retry logic in processors:
 
@@ -368,8 +351,6 @@ public class RetryableLogRecordProcessor implements LogRecordProcessor {
 
 ### 4. Circuit Breaker Pattern
 
-#### Concept
-
 Implement a circuit breaker for export operations:
 
 ```java
@@ -409,8 +390,6 @@ public class CircuitBreakerLogRecordExporter implements LogRecordExporter {
 - Loss of logs during "open" phase
 
 ### 5. Dead Letter Queue Pattern
-
-#### Concept
 
 Use a dead letter queue for failed exports:
 
@@ -455,8 +434,6 @@ public class DeadLetterQueueProcessor implements LogRecordProcessor {
 - Possible unlimited queue size
 
 ### 6. Metrics-Based Monitoring Approach
-
-#### Concept
 
 Focus on metrics instead of error handling:
 
