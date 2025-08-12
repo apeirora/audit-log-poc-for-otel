@@ -9,6 +9,8 @@ refine the challenges and requirements for audit logging in OTel and to showcase
 
 Read about the entire idea at [open-telemetry/community#2409](https://github.com/open-telemetry/community/pull/2409).
 
+More detailed documentation can be found in the [docs](./docs) directory.
+
 ## About This Project
 
 This PoC scenario provides an easy setup of an [OpenTelemetry Demo](https://opentelemetry.io/docs/demo/) environment to test how log
