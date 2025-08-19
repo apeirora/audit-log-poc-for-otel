@@ -127,3 +127,12 @@ tasks:
       - push
     status:
       - "echo 'All OTel client images built and pushed successfully.'"
+
+  update:
+    desc: Updates all modules in all go-projects
+    vars:
+      GOPROJECTS:
+        sh: find . -name go.mod -exec dirname {} \;
+    cmds:
+      - for: { var: GOPROJECTS }
+        cmd: (cd {{ .ITEM }} && go get -u ./... && go mod tidy)
