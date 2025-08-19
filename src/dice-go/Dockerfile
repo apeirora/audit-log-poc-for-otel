@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 # build the application
 WORKDIR /usr/src/app/
 # let's create separate layers for dependencies and source code
