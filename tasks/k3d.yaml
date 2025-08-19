@@ -8,6 +8,9 @@ includes:
     taskfile: ./tools.yaml
     internal: true
 
+vars:
+  PV_DIR: "{{ .ROOT_DIR }}/tmp/k3dvol"
+
 tasks:
   create:
     desc: Create a local k3d cluster.
@@ -16,11 +19,12 @@ tasks:
       - task: tools:install-k3d
     platforms: [linux, darwin]
     requires:
-      vars: [K3D_CMD]
+      vars: [K3D_CMD, PV_DIR]
     status:
       - "{{ .K3D_CMD }} cluster list | grep -q otel-audit-log"
     cmds:
-      - '{{ .K3D_CMD }} cluster create otel-audit-log -p "30000-30500:30000-30500@server:0" --no-rollback --wait'
+      - mkdir -p {{ .PV_DIR }}
+      - '{{ .K3D_CMD }} cluster create otel-audit-log -p "30000-30500:30000-30500@server:0" --no-rollback --wait --volume {{ .PV_DIR }}:/tmp/k3dvol'
 
   delete:
     desc: Delete the local k3d cluster.
@@ -75,3 +79,16 @@ tasks:
       - "{{ .KUBECTL_CMD }} config get-contexts | grep -q k3d-otel-audit-log"
     cmds:
       - "{{ .K3D_CMD }} kubeconfig merge otel-audit-log --kubeconfig-merge-default --kubeconfig-switch-context --update"
+
+  pv-volume:
+    desc:
+    deps:
+      - task: create
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    platforms: [linux, darwin]
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/pv-volume.yaml"
+      - "{{ .KUBECTL_CMD }} get pv"
+      - "{{ .KUBECTL_CMD }} get pvc"
