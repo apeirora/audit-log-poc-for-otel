@@ -230,6 +230,30 @@ spec:
       targetPort: 4318
       protocol: TCP
 ---
+# Service for OTel Collector Agent Metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol-agent-metrics
+  namespace: otelcol-agent
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8888"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: otelcol-agent
+    component: otel-collector
+  ports:
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+---
 # Generator
 apiVersion: apps/v1
 kind: Deployment
