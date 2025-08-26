@@ -1,0 +1,2 @@
+# Prometheus Stack Helm values override file
+# This file provides custom configuration for the kube-prometheus-stack Helm chart

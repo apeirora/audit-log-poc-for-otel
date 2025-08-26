@@ -41,6 +41,10 @@ includes:
     desc: Builds the OTel clients - services in different languages.
     taskfile: ./tasks/clients.yaml
 
+  monitoring:
+    desc: Install and manage Prometheus and Grafana monitoring stack with authentication.
+    taskfile: ./tasks/monitoring.yaml
+
   go:
     desc: Build the go application.
     taskfile: ./tasks/go.yaml
