@@ -96,7 +96,7 @@ tasks:
       vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
     cmds:
       - |
-        {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/kube-prometheus-stack \
+        {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
           --namespace {{ .MONITORING_NS }} \
           --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml
 
@@ -157,13 +157,13 @@ tasks:
     requires:
       vars: [KUBECTL_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
     preconditions:
-      - sh: "{{ .KUBECTL_CMD }} get svc/{{ .PROMETHEUS_RELEASE }}-kube-prometheus-prometheus -n {{ .MONITORING_NS }} >/dev/null 2>&1"
+      - sh: "{{ .KUBECTL_CMD }} get svc/{{ .PROMETHEUS_RELEASE }}-server -n {{ .MONITORING_NS }} >/dev/null 2>&1"
         msg: "Prometheus service not found. Please install first: task monitoring:install"
-      - sh: "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }} --field-selector=status.phase=Running | grep -q prometheus-{{ .PROMETHEUS_RELEASE }}-kube-prometheus-prometheus"
+      - sh: "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }} --field-selector=status.phase=Running | grep -q {{ .PROMETHEUS_RELEASE }}-server"
         msg: "Please wait for Prometheus pod to be in Running state."
     cmds:
       - echo "Accessing Prometheus at http://localhost:9090"
-      - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .PROMETHEUS_RELEASE }}-kube-prometheus-prometheus 9090:9090"
+      - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .PROMETHEUS_RELEASE }}-server 9090:80"
 
   port-forward-grafana:
     desc: Port-forward Grafana to localhost:3000.

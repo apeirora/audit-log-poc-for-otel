@@ -11,7 +11,7 @@ datasources:
       - name: Prometheus
         type: prometheus
         uid: prometheus
-        url: http://prometheus-server:9090
+        url: http://prometheus-server
         access: proxy
         isDefault: true
         editable: true
