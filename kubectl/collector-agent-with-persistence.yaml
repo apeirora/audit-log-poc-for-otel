@@ -1,0 +1,259 @@
+# Namespace for the OTel Collector Agent
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otelcol-agent
+  labels:
+    name: otelcol-agent
+---
+# ServiceAccount for the OTel Collector Agent
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otelcol-agent
+  namespace: otelcol-agent
+---
+# ClusterRole for the OTel Collector Agent to access node and pod information
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otelcol-agent
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding for the OTel Collector Agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otelcol-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otelcol-agent
+subjects:
+  - kind: ServiceAccount
+    name: otelcol-agent
+    namespace: otelcol-agent
+---
+# ConfigMap containing the OTel Collector Agent configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otelcol-agent-config
+  namespace: otelcol-agent
+data:
+  config.yaml: |
+    extensions:
+      file_storage:
+        directory: /var/lib/otelcol/storage
+        create_directory: true
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      otlp:
+        endpoint: log-sink:4317
+        tls:
+          insecure: true
+        sending_queue:
+          enabled: true
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+
+      debug:
+
+    service:
+      extensions: [file_storage, health_check]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp, debug]
+      telemetry:
+        logs:
+          level: info
+---
+# DaemonSet for deploying OTel Collector Agent on each node
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otelcol-agent
+  namespace: otelcol-agent
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: otelcol-agent
+      component: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otelcol-agent
+        component: otel-collector
+    spec:
+      serviceAccountName: otelcol-agent
+      initContainers:
+        - command:
+            - chown
+            - -R
+            - "10001:0"
+            - /var/lib/otelcol/storage
+          image: alpine:latest
+          name: storage-dir-ownership-modifier
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              add:
+                - CHOWN
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /var/lib/otelcol/storage
+              name: storage
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.133.0
+          args:
+            - "--config=/etc/otelcol-contrib/config.yaml"
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+            - name: health-check
+              containerPort: 13133
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 200m
+            requests:
+              memory: 128Mi
+              cpu: 100m
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib
+              readOnly: true
+            - name: storage
+              mountPath: /var/lib/otelcol/storage
+          livenessProbe:
+            httpGet:
+              path: /
+              port: health-check
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: health-check
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 10001
+      volumes:
+        - name: config
+          configMap:
+            name: otelcol-agent-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+        - name: storage
+          hostPath:
+            path: /var/lib/otelcol/storage
+            type: DirectoryOrCreate
+
+---
+# Service for the OTel Collector Agent
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol-agent
+  namespace: otelcol-agent
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: otelcol-agent
+    component: otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+---
+# Generator
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log-producer
+  template:
+    metadata:
+      labels:
+        app: log-producer
+    spec:
+      containers:
+        - name: loggen-go
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest
+          resources:
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          env:
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otelcol-agent:4317/"
