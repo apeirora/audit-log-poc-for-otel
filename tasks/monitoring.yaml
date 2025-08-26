@@ -14,15 +14,6 @@ includes:
     internal: true
 
 tasks:
-  create-namespace:
-    desc: Create the monitoring namespace if it doesn't exist.
-    requires:
-      vars: [KUBECTL_CMD, MONITORING_NS]
-    status:
-      - "{{ .KUBECTL_CMD }} get ns {{ .MONITORING_NS }} >/dev/null 2>&1"
-    cmds:
-      - "{{ .KUBECTL_CMD }} create ns {{ .MONITORING_NS }} --dry-run=client -o yaml | {{ .KUBECTL_CMD }} apply -f -"
-
   add-helm-repos:
     desc: Add Prometheus and Grafana Helm repositories.
     deps:
@@ -40,7 +31,6 @@ tasks:
   install-prometheus:
     desc: Install Prometheus using Helm with authentication enabled.
     deps:
-      - task: create-namespace
       - task: add-helm-repos
     requires:
       vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
@@ -51,15 +41,13 @@ tasks:
       - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .PROMETHEUS_RELEASE }}") | .status'' | grep -q deployed'
     cmds:
       - |
-        {{ .HELM_CMD }} install {{ .PROMETHEUS_RELEASE }} prometheus-community/kube-prometheus-stack \
-          --namespace {{ .MONITORING_NS }} \
-          --create-namespace \
-          --values {{ .ROOT_DIR }}/helm/prometheus-stack-overrides.yaml
+        {{ .HELM_CMD }} install {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
+          --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml \
 
   install-grafana:
     desc: Install Grafana using Helm with authentication enabled.
     deps:
-      - task: create-namespace
       - task: add-helm-repos
     requires:
       vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
@@ -71,8 +59,7 @@ tasks:
     cmds:
       - |
         {{ .HELM_CMD }} install {{ .GRAFANA_RELEASE }} grafana/grafana \
-          --namespace {{ .MONITORING_NS }} \
-          --create-namespace \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
           --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
 
   install:
@@ -111,7 +98,7 @@ tasks:
       - |
         {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/kube-prometheus-stack \
           --namespace {{ .MONITORING_NS }} \
-          --values {{ .ROOT_DIR }}/helm/prometheus-stack-overrides.yaml
+          --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml
 
   upgrade-grafana:
     desc: Upgrade Grafana installation.
