@@ -208,7 +208,6 @@ spec:
           hostPath:
             path: /var/lib/otelcol/storage
             type: DirectoryOrCreate
-
 ---
 # Service for the OTel Collector Agent
 apiVersion: v1
@@ -221,6 +220,7 @@ metadata:
     component: otel-collector
 spec:
   type: ClusterIP
+  internalTrafficPolicy: Local
   clusterIP: None
   selector:
     app: otelcol-agent
