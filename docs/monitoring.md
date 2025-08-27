@@ -1,10 +1,12 @@
 # Monitoring Stack Setup Guide
 
-This guide explains how to install and manage Prometheus and Grafana monitoring stack with authentication for the OpenTelemetry Audit Log PoC project.
+This guide explains how to install and manage Prometheus and Grafana monitoring stack with authentication for the OpenTelemetry Audit Log
+PoC project.
 
 ## Overview
 
 The monitoring stack includes:
+
 - **Prometheus**: Metrics collection and storage with AlertManager
 - **Grafana**: Visualization and dashboarding with authentication
 - **Node Exporter**: System metrics collection
@@ -27,6 +29,7 @@ task monitoring:install
 ```
 
 This will:
+
 - Create a `monitoring` namespace
 - Install Prometheus
 - Install Grafana with anonymous access
@@ -35,16 +38,19 @@ This will:
 ### 2. Access the Services
 
 #### Grafana (Port 3000)
+
 ```bash
 # Port-forward Grafana to localhost:3000
 task monitoring:port-forward-grafana
 ```
 
 Default credentials:
+
 - **Username**: `admin`
 - **Password**: Check `.tools/grafana-password` or run `task monitoring:get-grafana-password`
 
 #### Prometheus (Port 9090)
+
 ```bash
 # Port-forward Prometheus to localhost:9090
 task monitoring:port-forward-prometheus
