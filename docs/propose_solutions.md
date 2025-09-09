@@ -46,6 +46,8 @@ service:
 
 ### Notes / Unknowns / Ideas
 
+-Maybe we can implment kafka extension, so user dont have to configure it itself
+
 -Is it acceptable for the sink to receive duplicate logs?
 
 -Could we build a custom connector to process logs instead?
