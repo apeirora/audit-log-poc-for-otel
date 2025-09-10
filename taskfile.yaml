@@ -21,6 +21,10 @@ includes:
     desc: Install and manage Istio in the local cluster.
     taskfile: ./tasks/istio.yaml
 
+  otelcol-agent:
+    desc: Deploy and manage the OTel Collector agent setup with local filesystem-based persistence.
+    taskfile: ./tasks/otelcol-agent.yaml
+
   otel-demo:
     desc: Port-forward the otel-demo frontend-proxy service to localhost:8080.
     taskfile: ./tasks/otel-demo.yaml
@@ -36,6 +40,10 @@ includes:
   clients:
     desc: Builds the OTel clients - services in different languages.
     taskfile: ./tasks/clients.yaml
+
+  monitoring:
+    desc: Install and manage Prometheus and Grafana monitoring stack with authentication.
+    taskfile: ./tasks/monitoring.yaml
 
   go:
     desc: Build the go application.
