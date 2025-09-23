@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM sapmachine:24-jdk-headless-ubuntu AS build
+FROM sapmachine:25-jdk-headless-ubuntu AS build
 # install maven
 RUN apt-get update && apt-get -y install maven
 # build the application
@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 # --- Run Stage ---
-FROM sapmachine:24-jre-alpine
+FROM sapmachine:25-jre-alpine
 
 ARG REST_PORT=8082
 ENV REST_PORT=${REST_PORT}
