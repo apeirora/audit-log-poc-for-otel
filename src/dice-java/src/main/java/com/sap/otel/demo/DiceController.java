@@ -1,10 +1,10 @@
 package com.sap.otel.demo;
 
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.logs.Logger;
-import io.opentelemetry.api.logs.LoggerProvider;
-import io.opentelemetry.api.logs.Severity;
+import java.io.File;
+import java.time.Instant;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,6 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.logs.Logger;
+import io.opentelemetry.api.logs.LoggerProvider;
+import io.opentelemetry.api.logs.Severity;
+import io.opentelemetry.contrib.disk.buffering.internal.storage.FileSpanStorage;
+import io.opentelemetry.contrib.disk.buffering.storage.SignalStorage;
 
 /**
  * REST controller providing a /rolldice endpoint similar to the Go example. Uses OpenTelemetry for
@@ -23,15 +30,20 @@ public class DiceController {
   private final Random random = new Random();
   private final Logger otelLogger;
   private final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
-
+  private final AtomicInteger logCount = new AtomicInteger(0);
   // Number of log messages per request, configurable via environment variable:
   // LOG_MESSAGES_PER_REQUEST
   private final int logMessagesPerRequest;
 
+  public int getTotalLogCount() {
+    return logCount.get();
+  }
+
   public DiceController(
-      @Value("${LOG_MESSAGES_PER_REQUEST:1}") int logMessagesPerRequest,
-      @Qualifier("otelLoggerProvider") @Autowired LoggerProvider loggerProvider) {
+      @Value("${LOG_MESSAGES_PER_REQUEST:10}") int logMessagesPerRequest,
+      @Qualifier("auditLoggerProvider") @Autowired LoggerProvider loggerProvider) {
     log.debug("DiceController initialized with logMessagesPerRequest={}", logMessagesPerRequest);
+    log.info("Using LoggerProvider implementation: {}", loggerProvider.getClass().getName());
     // LoggerProvider loggerProvider = GlobalOpenTelemetry.get().getLogsBridge(); // actually
     // returns LoggerProvider.noop()
     this.otelLogger = loggerProvider.loggerBuilder("AUDIT_JAVA_SERVICE").build();
@@ -58,7 +70,10 @@ public class DiceController {
         .setBody(msg)
         .setAttribute(AttributeKey.stringKey("result"), String.valueOf(roll))
         .setAttribute(AttributeKey.stringKey("AUDIT-USER"), user)
+        .setAttribute(AttributeKey.longKey("logNo#"), (long)logCount.incrementAndGet())
+        .setTimestamp(Instant.now())
         .emit();
+    
 
     // Emit additional log messages if configured
     for (int i = 0; i < logMessagesPerRequest; i++) {
@@ -66,6 +81,8 @@ public class DiceController {
           .logRecordBuilder()
           .setSeverity(Severity.INFO)
           .setBody(String.format("dice: %d, user: %s - bulk log message #%d", roll, user, i + 1))
+          .setAttribute(AttributeKey.longKey("logNo#"), (long)logCount.incrementAndGet())
+          .setTimestamp(Instant.now())
           .emit();
     }
 

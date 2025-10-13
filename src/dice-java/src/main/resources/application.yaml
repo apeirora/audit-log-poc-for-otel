@@ -1,6 +1,15 @@
 spring:
   application:
-    name: demo
+    name: dice-java
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 5
+    scheduling:
+      pool:
+        size: 2
+
 server:
   address: 0.0.0.0
   port: 8082
