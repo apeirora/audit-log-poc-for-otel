@@ -65,9 +65,7 @@ To optimize for both **performance** and **durability**, we propose a dynamic qu
 
 - Normal state: Data flows through an in-memory queue (minimal latency).
 - On failure or backpressure:
-  - Retryable exporter failures (e.g., 5xx, 429) or
-  - Full in-memory queue
-  -  fallback to a persistent queue (file storage).
+  - Retryable exporter failures (e.g., 5xx, 429) or Full in-memory queue, fallback to a persistent queue (file storage).
 - Recovery: Switch back to memory once conditions normalize.
 
 ### Benefits
