@@ -4,8 +4,6 @@
 
 We have implemented a resilient observability pipeline using the OpenTelemetry Collector, designed to guarantee the delivery of telemetry data through disk-backed queues and Kafka. This setup supports both durability and recovery under adverse conditions.
 
----
-
 ## Stack Architecture
 
 ### Ingress Collector
@@ -22,8 +20,6 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
   - Sending queue with file storage, similar to the ingress collector
   - Final exporter to the observability backend (e.g., monitoring system, data lake, etc.)
 
----
-
 ## Advantages
 
 ### Durability / Crash Resilience
@@ -39,8 +35,6 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
   - Network interruptions
   - Backend throttling
   - Collector restarts or redeployments
-
----
 
 ## Risks & Trade-Offs
 
@@ -60,8 +54,6 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
 - Each batch is written to disk (via WAL).
 - If `fsync` is enabled (to ensure durable write), performance can be further impacted.
 - Default `fsync: false` balances safety and performance but may be unsuitable in all environments.
-
----
 
 ## Proposed Improvement: On-Demand Persistence Queue
 
@@ -83,8 +75,6 @@ To optimize for both **performance** and **durability**, we propose a dynamic qu
 - Reduces unnecessary disk I/O under healthy conditions
 - Maintains resilience and durability only when needed
 - Optimizes end-to-end latency and resource usage
-
----
 
 ## Current Observations
 
