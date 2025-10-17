@@ -2,7 +2,8 @@
 
 ## Overview
 
-We have implemented a resilient observability pipeline using the OpenTelemetry Collector, designed to guarantee the delivery of telemetry data through disk-backed queues and Kafka. This setup supports both durability and recovery under adverse conditions.
+We have implemented a resilient observability pipeline using the OpenTelemetry Collector, designed to guarantee the delivery of telemetry
+data through disk-backed queues and Kafka. This setup supports both durability and recovery under adverse conditions.
 
 ## Stack Architecture
 
@@ -23,14 +24,17 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
 ## Advantages
 
 ### Durability / Crash Resilience
+
 - Data queued to disk survives Collector crashes or restarts.
 - Ensures in-flight telemetry is not lost due to process failure.
 
 ### Graceful Recovery & Backpressure Smoothing
+
 - Persistent queues absorb downstream slowness or outages.
 - Prevents upstream data drops and smooths traffic spikes.
 
 ### Improved Data Fidelity in Adverse Conditions
+
 - Retains full fidelity even during:
   - Network interruptions
   - Backend throttling
@@ -39,6 +43,7 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
 ## Risks & Trade-Offs
 
 ### Volume Attachment Issues (Kubernetes)
+
 - Persistent volume claims (PVCs) can get stuck during:
   - Node failures
   - Preemptive pod evictions
@@ -46,11 +51,13 @@ We have implemented a resilient observability pipeline using the OpenTelemetry C
 - Increases recovery time and affects automation.
 
 ### Increased Latency (Buffering + Disk Write)
+
 - File-backed queues introduce extra I/O steps:
   - write → read → export
 - Adds latency to the ingestion-export path, especially under high load or tight SLA requirements.
 
 ### Disk I/O Latency
+
 - Each batch is written to disk (via WAL).
 - If `fsync` is enabled (to ensure durable write), performance can be further impacted.
 - Default `fsync: false` balances safety and performance but may be unsuitable in all environments.
