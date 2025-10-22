@@ -28,6 +28,19 @@ We explicitly distinguish:
 - Soft Guarantee: No loss if failures are transient and within configured durability windows (queue depth, retention times).
 - Hard Guarantee: Only loss if catastrophic, out-of-scope events (permanent disk destruction, multi-site outage) occur.
 
+## Community Alignment
+
+This proposal is designed to serve as a concrete implementation plan for the goals outlined in the official
+**[OpenTelemetry Project Proposal: Audit Logging SIG (#2409)](https://github.com/open-telemetry/community/pull/2409)**. It directly
+addresses the community's need for higher delivery guarantees, improved observability for dropped data, and clearer semantic conventions for
+audit events.
+
+Furthermore, the recommendations within this document align with the strategic direction of the OpenTelemetry Collector for improving
+reliability, particularly the migration towards exporter-native batching as tracked in
+**[Introduce new exporter helper with batching option (#8122)](https://github.com/open-telemetry/opentelemetry-collector/issues/8122)**.
+This PoC and its findings are intended to provide tangible data and a reference implementation for Phase 2 of the Audit Logging SIG's
+charter: contributing functional extensions back upstream.
+
 ## 2. Canonical Delivery Path & Loss Points
 
 | Stage | Component                                 | Loss Modes (Today)                                                                                              | Observability Gaps                                                          |
@@ -97,8 +110,8 @@ flowchart LR
 - Graceful shutdown timeout > largest expected retry + flush window.
 - Metrics to surface: queue size/capacity, persisted items, disk bytes (proposed), dropped with reason label.
 - fsync strategy: choose between performance (false) and durability (always/interval). Benchmark early.
-- Prefer exporter-native batching (exporter helper v2) and plan deprecation of legacy batch processor per exporter once feature parity
-  confirmed; do not double-layer batch processor + exporter batcher except during a short, monitored migration window.
+- Prefer exporter-native batching ([exporter helper][batchv2] v2) and plan deprecation of legacy batch processor per exporter once feature
+  parity confirmed; do not double-layer batch processor + [exporter batcher][batchv2] except during a short, monitored migration window.
 - When exporter-native batching is enabled, adopt byte-based queue sizing after observing 95th percentile serialized batch sizes for at
   least 24h; set initial byte capacity ≈ P95 \* queue_items_cap.
 - For multi-exporter fanout, configure exactly one exporter (e.g. primary durability path) with `drop_on_error=false` and all secondary
@@ -141,28 +154,28 @@ flowchart LR
 
 ## 6. Improvement Proposals (Candidate OTEPs)
 
-| ID  | Proposal                                                                   | Benefit                   | Effort  | Trade-Off                     | Affected Component(s)    |
-| --- | -------------------------------------------------------------------------- | ------------------------- | ------- | ----------------------------- | ------------------------ |
-| P1  | Drop reason taxonomy + metrics                                             | Root cause clarity        | Med     | Metric cardinality            | Collector, API/SemConv   |
-| P2  | Unified timeout model & auto-alignment warning                             | Prevent premature abort   | Low     | Surprise for advanced tuners  | Collector, SDK           |
-| P3  | Enhanced shutdown drain with multi-retry / grace window                    | Fewer restart losses      | Med     | Longer rollout time           | Collector                |
-| P4  | Byte-based queue limits & watermarks                                       | Predictive disk mgmt      | Med     | Complexity                    | Collector                |
-| P5  | Hash chain integrity plugin                                                | Tamper evidence           | Med     | CPU overhead                  | Collector (extension)    |
-| P6  | Standard backpressure advisory to SDK                                      | Coordinated flow control  | High    | Multi-language changes        | API, SDK, Collector      |
-| P7  | Durability level taxonomy in docs                                          | Clear trade-offs          | Low     | None                          | Docs                     |
-| P8  | Exporter batcher graduation guidance                                       | Simplify pipeline         | Med     | Adoption path                 | Docs, Collector          |
-| P9  | fsync policy modes (always/interval/none)                                  | Tunable durability        | Low-Med | Perf variance                 | Collector                |
-| P10 | End-to-end UUID trace per record (optional)                                | Forensic traceability     | Med     | Privacy considerations        | API, SDK, Collector      |
-| P11 | Survivability window heuristic metric                                      | Operator awareness        | Low     | Estimate accuracy             | Collector                |
-| P12 | Adaptive hybrid queue (memory→persistent on backpressure)                  | Latency + resilience      | High    | Complexity & correctness      | Collector                |
-| P13 | Batch processor deprecation & migration playbook                           | Reduced duplication       | Low-Med | Coordination across exporters | Docs, Collector          |
-| P14 | Failover connector telemetry spec (active level, transitions, durations)   | Faster failover MTTR      | Med     | Expanded metric set           | Collector (contrib)      |
-| P15 | Connector drop reason extension (`connector_failure`, `routing_unmatched`) | Precise attribution       | Low     | Cardinality increase          | Collector (contrib)      |
-| P16 | Byte-based queue guardrails & heuristic warnings                           | Prevent mis-sizing        | Med     | Heuristic false positives     | Collector                |
-| P17 | Graceful failover drain option                                             | Lower in-flight loss      | High    | Longer failover latency       | Collector (contrib)      |
-| P18 | Partition-aware / multi-tenant exporter batching guidance                  | Avoid [HoL][HoL] blocking | Med     | Config complexity             | Collector, Docs          |
-| P19 | Durability mode annotation metric (`pipeline_durability_mode`)             | Auditability              | Low     | More time series              | Collector                |
-| P20 | Connector backpressure hook (upstream throttle signal)                     | Unified flow control      | High    | Cross-component changes       | API, Collector (contrib) |
+| ID  | Proposal                                                                   | Benefit                                                                | Effort  | Trade-Off                     | Affected Component(s)    |
+| --- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------- | ----------------------------- | ------------------------ |
+| P1  | Drop reason taxonomy + metrics                                             | Root cause clarity (addresses Audit SIG need for event catalog)        | Med     | Metric cardinality            | Collector, API/SemConv   |
+| P2  | Unified timeout model & auto-alignment warning                             | Prevent premature abort                                                | Low     | Surprise for advanced tuners  | Collector, SDK           |
+| P3  | Enhanced shutdown drain with multi-retry / grace window                    | Fewer restart losses                                                   | Med     | Longer rollout time           | Collector                |
+| P4  | Byte-based queue limits & watermarks                                       | Predictive disk mgmt (aligns with exporter-native sizing in #8122)     | Med     | Complexity                    | Collector                |
+| P5  | Hash chain integrity plugin                                                | Tamper evidence (addresses Audit SIG immutability requirement)         | Med     | CPU overhead                  | Collector (extension)    |
+| P6  | Standard backpressure advisory to SDK                                      | Coordinated flow control (addresses Audit SIG "fail vs. throw" debate) | High    | Multi-language changes        | API, SDK, Collector      |
+| P7  | Durability level taxonomy in docs                                          | Clear trade-offs                                                       | Low     | None                          | Docs                     |
+| P8  | Exporter batcher graduation guidance                                       | Simplify pipeline (aligns with strategic direction in #8122)           | Med     | Adoption path                 | Docs, Collector          |
+| P9  | fsync policy modes (always/interval/none)                                  | Tunable durability                                                     | Low-Med | Perf variance                 | Collector                |
+| P10 | End-to-end UUID trace per record (optional)                                | Forensic traceability                                                  | Med     | Privacy considerations        | API, SDK, Collector      |
+| P11 | Survivability window heuristic metric                                      | Operator awareness                                                     | Low     | Estimate accuracy             | Collector                |
+| P12 | Adaptive hybrid queue (memory→persistent on backpressure)                  | Latency + resilience                                                   | High    | Complexity & correctness      | Collector                |
+| P13 | Batch processor deprecation & migration playbook                           | Reduced duplication (core goal of #8122)                               | Low-Med | Coordination across exporters | Docs, Collector          |
+| P14 | Failover connector telemetry spec (active level, transitions, durations)   | Faster failover MTTR                                                   | Med     | Expanded metric set           | Collector (contrib)      |
+| P15 | Connector drop reason extension (`connector_failure`, `routing_unmatched`) | Precise attribution                                                    | Low     | Cardinality increase          | Collector (contrib)      |
+| P16 | Byte-based queue guardrails & heuristic warnings                           | Prevent mis-sizing (enabled by exporter-native batching in #8122)      | Med     | Heuristic false positives     | Collector                |
+| P17 | Graceful failover drain option                                             | Lower in-flight loss                                                   | High    | Longer failover latency       | Collector (contrib)      |
+| P18 | Partition-aware / multi-tenant exporter batching guidance                  | Avoid [HoL][HoL] blocking                                              | Med     | Config complexity             | Collector, Docs          |
+| P19 | Durability mode annotation metric (`pipeline_durability_mode`)             | Auditability                                                           | Low     | More time series              | Collector                |
+| P20 | Connector backpressure hook (upstream throttle signal)                     | Unified flow control                                                   | High    | Cross-component changes       | API, Collector (contrib) |
 
 ## 7. Prioritized Actions
 
@@ -271,3 +284,4 @@ Please propose edits, additions, or raise issues tagged `durability` / `loss-att
 
 [MTTR]: https://en.wikipedia.org/wiki/Mean_time_to_repair
 [HoL]: https://en.wikipedia.org/wiki/Head-of-line_blocking
+[batchv2]: https://github.com/open-telemetry/opentelemetry-collector/issues/8122
