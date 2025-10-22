@@ -141,28 +141,28 @@ flowchart LR
 
 ## 6. Improvement Proposals (Candidate OTEPs)
 
-| ID  | Proposal                                                                   | Benefit                   | Effort  | Trade-Off                     |
-| --- | -------------------------------------------------------------------------- | ------------------------- | ------- | ----------------------------- |
-| P1  | Drop reason taxonomy + metrics                                             | Root cause clarity        | Med     | Metric cardinality            |
-| P2  | Unified timeout model & auto-alignment warning                             | Prevent premature abort   | Low     | Surprise for advanced tuners  |
-| P3  | Enhanced shutdown drain with multi-retry / grace window                    | Fewer restart losses      | Med     | Longer rollout time           |
-| P4  | Byte-based queue limits & watermarks                                       | Predictive disk mgmt      | Med     | Complexity                    |
-| P5  | Hash chain integrity plugin                                                | Tamper evidence           | Med     | CPU overhead                  |
-| P6  | Standard backpressure advisory to SDK                                      | Coordinated flow control  | High    | Multi-language changes        |
-| P7  | Durability level taxonomy in docs                                          | Clear trade-offs          | Low     | None                          |
-| P8  | Exporter batcher graduation guidance                                       | Simplify pipeline         | Med     | Adoption path                 |
-| P9  | fsync policy modes (always/interval/none)                                  | Tunable durability        | Low-Med | Perf variance                 |
-| P10 | End-to-end UUID trace per record (optional)                                | Forensic traceability     | Med     | Privacy considerations        |
-| P11 | Survivability window heuristic metric                                      | Operator awareness        | Low     | Estimate accuracy             |
-| P12 | Adaptive hybrid queue (memory→persistent on backpressure)                  | Latency + resilience      | High    | Complexity & correctness      |
-| P13 | Batch processor deprecation & migration playbook                           | Reduced duplication       | Low-Med | Coordination across exporters |
-| P14 | Failover connector telemetry spec (active level, transitions, durations)   | Faster failover MTTR      | Med     | Expanded metric set           |
-| P15 | Connector drop reason extension (`connector_failure`, `routing_unmatched`) | Precise attribution       | Low     | Cardinality increase          |
-| P16 | Byte-based queue guardrails & heuristic warnings                           | Prevent mis-sizing        | Med     | Heuristic false positives     |
-| P17 | Graceful failover drain option                                             | Lower in-flight loss      | High    | Longer failover latency       |
-| P18 | Partition-aware / multi-tenant exporter batching guidance                  | Avoid [HoL][HoL] blocking | Med     | Config complexity             |
-| P19 | Durability mode annotation metric (`pipeline_durability_mode`)             | Auditability              | Low     | More time series              |
-| P20 | Connector backpressure hook (upstream throttle signal)                     | Unified flow control      | High    | Cross-component changes       |
+| ID  | Proposal                                                                   | Benefit                   | Effort  | Trade-Off                     | Affected Component(s)    |
+| --- | -------------------------------------------------------------------------- | ------------------------- | ------- | ----------------------------- | ------------------------ |
+| P1  | Drop reason taxonomy + metrics                                             | Root cause clarity        | Med     | Metric cardinality            | Collector, API/SemConv   |
+| P2  | Unified timeout model & auto-alignment warning                             | Prevent premature abort   | Low     | Surprise for advanced tuners  | Collector, SDK           |
+| P3  | Enhanced shutdown drain with multi-retry / grace window                    | Fewer restart losses      | Med     | Longer rollout time           | Collector                |
+| P4  | Byte-based queue limits & watermarks                                       | Predictive disk mgmt      | Med     | Complexity                    | Collector                |
+| P5  | Hash chain integrity plugin                                                | Tamper evidence           | Med     | CPU overhead                  | Collector (extension)    |
+| P6  | Standard backpressure advisory to SDK                                      | Coordinated flow control  | High    | Multi-language changes        | API, SDK, Collector      |
+| P7  | Durability level taxonomy in docs                                          | Clear trade-offs          | Low     | None                          | Docs                     |
+| P8  | Exporter batcher graduation guidance                                       | Simplify pipeline         | Med     | Adoption path                 | Docs, Collector          |
+| P9  | fsync policy modes (always/interval/none)                                  | Tunable durability        | Low-Med | Perf variance                 | Collector                |
+| P10 | End-to-end UUID trace per record (optional)                                | Forensic traceability     | Med     | Privacy considerations        | API, SDK, Collector      |
+| P11 | Survivability window heuristic metric                                      | Operator awareness        | Low     | Estimate accuracy             | Collector                |
+| P12 | Adaptive hybrid queue (memory→persistent on backpressure)                  | Latency + resilience      | High    | Complexity & correctness      | Collector                |
+| P13 | Batch processor deprecation & migration playbook                           | Reduced duplication       | Low-Med | Coordination across exporters | Docs, Collector          |
+| P14 | Failover connector telemetry spec (active level, transitions, durations)   | Faster failover MTTR      | Med     | Expanded metric set           | Collector (contrib)      |
+| P15 | Connector drop reason extension (`connector_failure`, `routing_unmatched`) | Precise attribution       | Low     | Cardinality increase          | Collector (contrib)      |
+| P16 | Byte-based queue guardrails & heuristic warnings                           | Prevent mis-sizing        | Med     | Heuristic false positives     | Collector                |
+| P17 | Graceful failover drain option                                             | Lower in-flight loss      | High    | Longer failover latency       | Collector (contrib)      |
+| P18 | Partition-aware / multi-tenant exporter batching guidance                  | Avoid [HoL][HoL] blocking | Med     | Config complexity             | Collector, Docs          |
+| P19 | Durability mode annotation metric (`pipeline_durability_mode`)             | Auditability              | Low     | More time series              | Collector                |
+| P20 | Connector backpressure hook (upstream throttle signal)                     | Unified flow control      | High    | Cross-component changes       | API, Collector (contrib) |
 
 ## 7. Prioritized Actions
 
