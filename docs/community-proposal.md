@@ -36,9 +36,8 @@ We explicitly distinguish:
 | B     | Network to Agent/Gateway                  | Connection refused before retry engages (confusing timeouts); TLS handshake failures; transient DNS issues      | Hard to attribute which timeout (batch processor vs exporter vs gRPC)       |
 | C     | Collector In-Memory Sending Queue         | Queue full under sustained backpressure; force-shutdown before drain; single retry during graceful drain (logs) | No standard “dropped due to shutdown” counter                               |
 | D     | Collector Persistent Queue (file_storage) | Disk full, fsync disabled (WAL gap on host crash), node ephemeral storage wiped, PV detach stalls               | No size‑based (bytes) quota preemption/alert in some impls; partial metrics |
-| E     | Inter-Collector Hop via Kafka (optional)  | Producer send exhausts local retries; Kafka retention expiration; misconfigured acks                            | Limited correlation of collector batch → Kafka offset ack chain             |
-| F     | Gateway Exporter to Final Sink            | Same as C/D; sink 429/5xx beyond MaxElapsedTime; mis-tuned timeouts shorter than retry budget                   | Lack of “end-to-end age latency” distribution metric                        |
-| G     | Final Storage / Index                     | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
+| E     | Gateway Exporter to Final Sink            | Same as C/D; sink 429/5xx beyond MaxElapsedTime; mis-tuned timeouts shorter than retry budget                   | Lack of “end-to-end age latency” distribution metric                        |
+| F     | Final Storage / Index                     | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
 
 ```mermaid
 flowchart LR
@@ -106,11 +105,6 @@ flowchart LR
   exporters with `drop_on_error=true` to prevent duplicate retries.
 - Expose per-exporter batching metrics (batches_built_total, batch_build_duration, batch_bytes) to support sizing and early anomaly
   detection.
-
-### Message Queue (Kafka/Pulsar)
-
-- Idempotent producer, `acks=all`, retention ≥ worst-case outage.
-- Map batch IDs to offsets for audit traceability.
 
 ### Operations
 
@@ -217,7 +211,6 @@ flowchart LR
 | ------------------- | -------------------------------------------------------------- | ---------------------------- |
 | SDK                 | Timeout >= retry, export counters                              | Backpressure handling        |
 | Agent               | Persistent queue (interval fsync)                              | Integrity hashing            |
-| Transport           | Kafka acks=all, idempotent                                     | Multi-AZ replication         |
 | Gateway             | Memory queue + exporter batcher                                | Mirror sink for validation   |
 | Monitoring          | Drop reasons dashboard                                         | Automated chaos drills       |
 | Failover (optional) | Failover connector with telemetry (active level & transitions) | Graceful drain before switch |
