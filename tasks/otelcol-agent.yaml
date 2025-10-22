@@ -1,0 +1,71 @@
+version: "3"
+
+description: Taskfile for deploying the OTel Collector agent setup with local filesystem-based persistence.
+
+vars:
+  OTELCOL_AGENT_NS: "otelcol-agent"
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tools.yaml
+    internal: true
+  istio:
+    desc: Install and manage Istio in the local cluster.
+    taskfile: ./istio.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Deploy the OpenTelemetry Collector agent setup.
+    run: once
+    deps:
+      - task: tools:install-helm
+      - task: create-namespace
+    requires:
+      vars: [HELM_CMD, OTELCOL_AGENT_NS]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    status:
+      - "{{ .HELM_CMD }} list --namespace {{ .OTELCOL_AGENT_NS }} -o json | jq -r '.[].status' | grep -q deployed"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/log-sink.yaml -n {{ .OTELCOL_AGENT_NS }}"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/collector-agent-with-persistence.yaml -n {{ .OTELCOL_AGENT_NS }}"
+
+  upgrade:
+    desc: Upgrade the OpenTelemetry Collector agent setup.
+    deps:
+      - task: tools:install-helm
+      - task: create-namespace
+    requires:
+      vars: [HELM_CMD, OTELCOL_AGENT_NS]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/log-sink.yaml -n {{ .OTELCOL_AGENT_NS }}"
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/collector-agent-with-persistence.yaml -n {{ .OTELCOL_AGENT_NS }}"
+      - echo "OpenTelemetry Collector agent setup upgraded successfully!"
+
+  delete:
+    desc: Delete the OpenTelemetry Collector agent setup.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD, OTELCOL_AGENT_NS]
+    status:
+      - "! {{ .KUBECTL_CMD }} get ns {{ .OTELCOL_AGENT_NS }} >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/collector-agent-with-persistence.yaml -n {{ .OTELCOL_AGENT_NS }} --ignore-not-found"
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/log-sink.yaml -n {{ .OTELCOL_AGENT_NS }} --ignore-not-found"
+      - echo "OpenTelemetry Collector agent setup deleted successfully!"
+
+  create-namespace:
+    desc: Create the otelcol-agent namespace if it doesn't exist.
+    requires:
+      vars: [KUBECTL_CMD, OTELCOL_AGENT_NS]
+    status:
+      - "{{ .KUBECTL_CMD }} get ns {{ .OTELCOL_AGENT_NS }} >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} create ns {{ .OTELCOL_AGENT_NS }} --dry-run=client -o yaml | {{ .KUBECTL_CMD }} apply -f -"

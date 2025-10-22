@@ -1,0 +1,181 @@
+version: "3"
+
+description: Taskfile for installing and managing Prometheus and Grafana monitoring stack with authentication.
+
+vars:
+  MONITORING_NS: "monitoring"
+  PROMETHEUS_RELEASE: "prometheus"
+  GRAFANA_RELEASE: "grafana"
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  add-helm-repos:
+    desc: Add Prometheus and Grafana Helm repositories.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD]
+    status:
+      - "{{ .HELM_CMD }} repo list | grep -q prometheus-community"
+      - "{{ .HELM_CMD }} repo list | grep -q grafana"
+    cmds:
+      - "{{ .HELM_CMD }} repo add prometheus-community https://prometheus-community.github.io/helm-charts"
+      - "{{ .HELM_CMD }} repo add grafana https://grafana.github.io/helm-charts"
+      - "{{ .HELM_CMD }} repo update"
+
+  install-prometheus:
+    desc: Install Prometheus using Helm with authentication enabled.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    status:
+      - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .PROMETHEUS_RELEASE }}") | .status'' | grep -q deployed'
+    cmds:
+      - |
+        {{ .HELM_CMD }} install {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
+          --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml \
+
+  install-grafana:
+    desc: Install Grafana using Helm with authentication enabled.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    status:
+      - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .GRAFANA_RELEASE }}") | .status'' | grep -q deployed'
+    cmds:
+      - |
+        {{ .HELM_CMD }} install {{ .GRAFANA_RELEASE }} grafana/grafana \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
+          --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
+
+  install:
+    desc: Install complete monitoring stack (Prometheus and Grafana).
+    deps:
+      - task: install-prometheus
+      - task: install-grafana
+    cmds:
+      - echo "Monitoring stack installed successfully!"
+      - echo "Prometheus - {{ .PROMETHEUS_RELEASE }} in namespace {{ .MONITORING_NS }}"
+      - echo "Grafana - {{ .GRAFANA_RELEASE }} in namespace {{ .MONITORING_NS }}"
+
+  status:
+    desc: Check the status of monitoring components.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD, MONITORING_NS]
+    cmds:
+      - echo "=== Helm Releases in {{ .MONITORING_NS }} namespace ==="
+      - "{{ .HELM_CMD }} list -n {{ .MONITORING_NS }}"
+      - echo ""
+      - echo "=== Pods in {{ .MONITORING_NS }} namespace ==="
+      - "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }}"
+      - echo ""
+      - echo "=== Services in {{ .MONITORING_NS }} namespace ==="
+      - "{{ .KUBECTL_CMD }} get svc -n {{ .MONITORING_NS }}"
+
+  upgrade-prometheus:
+    desc: Upgrade Prometheus installation.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+    cmds:
+      - |
+        {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
+          --namespace {{ .MONITORING_NS }} \
+          --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml
+
+  upgrade-grafana:
+    desc: Upgrade Grafana installation.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+    cmds:
+      - |
+        {{ .HELM_CMD }} upgrade {{ .GRAFANA_RELEASE }} grafana/grafana \
+          --namespace {{ .MONITORING_NS }} \
+          --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
+
+  upgrade:
+    desc: Upgrade complete monitoring stack.
+    deps:
+      - task: upgrade-prometheus
+      - task: upgrade-grafana
+    cmds:
+      - echo "Monitoring stack upgraded successfully!"
+
+  uninstall-prometheus:
+    desc: Uninstall Prometheus.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+    status:
+      - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PROMETHEUS_RELEASE }}"
+    cmds:
+      - "{{ .HELM_CMD }} uninstall {{ .PROMETHEUS_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
+
+  uninstall-grafana:
+    desc: Uninstall Grafana.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+    status:
+      - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .GRAFANA_RELEASE }}"
+    cmds:
+      - "{{ .HELM_CMD }} uninstall {{ .GRAFANA_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
+
+  uninstall:
+    desc: Uninstall complete monitoring stack.
+    deps:
+      - task: uninstall-prometheus
+      - task: uninstall-grafana
+    cmds:
+      - echo "Monitoring stack uninstalled successfully!"
+
+  port-forward-prometheus:
+    desc: Port-forward Prometheus to localhost:9090.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} get svc/{{ .PROMETHEUS_RELEASE }}-server -n {{ .MONITORING_NS }} >/dev/null 2>&1"
+        msg: "Prometheus service not found. Please install first: task monitoring:install"
+      - sh: "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }} --field-selector=status.phase=Running | grep -q {{ .PROMETHEUS_RELEASE }}-server"
+        msg: "Please wait for Prometheus pod to be in Running state."
+    cmds:
+      - echo "Accessing Prometheus at http://localhost:9090"
+      - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .PROMETHEUS_RELEASE }}-server 9090:80"
+
+  port-forward-grafana:
+    desc: Port-forward Grafana to localhost:3000.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD, MONITORING_NS, GRAFANA_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} get svc/{{ .GRAFANA_RELEASE }} -n {{ .MONITORING_NS }} >/dev/null 2>&1"
+        msg: "Grafana service not found. Please install first: task monitoring:install"
+      - sh: "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }} --field-selector=status.phase=Running | grep -q {{ .GRAFANA_RELEASE }}"
+        msg: "Please wait for Grafana pod to be in Running state."
+    cmds:
+      - echo "Accessing Grafana at http://localhost:3000"
+      - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .GRAFANA_RELEASE }} 3000:80"
