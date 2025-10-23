@@ -15,3 +15,7 @@
   horizontal scaling by adding nodes to the storage cluster.
 - When the agent is unavailable (during rolling upgrades), applications will drop data by default. However, the retry mechanism can be
   fine-tuned to mitigate this.
+
+## Deployment Topologies
+
+![Deployment Topologies](assets/otel-deployment-topologies.drawio.svg)
