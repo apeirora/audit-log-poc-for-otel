@@ -1,10 +1,3 @@
----
-title: Toward Practical (Near) Guaranteed Delivery of OpenTelemetry Logs
-description:
-  Community proposal outlining best practices, lessons learned, and improvement areas for achieving near-zero log loss using OpenTelemetry.
-status: Draft
----
-
 <!-- markdownlint-disable-file MD025 -->
 <!-- markdownlint-disable-file MD013 -->
 
@@ -272,12 +265,6 @@ sequenceDiagram
 
 `queue_full`, `disk_full`, `shutdown_drain_timeout`, `retry_exhausted`, `serialization_error`, `network_unreachable`, `backend_rejected`,
 `integrity_failed` (future), `connector_failure`, `routing_unmatched`, `failover_during_switch`, `unknown`.
-
----
-
-**Status:** Draft – Feedback requested.
-
-Please propose edits, additions, or raise issues tagged `durability` / `loss-attribution`.
 
 [MTTR]: https://en.wikipedia.org/wiki/Mean_time_to_repair
 [HoL]: https://en.wikipedia.org/wiki/Head-of-line_blocking
