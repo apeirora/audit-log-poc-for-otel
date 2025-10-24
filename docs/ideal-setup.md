@@ -3,7 +3,7 @@
 This document describes the recommended 3-tier architecture (Client SDK → OpenTelemetry Collector → Final Storage Sink) for highly reliable
 audit log delivery. It focuses on minimizing data loss, ensuring long retention, and keeping operational complexity under control.
 
-## 1. Scope & Goals
+## Scope & Goals
 
 Primary goals:
 
@@ -17,7 +17,7 @@ Non-goals:
 - Ultra low latency for audit logs (latency is secondary to durability).
 - Mixing audit and high-volume debug/info logs in the same pipeline.
 
-## 2. Architecture Overview (3 Tiers)
+## Architecture Overview (3 Tiers)
 
 1. Client SDK Tier: Produces audit log records and sends them directly to a dedicated Audit OpenTelemetry (OTel) Collector endpoint.
 2. Collector Tier: Persists and forwards audit logs using durable queues to the Final Storage Sink. Acts only as a buffering and routing
@@ -26,7 +26,7 @@ Non-goals:
 
 Rationale: Separating tiers isolates failure domains (client, transport, storage) and allows independent scaling and policy enforcement.
 
-## 3. Client SDK Tier Guidelines
+## 1. Client SDK Tier Guidelines
 
 Use a dedicated logger / pipeline for audit logs distinct from your regular application logging/tracing pipeline.
 
@@ -52,7 +52,7 @@ Failure considerations:
 - If the network is down, client-side persistence must retain events until restored.
 - If local disk fills, trigger alerts; do not silently discard audit entries.
 
-## 4. Collector Tier Guidelines
+## 2. Collector Tier Guidelines
 
 Run a dedicated OTel Collector instance (or set of instances) for audit logs – do not share with high-volume telemetry.
 
@@ -106,7 +106,7 @@ Operational Notes:
 - Health check endpoint must be scraped; failing health triggers remediation.
 - Use node-local filesystem (cluster node persistent path) to minimize latency; weigh trade-offs vs. network-attached volumes.
 
-## 5. Final Storage Sink Tier Guidelines
+## 3. Final Storage Sink Tier Guidelines
 
 Examples: SIEM (Security Information and Event Management), Data Lake (e.g. S3/GCS/HDFS), OpenSearch, Elasticsearch.
 
@@ -120,7 +120,7 @@ Requirements:
 
 Do not rely on the Collector for long-term retention; it is transient.
 
-## 6. Reliability & Delivery Semantics
+## Reliability & Delivery Semantics
 
 Desired delivery: At least once.
 
@@ -133,7 +133,7 @@ Loss Prevention Layers:
 2. Collector persistent sending queue – network / downstream outage buffering.
 3. Final sink durability (replication, backups).
 
-## 7. Monitoring & Alerting
+## Monitoring & Alerting
 
 Track and alert on:
 
@@ -148,7 +148,7 @@ Set thresholds for proactive scaling:
 - If queue age > defined SLA (e.g. 5 min), investigate network/backpressure.
 - If retry rate spikes, check sink health.
 
-## 8. Scaling Strategy
+## Scaling Strategy
 
 Horizontal scaling points:
 
@@ -157,7 +157,7 @@ Horizontal scaling points:
 
 Client side remains lightweight due to no batching – CPU overhead minimal.
 
-## 9. Security & Compliance
+## Security & Compliance
 
 - Encrypt in transit (TLS for OTLP gRPC/HTTP). Mutual TLS for sensitive environments.
 - Restrict Collector endpoints with network policy (only allow known client subnets).
@@ -170,7 +170,7 @@ PII Handling:
 - Apply tokenization or pseudonymization where feasible before export.
 - If necessary, encrypt sensitive fields at the application level.
 
-## 10. Failure Modes & Mitigations
+## Failure Modes & Mitigations
 
 | Failure Mode                 | Mitigation                                                           |
 | ---------------------------- | -------------------------------------------------------------------- |
@@ -181,7 +181,7 @@ PII Handling:
 | Disk full (client/collector) | Alerts; autoscale storage; pause intake if critical                  |
 | Data corruption              | Checksums / hashing; sink replication; backup restore                |
 
-## 11. Implementation Checklist
+## Implementation Checklist
 
 Client SDK:
 
@@ -211,7 +211,7 @@ Cross-Cutting:
 - [ ] Monitoring dashboards (queues, latency, errors)
 - [ ] Runbook for each failure mode
 
-## 12. Glossary & References
+## Glossary & References
 
 Acronyms / Terms:
 
