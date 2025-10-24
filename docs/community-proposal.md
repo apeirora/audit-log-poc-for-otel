@@ -6,7 +6,7 @@
 This document summarizes lessons learned from building resilient OpenTelemetry (OTel) log pipelines for audit-grade reliability. It proposes
 best practices and incremental improvements for the open-source community.
 
-## 1. Problem Statement
+## Problem Statement
 
 Organizations with regulatory or forensic needs require extremely low probability of log loss from Application SDK → Collector tiers →
 Intermediate durability → Final sink. Today OTel offers building blocks (retry, batching, queues, WAL, message queues) but lacks an
@@ -33,7 +33,7 @@ reliability, particularly the migration towards exporter-native batching as trac
 (#8122)][batchv2]**. This PoC and its findings are intended to provide tangible data and a reference implementation for Phase 2 of the Audit
 Logging SIG's charter: contributing functional extensions back upstream.
 
-## 2. Canonical Delivery Path & Loss Points
+## Canonical Delivery Path & Loss Points
 
 | Stage | Component                                 | Loss Modes (Today)                                                                                              | Observability Gaps                                                          |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -75,7 +75,7 @@ flowchart LR
   classDef lossPoint fill:#ffe0e0,stroke:#ff5555,stroke-width:1px
 ```
 
-## 3. Failure Class Taxonomy
+## Failure Class Taxonomy
 
 | Class             | Examples                      | Mitigation                               |
 | ----------------- | ----------------------------- | ---------------------------------------- |
@@ -87,7 +87,7 @@ flowchart LR
 | Systemic Outage   | long backend downtime         | Durable MQ + extended retention          |
 | Data Tampering    | on-node modification          | Integrity hashing & encryption (future)  |
 
-## 4. Current Best Practices
+## Current Best Practices
 
 ### Application / SDK
 
@@ -128,7 +128,7 @@ flowchart LR
 - Hash chaining per batch in persistent queue.
 - Pluggable encryption at Client SDK for regulated domains.
 
-## 5. Lessons Learned
+## Lessons Learned
 
 | Area                       | Insight                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -144,7 +144,9 @@ flowchart LR
 | Failover Visibility        | Limited built-in metrics for failover transitions and active priority level.                                                        |
 | Connector Loss Attribution | Drops inside connectors (routing/aggregation) often misattributed to exporters.                                                     |
 
-## 6. Improvement Proposals (Candidate OTEPs)
+## Improvements
+
+### Improvement Proposals (Candidate OTEPs)
 
 | ID  | Proposal                                                                   | Benefit                                                                       | Effort  | Trade-Off                     | Affected Component(s)    |
 | --- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------- | ----------------------------- | ------------------------ |
@@ -169,20 +171,20 @@ flowchart LR
 | P19 | Durability mode annotation metric (`pipeline_durability_mode`)             | Auditability                                                                  | Low     | More time series              | Collector                |
 | P20 | Connector backpressure hook (upstream throttle signal)                     | Unified flow control                                                          | High    | Cross-component changes       | API, Collector (contrib) |
 
-## 7. Prioritized Actions
+### Prioritized Actions
 
 1. Align timeouts (docs), ensure retry - especially when connection loss/establishment is involved. Might require code changes in some
    dependencies (gRPC/http libraries) or in their usage.
 2. Focus on Client SDK persistency (+ retry).
 3. Double check relevant metrics around queuing, batching, timeouts and retries etc.
 
-## 8. Longer-Term Experiments
+### Longer-Term Experiments
 
 - Adaptive hybrid queue state machine (NORMAL → DEGRADED → RECOVERY).
 - Backpressure signaling spec extension (HTTP header / gRPC status mapping).
 - Integrity hashing plugin reference implementation.
 
-## 9. Risk & Trade-Off Matrix
+## Risk & Trade-Off Matrix
 
 | Change                            | Risk                        | Mitigation                          |
 | --------------------------------- | --------------------------- | ----------------------------------- |
@@ -195,7 +197,7 @@ flowchart LR
 | Failover flapping                 | Oscillation, burst pressure | Cooldown + hysteresis metrics (P14) |
 | Connector telemetry expansion     | Metric overhead             | Limit enum set; sampling if needed  |
 
-## 10. Success Metrics
+## Success Metrics
 
 | Metric                                         | Target                 |
 | ---------------------------------------------- | ---------------------- |
@@ -208,7 +210,7 @@ flowchart LR
 | Mean failover detection time                   | < 10s                  |
 | Unexplained connector-origin drops             | < 5% of total drops    |
 
-## 11. Gold Pipeline Checklist
+## Gold Pipeline Checklist
 
 | Layer               | Mandatory                                                      | Optional (High Assurance)    |
 | ------------------- | -------------------------------------------------------------- | ---------------------------- |
@@ -218,7 +220,7 @@ flowchart LR
 | Monitoring          | Drop reasons dashboard                                         | Automated chaos drills       |
 | Failover (optional) | Failover connector with telemetry (active level & transitions) | Graceful drain before switch |
 
-## 12. Open Questions
+## Open Questions
 
 1. Scope definition: Should "Guaranteed" explicitly declare catastrophe boundaries?
 2. Introduce `durability_level` config attribute to drive auto defaults?
@@ -226,14 +228,14 @@ flowchart LR
 4. Metric design: single counter with reason label vs multiple counters?
 5. Adaptive queue: start as experimental extension before spec adoption?
 
-## 13. Call to Action
+## Call to Action
 
 - Comment on proposal prioritization (P1–P12).
 - Volunteer for metric taxonomy (P1) and queue byte limit (P4) implementation.
 - Share real incident postmortems for timeout/loss attribution.
 - Provide fsync performance benchmark data (interval vs none).
 
-## 14. Timeout Chain Interaction Diagram
+## Timeout Chain Interaction Diagram
 
 Effective retry window = MIN(ExporterOperationTimeout, BatchProcessorExportTimeout, ContextCancellation) — if < RetryMaxElapsedTime then
 “latent” configuration hazard → emit warning.
@@ -261,7 +263,7 @@ sequenceDiagram
   App->>App: Drop or Retry higher level (if configured)
 ```
 
-## 15. Draft Drop Reason Enum
+## Draft Drop Reason Enum
 
 `queue_full`, `disk_full`, `shutdown_drain_timeout`, `retry_exhausted`, `serialization_error`, `network_unreachable`, `backend_rejected`,
 `integrity_failed` (future), `connector_failure`, `routing_unmatched`, `failover_during_switch`, `unknown`.
