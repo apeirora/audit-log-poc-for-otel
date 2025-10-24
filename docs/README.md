@@ -8,3 +8,4 @@
 - [Toward Practical (Near) Guaranteed Delivery of OpenTelemetry Logs](./community-proposal.md)
 - [Monitoring Stack Setup Guide](./monitoring.md)
 - [Pros and cons of using OTel Collector agent with local persistence](./collector-agent-with-persistence.md)
+- [Technology Guideline: Reliable Audit Logging with OpenTelemetry](./ideal-setup.md)
