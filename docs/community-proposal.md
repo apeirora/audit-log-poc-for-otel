@@ -178,12 +178,10 @@ flowchart LR
 
 ## 7. Prioritized Actions
 
-1. Docs: timeout alignment diagram + durability levels matrix.
-2. Metrics: implement P1 in collector.
-3. Warning: emit log if retry budget exceeds any shorter timeout.
-4. Prototype byte-based queue limit (P4) behind feature flag.
-5. Exporter batcher guidance blog post (P8).
-6. Loss investigation issue template.
+1. Align timeouts (docs), ensure retry - especially when connection loss/establishment is involved. Might require code changes in some
+   dependencies (gRPC/http libraries) or in their usage.
+2. Focus on Client SDK persistency (+ retry).
+3. Double check relevant metrics around queuing, batching, timeouts and retries etc.
 
 ## 8. Longer-Term Experiments
 
