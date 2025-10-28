@@ -1,4 +1,4 @@
-# Technology Guideline: Reliable Audit Logging with OpenTelemetry
+# Guidance Document: Reliable Audit Logging with OpenTelemetry
 
 This document describes the recommended 3-tier architecture (Client SDK → OpenTelemetry Collector → Final Storage Sink) for highly reliable
 audit log delivery. It focuses on minimizing data loss, ensuring long retention, and keeping operational complexity under control.
