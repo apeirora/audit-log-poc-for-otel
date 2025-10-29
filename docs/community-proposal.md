@@ -228,19 +228,6 @@ experimental rollouts for higher-risk items.
 | Failover flapping                 | Oscillation, burst pressure | Cooldown + hysteresis metrics (P14) |
 | Connector telemetry expansion     | Metric overhead             | Limit enum set; sampling if needed  |
 
-## Gold Pipeline Checklist
-
-The checklist is a deployment‑oriented summary to compare actual pipelines versus a high‑assurance reference. The "Mandatory"
-column lists minimum items; the "Optional" column lists higher‑assurance extras operators may add for audit‑grade needs.
-
-| Layer               | Mandatory                                                      | Optional (High Assurance)    |
-| ------------------- | -------------------------------------------------------------- | ---------------------------- |
-| SDK                 | Timeout >= retry, export counters                              | Backpressure handling        |
-| Agent               | Persistent queue (interval fsync)                              | Integrity hashing            |
-| Gateway             | Memory queue + exporter batcher                                | Mirror sink for validation   |
-| Monitoring          | Drop reasons dashboard                                         | Automated chaos drills       |
-| Failover (optional) | Failover connector with telemetry (active level & transitions) | Graceful drain before switch |
-
 ## Open Questions
 
 1. Scope definition: Should "Guaranteed" explicitly declare catastrophe boundaries?
