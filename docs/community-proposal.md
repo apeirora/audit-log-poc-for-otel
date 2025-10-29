@@ -50,30 +50,30 @@ diagram that follows visualizes the same path and highlights where buffering, ba
 ```mermaid
 flowchart LR
   subgraph APP[Application / SDK]
-    A[Emit log record]
-    A --> B{Local batching / queue}
+    A[Emit<br/>log]
+    A --> B{"Local batching/<br/>queue (FC3)"}
   end
-  B -->|Export| C[Network Transfer]
-  C -->|OTLP| D[Agent Collector]
-  D -->|Send queue| E{Queue Type?}
-  E -->|In-Memory| F1[Volatile Buffer]
-  E -->|Persistent| F2[WAL + Disk]
-  F1 --> G[Exporter]
-  F2 --> G
-  G -->|Optionally| H[Kafka / MQ]
-  H --> I[Gateway Collector]
-  I --> J{"Queue (file_storage)"}
-  J --> K[Exporter]
-  K --> L[Final Sink - OpenSearch / Audit Store]
+  B -->|"Export<br/>OTLP<br/>(FC1)"| C[Receive<br/>log]
+  subgraph Collector[Collector]
+    C --> D["optional<br/>Processing<br/>(FC3)"]
+    D -->|queue| E{type?}
+    E -->|In-Memory| F1["Volatile Buffer<br/>(FC2/FC3)"]
+    E -->|Persistent| F2["WAL + Disk<br/>(FC5)"]
+    F1 --> G["Exporter<br/>(FC3)"]
+    F2 --> G
+  end
+  G -->|"Export<br/>OTLP<br/>(FC1)"| H[Receive<br/>log]
+  subgraph Sink[Final Sink]
+    H --> I["Final Sink<br/>(OpenSearch/<br/>Audit Store)<br/>(FC6/FC7)"]
+  end
 
   %% Loss points annotations
+  D:::lossPoint
   B:::lossPoint
   F1:::lossPoint
   F2:::lossPoint
-  H:::lossPoint
-  J:::lossPoint
-  K:::lossPoint
-  L:::lossPoint
+  G:::lossPoint
+  I:::lossPoint
 
   classDef lossPoint fill:#ffe0e0,stroke:#ff5555,stroke-width:1px
 ```
