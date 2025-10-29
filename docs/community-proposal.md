@@ -228,22 +228,6 @@ experimental rollouts for higher-risk items.
 | Failover flapping                 | Oscillation, burst pressure | Cooldown + hysteresis metrics (P14) |
 | Connector telemetry expansion     | Metric overhead             | Limit enum set; sampling if needed  |
 
-## Success Metrics
-
-These success metrics are proposed targets to measure whether the combined changes improve pipeline reliability and observability.
-Each metric should be mappable back to one or more proposals/actions so progress can be measured and traced.
-
-| Metric                                         | Target                 |
-| ---------------------------------------------- | ---------------------- |
-| Unattributed drops (%)                         | < 5%                   |
-| MTTR for loss investigation                    | < 30m                  |
-| Issues about timeout confusion                 | Downward trend         |
-| fsync interval overhead                        | < 15% throughput hit   |
-| Adoption of drop taxonomy (top distros)        | > 80%                  |
-| Pipelines migrated to exporter-native batching | > 90% (target horizon) |
-| Mean failover detection time                   | < 10s                  |
-| Unexplained connector-origin drops             | < 5% of total drops    |
-
 ## Gold Pipeline Checklist
 
 The checklist is a deployment‑oriented summary to compare actual pipelines versus a high‑assurance reference. The "Mandatory"
