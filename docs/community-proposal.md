@@ -38,14 +38,14 @@ Logging SIG's charter: contributing functional extensions back upstream.
 The table below summarizes the canonical end-to-end delivery path for a log record and the principal places where data can be lost. The
 diagram that follows visualizes the same path and highlights where buffering, batching and persistence typically occur.
 
-| Stage | Component                                 | Loss Modes (Today)                                                                                              | Observability Gaps                                                          |
-| ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| A     | App SDK / exporter                        | Local queue/batch full; exporter timeout shorter than retry window; process crash (no persistence)              | Inconsistent metrics to show pre-export drops                               |
-| B     | Network to Agent/Gateway                  | Connection refused before retry engages (confusing timeouts); TLS handshake failures; transient DNS issues      | Hard to attribute which timeout (batch processor vs exporter vs gRPC)       |
-| C     | Collector In-Memory Sending Queue         | Queue full under sustained backpressure; force-shutdown before drain; single retry during graceful drain (logs) | No standard “dropped due to shutdown” counter                               |
-| D     | Collector Persistent Queue (file_storage) | Disk full, fsync disabled (WAL gap on host crash), node ephemeral storage wiped, PV detach stalls               | No size‑based (bytes) quota preemption/alert in some impls; partial metrics |
-| E     | Gateway Exporter to Final Sink            | Same as C/D; sink 429/5xx beyond MaxElapsedTime; mis-tuned timeouts shorter than retry budget                   | Lack of “end-to-end age latency” distribution metric                        |
-| F     | Final Sink                                | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
+| Stage | Failures | Component                                 | Loss Modes (Today)                                                                                              | Observability Gaps                                                          |
+| ----- | -------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| A     | FC3      | App SDK / exporter                        | Local queue/batch full; exporter timeout shorter than retry window; process crash (no persistence)              | Inconsistent metrics to show pre-export drops                               |
+| B     | FC1      | Network to Agent/Gateway                  | Connection refused before retry engages (confusing timeouts); TLS handshake failures; transient DNS issues      | Hard to attribute which timeout (batch processor vs exporter vs gRPC)       |
+| C     | FC2,FC3  | Collector In-Memory Sending Queue         | Queue full under sustained backpressure; force-shutdown before drain; single retry during graceful drain (logs) | No standard “dropped due to shutdown” counter                               |
+| D     | FC5      | Collector Persistent Queue (file_storage) | Disk full, fsync disabled (WAL gap on host crash), node ephemeral storage wiped, PV detach stalls               | No size‑based (bytes) quota preemption/alert in some impls; partial metrics |
+| E     | FC1,FC6  | Gateway Exporter to Final Sink            | Same as C/D; sink 429/5xx beyond MaxElapsedTime; mis-tuned timeouts shorter than retry budget                   | Lack of “end-to-end age latency” distribution metric                        |
+| F     | FC6,FC7  | Final Sink                                | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
 
 ```mermaid
 flowchart LR
@@ -83,15 +83,15 @@ flowchart LR
 This taxonomy groups the common failure classes observed in the PoC and in community incident analysis. It is intended as a lightweight,
 implementation-neutral vocabulary that helps map observed drops to actionable mitigations.
 
-| Class             | Examples                      | Mitigation                               |
-| ----------------- | ----------------------------- | ---------------------------------------- |
-| Transient Network | brief 5xx, connection refused | Exponential retry + persistent buffering |
-| Surge/Burst       | sudden volume spike           | Elastic queue sizing + backpressure      |
-| Process Crash     | pod OOMKill/upgrade           | WAL + restart replay                     |
-| Node Restart      | drain/hibernation             | External MQ or HA replication            |
-| Storage Pressure  | disk full                     | Predictive monitoring + watermarks       |
-| Systemic Outage   | long backend downtime         | Durable MQ + extended retention          |
-| Data Tampering    | on-node modification          | Integrity hashing & encryption (future)  |
+| Id  | Class             | Examples                      | Mitigation                               |
+| --- | ----------------- | ----------------------------- | ---------------------------------------- |
+| FC1 | Transient Network | brief 5xx, connection refused | Exponential retry + persistent buffering |
+| FC2 | Surge/Burst       | sudden volume spike           | Elastic queue sizing + backpressure      |
+| FC3 | Process Crash     | pod OOMKill/upgrade           | WAL + restart replay                     |
+| FC4 | Node Restart      | drain/hibernation             | External MQ or HA replication            |
+| FC5 | Storage Pressure  | disk full                     | Predictive monitoring + watermarks       |
+| FC6 | Systemic Outage   | long backend downtime         | Durable MQ + extended retention          |
+| FC7 | Data Tampering    | on-node modification          | Integrity hashing & encryption (future)  |
 
 ## Current Best Practices
 
