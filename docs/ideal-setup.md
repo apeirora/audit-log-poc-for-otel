@@ -32,12 +32,12 @@ Use a dedicated logger / pipeline for audit logs distinct from your regular appl
 
 Recommended components:
 
-- LoggerProvider with a Simple (non-batching) LogRecordProcessor.
-- A custom AuditLogRecordProcessor ensuring durability (e.g. persistent local queue, no dropping when queue is full).
-- OTLP (OpenTelemetry Protocol) LogRecordExporter configured with retry and a dedicated endpoint (`setEndpoint()`) pointing to the audit
+- [LoggerProvider](add-link-here-please) with a Simple (non-batching) [LogRecordProcessor](add-link-here-please).
+- A custom [AuditLogRecordProcessor](add-link-here-please) ensuring durability (e.g. persistent local queue, no dropping when queue is full).
+- OTLP (OpenTelemetry Protocol) [LogRecordExporter](add-link-here-please) configured with retry and a dedicated endpoint ([`setEndpoint()`](add-link-here-please)) pointing to the audit
   collector.
 
-Why no batching at client side for audit logs:
+Why no batching at client side for audit logs?:
 
 - Batching trades reliability for throughput and can increase loss risk during crashes.
 
@@ -58,14 +58,15 @@ Run a dedicated OTel Collector instance (or set of instances) for audit logs –
 
 Principles:
 
-- Use persistent sending queue (export helper v2) – never the deprecated batch processor for critical audit paths.
-- Only add batching if load metrics prove necessity (opt-in, not default).
+- Use persistent sending queue ([export helper v2](add-link-here-please)) – never the [deprecated batch processor](add-link-here-please) for critical audit paths.
+- Only add batching if load metrics prove necessary (opt-in, not default).
 - Treat the collector storage as transient, not authoritative.
 
 Configuration Example (`config.yaml`):
 
 ```yaml
 extensions:
+  # See: add-link-here-please pointing to the file_storage extension (and docs)
   file_storage:
     directory: /var/lib/otelcol/storage
     create_directory: true
@@ -73,6 +74,7 @@ extensions:
     endpoint: ${env:MY_POD_IP}:13133
 
 receivers:
+  # See: add-link-here-please pointing to OTLP receiver (and docs)
   otlp:
     protocols:
       grpc:
@@ -83,6 +85,7 @@ receivers:
 processors: {}
 
 exporters:
+  # See: add-link-here-please pointing to OTLP exporter (and docs)
   otlp:
     endpoint: log-sink:4317
     sending_queue:
@@ -118,42 +121,47 @@ Requirements:
 - Access controls & audit trails on read operations.
 - Encryption at rest.
 
-Do not rely on the Collector for long-term retention; it is transient.
+Do not rely on the Collector for long-term retention; it is transient (unless configured as recommended above)!
 
 ## Reliability & Delivery Semantics
 
 Desired delivery: At least once.
 
-- Duplicate detection (idempotency) can be handled downstream using event IDs (include a stable unique identifier in each audit log). If not
-  available, accept duplicates over loss.
+- In case of unavailability of sinks, prefer duplicates over loss.
+- Duplicate detection (idempotency) can be handled downstream using event IDs.
+- Include a stable unique identifier in each audit log to allow for downstream de-duplication.
 
 Loss Prevention Layers:
 
-1. Client local persistence (disk queue) – crash resilience.
-2. Collector persistent sending queue – network / downstream outage buffering.
-3. Final sink durability (replication, backups).
+1. Client: local persistence (disk queue) – crash resiliency.
+2. Collector: persistent sending queue – network / downstream outage buffering.
+3. Final Sink: durability (redundant storage (e.g. RAID), backups).
 
 ## Monitoring & Alerting
+
+Monitoring of the involved components of the data delivery stack is critical, as it will unveil upcoming threats of data loss early and can be used to trigger remediation actions before data loss occurs.
+In a distributed system, where delivery can never be 100% guaranteed, monitoring is crucial to get at least close to 100%.
 
 Track and alert on:
 
 - Client queue size & age (oldest event timestamp).
-- Collector sending_queue depth and retry counts.
+- Collector sending_queue depth and retry counts, failed requests counts.
 - Export latency (p50, p95) vs. SLOs.
 - Final sink ingestion lag (difference between event time and indexed time).
-- Storage capacity projections (time to full).
+- Storage capacity thresholds and projections (time to full).
 
 Set thresholds for proactive scaling:
 
 - If queue age > defined SLA (e.g. 5 min), investigate network/backpressure.
 - If retry rate spikes, check sink health.
+- If storage capacity exceeds threshold, take care of storage extension and/or investigate network/backpressure.
 
 ## Scaling Strategy
 
 Horizontal scaling points:
 
 - Add more Collector instances behind DNS / load balancer for increased ingestion throughput.
-- Partition audit logs by tenant or domain if cardinality grows.
+- Partition audit logs by tenant or domain if cardinality grows and spread out to tenant or domain-specific Collectors.
 
 Client side remains lightweight due to no batching – CPU overhead minimal.
 
@@ -174,7 +182,7 @@ PII Handling:
 
 | Failure Mode                 | Mitigation                                                           |
 | ---------------------------- | -------------------------------------------------------------------- |
-| Client crash                 | Local disk queue + restart replays                                   |
+| Client crash                 | Retrieve unsent Audit Logs from local disk queue + resend to sink    |
 | Network outage               | Client queue grows; alert on age; Collector persistent queue buffers |
 | Collector restart            | file_storage + sending_queue preserves state                         |
 | Final sink outage            | Collector retry + queue; monitor depth                               |
@@ -185,17 +193,17 @@ PII Handling:
 
 Client SDK:
 
-- [ ] Dedicated Audit LoggerProvider
-- [ ] Simple (non-batching) AuditLogRecordProcessor
+- [ ] Dedicated Audit [LoggerProvider](add-link-here-please)
+- [ ] Simple (non-batching) [AuditLogRecordProcessor](add-link-here-please)
 - [ ] Persistent local queue enabled
-- [ ] OTLP exporter with retry + endpoint isolation
+- [ ] OTLP exporter with [retry + endpoint isolation](add-link-here-please)
 
 Collector:
 
 - [ ] Dedicated deployment (not shared with high-volume telemetry)
-- [ ] `sending_queue` enabled with `file_storage`
-- [ ] Health check monitored
-- [ ] Queue depth metric alerts configured
+- [ ] [`sending_queue`](add-link-here-please) enabled with `file_storage`
+- [ ] [Health check](add-link-here-please) monitored
+- [ ] [Queue depth metric](add-link-here-please) alerts configured
 
 Final Sink:
 
@@ -207,8 +215,8 @@ Final Sink:
 Cross-Cutting:
 
 - [ ] TLS enabled end-to-end
-- [ ] Unique event IDs added
-- [ ] Monitoring dashboards (queues, latency, errors)
+- [ ] Unique event IDs used inside audit log events
+- [ ] Monitoring dashboards created (queues, latency, errors)
 - [ ] Runbook for each failure mode
 
 ## Glossary & References
