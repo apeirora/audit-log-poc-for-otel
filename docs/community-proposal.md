@@ -218,16 +218,16 @@ appropriate for production adoption.
 This matrix maps proposed changes to primary risks and mitigations. Use it to inform prioritization decisions and to guide experimental
 rollouts for higher-risk items.
 
-| Change                            | Risk                        | Mitigation                          |
-| --------------------------------- | --------------------------- | ----------------------------------- |
-| fsync always                      | Throughput drop             | Provide interval mode + benchmarks  |
-| Persistent queues ubiquitous      | Disk exhaustion             | Watermarks + alerts                 |
-| Detailed drop metrics             | Cardinality                 | Fixed enum, cap reasons             |
-| Hybrid queue                      | State bugs                  | Formal spec + property tests        |
-| Backpressure propagation          | SDK complexity              | Feature flag progressive rollout    |
-| Dual batching (legacy + exporter) | Added latency & confusion   | Migration playbook (P13)            |
-| Failover flapping                 | Oscillation, burst pressure | Cooldown + hysteresis metrics (P14) |
-| Connector telemetry expansion     | Metric overhead             | Limit enum set; sampling if needed  |
+| Change                            | Risk                        | Mitigation                               |
+| --------------------------------- | --------------------------- | ---------------------------------------- |
+| fsync always                      | Throughput drop             | Provide interval mode + benchmarks (P9)  |
+| Persistent queues ubiquitous      | Disk exhaustion             | Watermarks + alerts (P4)                 |
+| Detailed drop metrics             | Cardinality                 | Fixed enum, cap reasons (P1)             |
+| Hybrid queue                      | State bugs                  | Formal spec + property tests (P12)       |
+| Backpressure propagation          | SDK complexity              | Feature flag progressive rollout (P20)   |
+| Dual batching (legacy + exporter) | Added latency & confusion   | Migration playbook (P13)                 |
+| Failover flapping                 | Oscillation, burst pressure | Cooldown + hysteresis metrics (P14)      |
+| Connector telemetry expansion     | Metric overhead             | Limit enum set; sampling if needed (P15) |
 
 ## Open Questions
 
