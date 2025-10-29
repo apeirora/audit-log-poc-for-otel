@@ -58,13 +58,13 @@ flowchart LR
     C --> D["optional<br/>Processing<br/>(FC3)"]
     D -->|queue| E{type?}
     E -->|In-Memory| F1["Volatile Buffer<br/>(FC2/FC3)"]
-    E -->|Persistent| F2["WAL + Disk<br/>(FC5)"]
+    E -->|Persistent| F2["WAL + Disk<br/>(FC4/FC5)"]
     F1 --> G["Exporter<br/>(FC3)"]
     F2 --> G
   end
   G -->|"Export<br/>OTLP<br/>(FC1)"| H[Receive<br/>log]
   subgraph Sink[Final Sink]
-    H --> I["Final Sink<br/>(OpenSearch/<br/>Audit Store)<br/>(FC6/FC7)"]
+    H --> I["Final Sink<br/>(OpenSearch/<br/>Audit Store)<br/>(FC5/FC6/FC7)"]
   end
 
   %% Loss points annotations
