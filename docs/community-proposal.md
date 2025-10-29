@@ -35,6 +35,9 @@ Logging SIG's charter: contributing functional extensions back upstream.
 
 ## Canonical Delivery Path & Loss Points
 
+The table below summarizes the canonical end-to-end delivery path for a log record and the principal places where data can be
+lost. The diagram that follows visualizes the same path and highlights where buffering, batching and persistence typically occur.
+
 | Stage | Component                                 | Loss Modes (Today)                                                                                              | Observability Gaps                                                          |
 | ----- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | A     | App SDK / exporter                        | Local queue/batch full; exporter timeout shorter than retry window; process crash (no persistence)              | Inconsistent metrics to show pre-export drops                               |
@@ -42,7 +45,7 @@ Logging SIG's charter: contributing functional extensions back upstream.
 | C     | Collector In-Memory Sending Queue         | Queue full under sustained backpressure; force-shutdown before drain; single retry during graceful drain (logs) | No standard “dropped due to shutdown” counter                               |
 | D     | Collector Persistent Queue (file_storage) | Disk full, fsync disabled (WAL gap on host crash), node ephemeral storage wiped, PV detach stalls               | No size‑based (bytes) quota preemption/alert in some impls; partial metrics |
 | E     | Gateway Exporter to Final Sink            | Same as C/D; sink 429/5xx beyond MaxElapsedTime; mis-tuned timeouts shorter than retry budget                   | Lack of “end-to-end age latency” distribution metric                        |
-| F     | Final Storage / Index                     | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
+| F     | Final Sink                                | Index rejection (mapping error), security filter, shard overload                                                | These failures may appear as generic 5xx without semantic classification    |
 
 ```mermaid
 flowchart LR
@@ -59,7 +62,7 @@ flowchart LR
   F2 --> G
   G -->|Optionally| H[Kafka / MQ]
   H --> I[Gateway Collector]
-  I --> J{"Queue memory/persistent"}
+  I --> J{"Queue (file_storage)"}
   J --> K[Exporter]
   K --> L[Final Sink - OpenSearch / Audit Store]
 
@@ -77,6 +80,9 @@ flowchart LR
 
 ## Failure Class Taxonomy
 
+This taxonomy groups the common failure classes observed in the PoC and in community incident analysis. It is intended as a
+lightweight, implementation-neutral vocabulary that helps map observed drops to actionable mitigations.
+
 | Class             | Examples                      | Mitigation                               |
 | ----------------- | ----------------------------- | ---------------------------------------- |
 | Transient Network | brief 5xx, connection refused | Exponential retry + persistent buffering |
@@ -88,6 +94,11 @@ flowchart LR
 | Data Tampering    | on-node modification          | Integrity hashing & encryption (future)  |
 
 ## Current Best Practices
+
+This section lists immediate, deployable practices we recommend today. Where a recommendation depends on upcoming Collector features
+(for example, exporter-native batching) the dependency is called out so teams can plan pilots or progressive rollouts.
+
+We've compiled these practices into a separate **[Guidance Document](./ideal-setup.md)** for operational reference.
 
 ### Application / SDK
 
@@ -130,6 +141,9 @@ flowchart LR
 
 ## Lessons Learned
 
+The following lessons were distilled from the PoC, test runs, and incident reviews; they explain why certain recommendations exist
+and motivate the improvement proposals in the next section.
+
 | Area                       | Insight                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | Timeout Fragmentation      | Layered timeouts cause premature abort (see OTLP Go issue [#6588](https://github.com/open-telemetry/opentelemetry-go/issues/6588)). |
@@ -145,6 +159,10 @@ flowchart LR
 | Connector Loss Attribution | Drops inside connectors (routing/aggregation) often misattributed to exporters.                                                     |
 
 ## Improvements
+
+The proposals below collect candidate OTEPs and implementation items. They are a menu of potential community deliverables — some are
+low-effort docs/metric changes, others require Collector or SDK code. The table is not strictly ordered; see "Prioritized Actions" for
+the recommended short-term focus.
 
 ### Improvement Proposals (Candidate OTEPs)
 
@@ -173,6 +191,9 @@ flowchart LR
 
 ### Prioritized Actions
 
+This short list is a near-term priority selected from the larger proposals above. It is intended to deliver quick wins that
+significantly reduce unexplained drops and improve operator visibility.
+
 1. Align timeouts (docs), ensure retry - especially when connection loss/establishment is involved. Might require code changes in some
    dependencies (gRPC/http libraries) or in their usage.
 2. Focus on Client SDK persistency (+ retry).
@@ -180,11 +201,21 @@ flowchart LR
 
 ### Longer-Term Experiments
 
-- Adaptive hybrid queue state machine (NORMAL → DEGRADED → RECOVERY).
-- Backpressure signaling spec extension (HTTP header / gRPC status mapping).
-- Integrity hashing plugin reference implementation.
+The items below are research or experimental efforts that require more design, testing, or cross-project coordination before they are
+appropriate for production adoption.
+
+- Adaptive hybrid queue state machine (NORMAL → DEGRADED → RECOVERY). — A state machine that automatically moves from memory
+  buffering to persistent buffering under high load and recovers when pressure subsides. Benefits: predictable degradation; risks: added
+  state complexity and correctness challenges. E.g. the first time something requires a retry, queuing moves from in-memory to persistent. When the queue is drained (or after a certain amount of time), it moves back to in memory.
+- Backpressure signaling spec extension (HTTP header / gRPC status mapping). — Define how upstreams/SDKs signal throttling requests to
+  avoid blind retries. Benefits: coordinated flow control; Problem: cross-language adoption cost.
+- Integrity hashing plugin reference implementation. — Provide a reference for hash chaining / tamper evidence on persisted batches.
+  Benefits: tamper detection; risks: CPU/IO overhead and key management considerations. Maybe together with encryption at rest?
 
 ## Risk & Trade-Off Matrix
+
+This matrix maps proposed changes to primary risks and mitigations. Use it to inform prioritization decisions and to guide
+experimental rollouts for higher-risk items.
 
 | Change                            | Risk                        | Mitigation                          |
 | --------------------------------- | --------------------------- | ----------------------------------- |
@@ -199,6 +230,9 @@ flowchart LR
 
 ## Success Metrics
 
+These success metrics are proposed targets to measure whether the combined changes improve pipeline reliability and observability.
+Each metric should be mappable back to one or more proposals/actions so progress can be measured and traced.
+
 | Metric                                         | Target                 |
 | ---------------------------------------------- | ---------------------- |
 | Unattributed drops (%)                         | < 5%                   |
@@ -211,6 +245,9 @@ flowchart LR
 | Unexplained connector-origin drops             | < 5% of total drops    |
 
 ## Gold Pipeline Checklist
+
+The checklist is a deployment‑oriented summary to compare actual pipelines versus a high‑assurance reference. The "Mandatory"
+column lists minimum items; the "Optional" column lists higher‑assurance extras operators may add for audit‑grade needs.
 
 | Layer               | Mandatory                                                      | Optional (High Assurance)    |
 | ------------------- | -------------------------------------------------------------- | ---------------------------- |
@@ -229,6 +266,9 @@ flowchart LR
 5. Adaptive queue: start as experimental extension before spec adoption?
 
 ## Call to Action
+
+This section lists concrete ways the community can help. When opening issues or PRs, reference the proposal IDs above (for example
+"P1: drop reason taxonomy") so reviewers can quickly map work to the document's intent.
 
 - Comment on proposal prioritization (P1–P12).
 - Volunteer for metric taxonomy (P1) and queue byte limit (P4) implementation.
