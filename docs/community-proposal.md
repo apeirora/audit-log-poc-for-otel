@@ -144,19 +144,19 @@ We've compiled these practices into a separate **[Guidance Document](./ideal-set
 The following lessons were distilled from the PoC, test runs, and incident reviews; they explain why certain recommendations exist and
 motivate the improvement proposals in the next section.
 
-| Area                       | Insight                                                                                                                             |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Timeout Fragmentation      | Layered timeouts cause premature abort (see OTLP Go issue [#6588](https://github.com/open-telemetry/opentelemetry-go/issues/6588)). |
-| Hidden Batching            | Filelog implicit batching can remove need for batch processor.                                                                      |
-| Shutdown Loss              | In-memory queue drains only single retry; risk of silent drop.                                                                      |
-| Disk Limits                | Lack of byte-based cap complicates sizing; risk of node pressure.                                                                   |
-| Retry Semantics            | Ambiguity around connection-establishment vs post-connection transient errors.                                                      |
-| Loss Attribution           | Need structured drop reason taxonomy for root cause.                                                                                |
-| PV Operational Friction    | Volume reattachment delays decrease HA viability.                                                                                   |
-| Backpressure Signaling     | No standardized upstream throttle advisory.                                                                                         |
-| Batching Layer Duplication | Running legacy batch processor plus exporter batcher increases latency and obscures failure attribution.                            |
-| Failover Visibility        | Limited built-in metrics for failover transitions and active priority level.                                                        |
-| Connector Loss Attribution | Drops inside connectors (routing/aggregation) often misattributed to exporters.                                                     |
+| Area                       | Insight                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Timeout Fragmentation      | Layered timeouts cause premature abort (see OTLP Go issue [#6588][6588]).                                |
+| Hidden Batching            | Filelog implicit batching can remove need for batch processor.                                           |
+| Shutdown Loss              | In-memory queue drains only single retry; risk of silent drop.                                           |
+| Disk Limits                | Lack of byte-based cap complicates sizing; risk of node pressure.                                        |
+| Retry Semantics            | Ambiguity around connection-establishment vs post-connection transient errors.                           |
+| Loss Attribution           | Need structured drop reason taxonomy for root cause.                                                     |
+| PV Operational Friction    | Volume reattachment delays decrease HA viability.                                                        |
+| Backpressure Signaling     | No standardized upstream throttle advisory.                                                              |
+| Batching Layer Duplication | Running legacy batch processor plus exporter batcher increases latency and obscures failure attribution. |
+| Failover Visibility        | Limited built-in metrics for failover transitions and active priority level.                             |
+| Connector Loss Attribution | Drops inside connectors (routing/aggregation) often misattributed to exporters.                          |
 
 ## Improvements
 
@@ -195,8 +195,11 @@ This short list is a near-term priority selected from the larger proposals above
 reduce unexplained drops and improve operator visibility.
 
 1. Align timeouts (docs), ensure retry - especially when connection loss/establishment is involved. Might require code changes in some
-   dependencies (gRPC/http libraries) or in their usage.
-2. Focus on Client SDK persistency (+ retry).
+   dependencies (gRPC/http libraries) or in their usage. See OTLP Go issue [#6588][6588] for an example.
+2. Focus on Client SDK persistency (+ retry). E.g. introduce persistent queue option in popular SDKs
+   ([Java](https://github.com/apeirora/opentelemetry-java/pull/2), [Go](https://github.com/apeirora/opentelemetry-go/pull/2)). Ensure that
+   SDK exporter timeouts are aligned with retry budgets. Save logs as long as possible locally before giving up. Especially when Collector
+   is unreachable.
 3. Double check relevant metrics around queuing, batching, timeouts and retries etc.
 
 ### Longer-Term Experiments
@@ -280,6 +283,7 @@ sequenceDiagram
 `queue_full`, `disk_full`, `shutdown_drain_timeout`, `retry_exhausted`, `serialization_error`, `network_unreachable`, `backend_rejected`,
 `integrity_failed` (future), `connector_failure`, `routing_unmatched`, `failover_during_switch`, `unknown`.
 
-[MTTR]: https://en.wikipedia.org/wiki/Mean_time_to_repair
-[HoL]: https://en.wikipedia.org/wiki/Head-of-line_blocking
+[6588]: https://github.com/open-telemetry/opentelemetry-go/issues/6588
 [batchv2]: https://github.com/open-telemetry/opentelemetry-collector/issues/8122
+[HoL]: https://en.wikipedia.org/wiki/Head-of-line_blocking
+[MTTR]: https://en.wikipedia.org/wiki/Mean_time_to_repair
