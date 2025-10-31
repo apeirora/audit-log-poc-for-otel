@@ -124,7 +124,7 @@ Requirements:
 - Access controls & audit trails on read operations.
 - Encryption at rest.
 
-Do not rely on the Collector for long-term retention; it is transient (unless configured as recommended above)!
+Do not rely on the Collector for long-term retention; it is transient.
 
 ## Reliability & Delivery Semantics
 
@@ -184,14 +184,14 @@ PII Handling:
 
 ## Failure Modes & Mitigations
 
-| Failure Mode                 | Mitigation                                                           |
-| ---------------------------- | -------------------------------------------------------------------- |
-| Client crash                 | Retrieve unsent Audit Logs from local disk queue + resend to sink    |
-| Network outage               | Client queue grows; alert on age; Collector persistent queue buffers |
-| Collector restart            | file_storage + sending_queue preserves state                         |
-| Final sink outage            | Collector retry + queue; monitor depth                               |
-| Disk full (client/collector) | Alerts; autoscale storage; pause intake if critical                  |
-| Data corruption              | Checksums / hashing; sink replication; backup restore                |
+| Failure Mode                 | Mitigation                                                                |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Client crash                 | Retrieve unsent Audit Logs from local disk queue + resend to collector    |
+| Network outage               | Client queue grows; alert on age; Collector persistent queue buffers      |
+| Collector restart            | file_storage + sending_queue preserves state                              |
+| Final sink outage            | Collector retry + queue; monitor depth                                    |
+| Disk full (client/collector) | Alerts; autoscale storage; pause intake if critical                       |
+| Data corruption              | Checksums / hashing; sink replication; backup restore                     |
 
 ## Implementation Checklist
 
