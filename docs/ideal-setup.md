@@ -32,12 +32,13 @@ Use a dedicated logger / pipeline for audit logs distinct from your regular appl
 
 Recommended components:
 
-- LoggerProvider with a Simple (non-batching) LogRecordProcessor.
-- A custom AuditLogRecordProcessor ensuring durability (e.g. persistent local queue, no dropping when queue is full).
-- OTLP (OpenTelemetry Protocol) LogRecordExporter configured with retry and a dedicated endpoint (`setEndpoint()`) pointing to the audit
-  collector.
+- [LoggerProvider][LoggerProvider] with a Simple (non-batching) [LogRecordProcessor][LogRecordProcessor].
+- A custom [AuditLogRecordProcessor][AuditLogRecordProcessor] ensuring durability (e.g. persistent local queue, no dropping when queue is
+  full).
+- OTLP (OpenTelemetry Protocol) [LogRecordExporter][LogRecordExporter] configured with retry and a dedicated endpoint
+  ([`setEndpoint()`](https://opentelemetry.io/docs/languages/java/sdk/#opentelemetrysdk)) pointing to the audit collector.
 
-Why no batching at client side for audit logs:
+Why no batching at client side for audit logs?:
 
 - Batching trades reliability for throughput and can increase loss risk during crashes.
 
@@ -58,14 +59,15 @@ Run a dedicated OTel Collector instance (or set of instances) for audit logs –
 
 Principles:
 
-- Use persistent sending queue (export helper v2) – never the deprecated batch processor for critical audit paths.
-- Only add batching if load metrics prove necessity (opt-in, not default).
+- Use persistent sending queue ([export helper v2][batchv2]) – never the [deprecated batch processor][batchv1] for critical audit paths.
+- Only add batching if load metrics prove necessary (opt-in, not default).
 - Treat the collector storage as transient, not authoritative.
 
-Configuration Example (`config.yaml`):
+[Configuration](https://opentelemetry.io/docs/collector/configuration/) Example (`config.yaml`):
 
 ```yaml
 extensions:
+  # See: https://opentelemetry.io/docs/collector/configuration/#extensions
   file_storage:
     directory: /var/lib/otelcol/storage
     create_directory: true
@@ -73,6 +75,7 @@ extensions:
     endpoint: ${env:MY_POD_IP}:13133
 
 receivers:
+  # See: https://opentelemetry.io/docs/collector/configuration/#receivers
   otlp:
     protocols:
       grpc:
@@ -80,11 +83,13 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-processors: {}
+processors: {} # See: https://opentelemetry.io/docs/collector/configuration/#processors
 
 exporters:
+  # See: https://opentelemetry.io/docs/collector/configuration/#exporters
   otlp:
     endpoint: log-sink:4317
+    # See: https://github.com/open-telemetry/opentelemetry-collector/issues/8122
     sending_queue:
       enabled: true
       storage: file_storage
@@ -92,6 +97,7 @@ exporters:
       enabled: true
 
 service:
+  # See: https://opentelemetry.io/docs/collector/configuration/#service
   extensions: [file_storage, health_check]
   pipelines:
     logs:
@@ -124,36 +130,42 @@ Do not rely on the Collector for long-term retention; it is transient.
 
 Desired delivery: At least once.
 
-- Duplicate detection (idempotency) can be handled downstream using event IDs (include a stable unique identifier in each audit log). If not
-  available, accept duplicates over loss.
+- In case of unavailability of sinks, prefer duplicates over loss.
+- Duplicate detection (idempotency) can be handled downstream using event IDs.
+- Include a stable unique identifier in each audit log to allow for downstream de-duplication.
 
 Loss Prevention Layers:
 
-1. Client local persistence (disk queue) – crash resilience.
-2. Collector persistent sending queue – network / downstream outage buffering.
-3. Final sink durability (replication, backups).
+1. Client: local persistence (disk queue) – crash resiliency.
+2. Collector: persistent sending queue – network / downstream outage buffering.
+3. Final Sink: durability (redundant storage (e.g. RAID), backups).
 
 ## Monitoring & Alerting
+
+Monitoring of the involved components of the data delivery stack is critical, as it will unveil upcoming threats of data loss early and can
+be used to trigger remediation actions before data loss occurs. In a distributed system, where delivery can never be 100% guaranteed,
+monitoring is crucial to get at least close to 100%.
 
 Track and alert on:
 
 - Client queue size & age (oldest event timestamp).
-- Collector sending_queue depth and retry counts.
+- Collector sending_queue depth and retry counts, failed requests counts.
 - Export latency (p50, p95) vs. SLOs.
 - Final sink ingestion lag (difference between event time and indexed time).
-- Storage capacity projections (time to full).
+- Storage capacity thresholds and projections (time to full).
 
 Set thresholds for proactive scaling:
 
 - If queue age > defined SLA (e.g. 5 min), investigate network/backpressure.
 - If retry rate spikes, check sink health.
+- If storage capacity exceeds threshold, take care of storage extension and/or investigate network/backpressure.
 
 ## Scaling Strategy
 
 Horizontal scaling points:
 
 - Add more Collector instances behind DNS / load balancer for increased ingestion throughput.
-- Partition audit logs by tenant or domain if cardinality grows.
+- Partition audit logs by tenant or domain if cardinality grows and spread out to tenant or domain-specific Collectors.
 
 Client side remains lightweight due to no batching – CPU overhead minimal.
 
@@ -172,30 +184,33 @@ PII Handling:
 
 ## Failure Modes & Mitigations
 
-| Failure Mode                 | Mitigation                                                           |
-| ---------------------------- | -------------------------------------------------------------------- |
-| Client crash                 | Local disk queue + restart replays                                   |
-| Network outage               | Client queue grows; alert on age; Collector persistent queue buffers |
-| Collector restart            | file_storage + sending_queue preserves state                         |
-| Final sink outage            | Collector retry + queue; monitor depth                               |
-| Disk full (client/collector) | Alerts; autoscale storage; pause intake if critical                  |
-| Data corruption              | Checksums / hashing; sink replication; backup restore                |
+| Failure Mode                 | Mitigation                                                             |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| Client crash                 | Retrieve unsent Audit Logs from local disk queue + resend to collector |
+| Network outage               | Client queue grows; alert on age; Collector persistent queue buffers   |
+| Collector restart            | file_storage + sending_queue preserves state                           |
+| Final sink outage            | Collector retry + queue; monitor depth                                 |
+| Disk full (client/collector) | Alerts; autoscale storage; pause intake if critical                    |
+| Data corruption              | Checksums / hashing; sink replication; backup restore                  |
 
 ## Implementation Checklist
 
 Client SDK:
 
-- [ ] Dedicated Audit LoggerProvider
-- [ ] Simple (non-batching) AuditLogRecordProcessor
-- [ ] Persistent local queue enabled
-- [ ] OTLP exporter with retry + endpoint isolation
+- [ ] Dedicated Audit [LoggerProvider][LoggerProvider]
+- [ ] [Simple](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#simple-processor)
+      (non-batching) or [AuditLogRecordProcessor][AuditLogRecordProcessor]
+- [ ] [Persistent][AuditLogRecordProcessor] local queue enabled
+- [ ] OTLP exporter with [retry + endpoint isolation][AuditLogRecordProcessor]
 
 Collector:
 
 - [ ] Dedicated deployment (not shared with high-volume telemetry)
-- [ ] `sending_queue` enabled with `file_storage`
-- [ ] Health check monitored
-- [ ] Queue depth metric alerts configured
+- [ ] [`sending_queue`](https://pkg.go.dev/go.opentelemetry.io/collector/exporter/exporterhelper#readme-persistent-queue) enabled with
+      `file_storage`
+- [ ] [Health check](https://pkg.go.dev/github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension#readme-health-check)
+      monitored
+- [ ] [Queue depth metric](https://opentelemetry.io/docs/collector/internal-telemetry/#basic-level-metrics) alerts configured
 
 Final Sink:
 
@@ -207,8 +222,8 @@ Final Sink:
 Cross-Cutting:
 
 - [ ] TLS enabled end-to-end
-- [ ] Unique event IDs added
-- [ ] Monitoring dashboards (queues, latency, errors)
+- [ ] Unique event IDs used inside audit log events
+- [ ] Monitoring dashboards created (queues, latency, errors)
 - [ ] Runbook for each failure mode
 
 ## Glossary & References
@@ -231,6 +246,10 @@ Referenced Issues / PRs:
 - Proposed AuditLogRecordProcessor (Java PR): [AuditLogRecordProcessor]
 - Collector scaling guidance: [Scaling the Collector][scaling]
 
-[scaling]: https://opentelemetry.io/docs/collector/scaling/
 [AuditLogRecordProcessor]: https://github.com/apeirora/opentelemetry-java/pull/2
+[batchv1]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#batching-processor
 [batchv2]: https://github.com/open-telemetry/opentelemetry-collector/issues/8122
+[LoggerProvider]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#loggerprovider
+[LogRecordExporter]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#logrecordexporter
+[LogRecordProcessor]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/logs/sdk.md#logrecordprocessor
+[scaling]: https://opentelemetry.io/docs/collector/scaling/
