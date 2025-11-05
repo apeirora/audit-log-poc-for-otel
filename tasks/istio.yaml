@@ -18,9 +18,9 @@ tasks:
     requires:
       vars: [ISTIOCTL_CMD]
     status:
-      - "{{ .ITIOCTL_CMD }} proxy-status | grep -q SYNCED"
+      - "{{ .ISTIOCTL_CMD }} proxy-status | grep -q SYNCED"
     cmds:
-      - "{{ .ISTIOCTL_CMD }} install  --set values.sidecarInjectorWebhook.enableNamespacesByDefault=true"
+      - "{{ .ISTIOCTL_CMD }} install -y --set values.sidecarInjectorWebhook.enableNamespacesByDefault=true"
 
   uninstall:
     desc: Uninstall istio control plane from the current cluster.
@@ -32,4 +32,4 @@ tasks:
     status:
       - "! {{ .ISTIOCTL_CMD }} proxy-status | grep -q SYNCED"
     cmds:
-      - "{{ .ISTIOCTL_CMD }} uninstall --purge"
+      - "{{ .ISTIOCTL_CMD }} uninstall -y --purge"
