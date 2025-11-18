@@ -1,0 +1,39 @@
+extensions:
+  redis_storage:
+    endpoint: redis:6379
+    db: 0
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: detailed
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
+      storage: redis_storage
+      batch:
+        flush_timeout: 1m
+        min_size: 100
+        max_size: 1000
+
+service:
+  extensions: [redis_storage]
+  
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+    
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]
+    
+    logs:
+      receivers: [otlp]
+      exporters: [debug]
