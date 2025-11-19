@@ -2,49 +2,58 @@
 
 set -e
 
-echo "Step 1: Cloning opentelemetry-collector..."
-if [ -d "opentelemetry-collector" ]; then
-    echo "Directory opentelemetry-collector already exists, skipping clone..."
-else
-    git clone https://github.com/apeirora/opentelemetry-collector
-fi
-
-echo "Step 2: Checking out to main branch..."
-cd opentelemetry-collector
-git checkout main
-cd ..
-
-echo "Step 3: Cloning opentelemetry-collector-contrib..."
+echo "Step 1: Cloning opentelemetry-collector-contrib..."
 if [ -d "opentelemetry-collector-contrib" ]; then
     echo "Directory opentelemetry-collector-contrib already exists, skipping clone..."
 else
     git clone https://github.com/apeirora/opentelemetry-collector-contrib
 fi
 
-echo "Step 4: Checking out contrib to main branch..."
+echo "Step 2: Checking out contrib to fixRedisStart branch..."
 cd opentelemetry-collector-contrib
-git checkout main
+git checkout fixRedisStart
 cd ..
 
-echo "Step 5: Cloning opentelemetry-go..."
+echo "Step 3: Cloning opentelemetry-go..."
 if [ -d "opentelemetry-go" ]; then
     echo "Directory opentelemetry-go already exists, skipping clone..."
 else
     git clone https://github.com/apeirora/opentelemetry-go
 fi
 
-echo "Step 6: Checking out to AuditLog branch..."
+echo "Step 4: Checking out to AuditLog branch..."
 cd opentelemetry-go
 git checkout AuditLog
 cd ..
 
-echo "Step 7: Building otelcontribcol for Linux (Docker)..."
+echo "Step 5: Building otelcontribcol for Linux (Docker)..."
 cd opentelemetry-collector-contrib
 
-if [ -f "bin/otelcontribcol_linux_amd64" ]; then
-    echo "Linux binary already exists, skipping build..."
-    echo "Found: bin/otelcontribcol_linux_amd64"
+NEEDS_REBUILD=0
+if [ ! -f "bin/otelcontribcol_linux_amd64" ]; then
+    NEEDS_REBUILD=1
 else
+    if [ -f "extension/storage/redisstorageextension/extension.go" ]; then
+        if [ "extension/storage/redisstorageextension/extension.go" -nt "bin/otelcontribcol_linux_amd64" ] 2>/dev/null; then
+            echo "Extension source code modified (newer than binary), rebuilding..."
+            NEEDS_REBUILD=1
+        else
+            EXT_MOD_TIME=$(stat -c %Y "extension/storage/redisstorageextension/extension.go" 2>/dev/null || stat -f %m "extension/storage/redisstorageextension/extension.go" 2>/dev/null || echo "0")
+            BIN_MOD_TIME=$(stat -c %Y "bin/otelcontribcol_linux_amd64" 2>/dev/null || stat -f %m "bin/otelcontribcol_linux_amd64" 2>/dev/null || echo "0")
+            if [ "$EXT_MOD_TIME" -gt "$BIN_MOD_TIME" ] 2>/dev/null && [ "$EXT_MOD_TIME" != "0" ] && [ "$BIN_MOD_TIME" != "0" ]; then
+                echo "Extension source code is newer than binary (by timestamp), rebuilding..."
+                NEEDS_REBUILD=1
+            fi
+        fi
+    fi
+fi
+
+if [ $NEEDS_REBUILD -eq 0 ] && git status --porcelain extension/storage/redisstorageextension/extension.go 2>/dev/null | grep -q "^.M"; then
+    echo "Extension source code has uncommitted changes, rebuilding to be safe..."
+    NEEDS_REBUILD=1
+fi
+
+if [ $NEEDS_REBUILD -eq 1 ]; then
     echo "Building Linux binary for Docker..."
     GOOS=linux GOARCH=amd64 make otelcontribcol
     if [ $? -eq 0 ]; then
@@ -53,12 +62,15 @@ else
         echo "Build failed!"
         exit 1
     fi
+else
+    echo "Linux binary already exists and is up to date, skipping build..."
+    echo "Found: bin/otelcontribcol_linux_amd64"
 fi
 cd ..
 
-echo "Step 8: Build finished successfully, proceeding..."
+echo "Step 6: Build finished successfully, proceeding..."
 
-echo "Step 9: Creating Docker network and starting Redis container..."
+echo "Step 7: Creating Docker network and starting Redis container..."
 if ! docker network ls --format '{{.Name}}' | grep -q "^otel-network$"; then
     echo "Creating Docker network 'otel-network'..."
     docker network create otel-network || {
@@ -218,11 +230,21 @@ else
     fi
 fi
 
-echo "Step 10: Creating auditlog-config.yaml..."
-cat > auditlog-config.yaml << 'EOF'
+echo "Step 8: Creating auditlog-config.yaml..."
+echo "Getting Redis container IP address for config..."
+REDIS_IP_FOR_CONFIG=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' redis 2>/dev/null || echo "")
+if [ -z "$REDIS_IP_FOR_CONFIG" ]; then
+    echo "Warning: Could not get Redis IP, using hostname 'redis'"
+    REDIS_ENDPOINT="redis:6379"
+else
+    echo "Using Redis IP address: $REDIS_IP_FOR_CONFIG"
+    REDIS_ENDPOINT="${REDIS_IP_FOR_CONFIG}:6379"
+fi
+
+cat > auditlog-config.yaml << EOF
 extensions:
   redis_storage:
-    endpoint: redis:6379
+    endpoint: ${REDIS_ENDPOINT}
     db: 0
 
 receivers:
@@ -240,9 +262,9 @@ exporters:
       queue_size: 1000
       storage: redis_storage
       batch:
-        flush_timeout: 1m
-        min_size: 100
-        max_size: 1000
+        flush_timeout: 5s
+        min_size: 1
+        max_size: 100
 
 service:
   extensions: [redis_storage]
@@ -261,7 +283,7 @@ service:
       exporters: [debug]
 EOF
 
-echo "Step 11: Running collector in Docker container..."
+echo "Step 9: Running collector in Docker container..."
 cd opentelemetry-collector-contrib
 
 if [ -f "bin/otelcontribcol_linux_amd64" ]; then
@@ -316,13 +338,34 @@ if [ -f "bin/otelcontribcol_linux_amd64" ]; then
     fi
     
     echo "Ensuring Redis is fully ready before starting collector..."
-    sleep 3
+    echo "Testing Redis connectivity from Docker network (same as collector will use)..."
     
-    if docker exec redis redis-cli ping 2>&1 | grep -q "PONG"; then
-        echo "Redis is confirmed ready - starting collector in Docker..."
-    else
-        echo "Error: Redis is not responding! Cannot start collector."
+    MAX_RETRIES=15
+    RETRY_COUNT=0
+    REDIS_NETWORK_READY=0
+    
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        if docker exec redis redis-cli ping 2>&1 | grep -q "PONG"; then
+            REDIS_TEST=$(docker run --rm --network otel-network debian:bookworm-slim sh -c "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq redis-tools >/dev/null 2>&1 && timeout 10 redis-cli -h redis -p 6379 ping 2>&1 && timeout 10 redis-cli -h redis -p 6379 SET test_key test_value 2>&1 && timeout 10 redis-cli -h redis -p 6379 GET test_key 2>&1 && timeout 10 redis-cli -h redis -p 6379 DEL test_key 2>&1" 2>/dev/null)
+            if echo "$REDIS_TEST" | grep -q "PONG" && echo "$REDIS_TEST" | grep -q "test_value"; then
+                echo "Redis is accessible and fully functional from Docker network!"
+                REDIS_NETWORK_READY=1
+                break
+            fi
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        echo "Waiting for Redis network connectivity... ($RETRY_COUNT/$MAX_RETRIES)"
+        sleep 2
+    done
+    
+    if [ $REDIS_NETWORK_READY -eq 0 ]; then
+        echo "Error: Could not verify Redis connectivity from Docker network!"
+        echo "This will cause the collector to fail. Please check Redis container status."
+        docker ps --filter "name=redis" --format "table {{.Names}}\t{{.Status}}"
         exit 1
+    else
+        echo "Redis connectivity verified! Waiting 5 seconds for Redis to fully stabilize..."
+        sleep 5
     fi
     
     echo "Creating collector Docker container..."
@@ -357,21 +400,72 @@ if [ -f "bin/otelcontribcol_linux_amd64" ]; then
     echo "Binary path (Windows): $BINARY_PATH_WIN"
     echo "Config path (Windows): $CONFIG_PATH_WIN"
     
+    echo "Using Redis endpoint from config: $REDIS_ENDPOINT"
+    REDIS_HOST_FOR_WAIT=$(echo "$REDIS_ENDPOINT" | cut -d: -f1)
+    REDIS_PORT_FOR_WAIT=$(echo "$REDIS_ENDPOINT" | cut -d: -f2)
+    
     MSYS_NO_PATHCONV=1 docker run -d --name otel-collector \
         --network otel-network \
-        --entrypoint /otelcontribcol \
         -v "${BINARY_PATH_WIN}:/otelcontribcol:ro" \
         -v "${CONFIG_PATH_WIN}:/auditlog-config.yaml:ro" \
         -p 4318:4318 \
         debian:bookworm-slim \
-        --config /auditlog-config.yaml
+        sh -c "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq netcat-openbsd >/dev/null 2>&1 && sleep 5 && for i in \$(seq 1 40); do if nc -z '$REDIS_HOST_FOR_WAIT' '$REDIS_PORT_FOR_WAIT' 2>/dev/null; then echo 'Redis is ready at $REDIS_ENDPOINT!'; break; fi; echo \"Waiting for Redis at $REDIS_ENDPOINT... (\$i/40)\"; sleep 1; done && /otelcontribcol --config /auditlog-config.yaml"
     
     if [ $? -eq 0 ]; then
         echo "Collector container started successfully!"
+        echo "Waiting for container to fully initialize and join network..."
         sleep 5
         
         if docker ps --format '{{.Names}}' | grep -q "^otel-collector$"; then
             echo "Collector container is running"
+            echo "Testing Redis connectivity from within collector container..."
+            
+            echo "Waiting for container network to be ready..."
+            sleep 3
+            
+            echo "Testing DNS resolution..."
+            if docker exec otel-collector sh -c "getent hosts redis 2>&1" 2>/dev/null | grep -q "redis"; then
+                echo "✓ DNS resolution works (redis hostname resolves)"
+            else
+                echo "✗ DNS resolution failed (redis hostname does not resolve)"
+            fi
+            
+            echo "Testing port connectivity..."
+            if docker exec otel-collector sh -c "timeout 5 sh -c 'while ! nc -z redis 6379 2>/dev/null; do sleep 0.1; done'" 2>/dev/null; then
+                echo "✓ Port 6379 is reachable"
+            else
+                echo "✗ Port 6379 is NOT reachable"
+            fi
+            
+            echo "Testing Redis connection using endpoint from config: $REDIS_ENDPOINT"
+            REDIS_TEST_HOST=$(echo "$REDIS_ENDPOINT" | cut -d: -f1)
+            REDIS_TEST_PORT=$(echo "$REDIS_ENDPOINT" | cut -d: -f2)
+            REDIS_TEST_OUTPUT=$(docker exec otel-collector sh -c "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq redis-tools >/dev/null 2>&1 && timeout 15 redis-cli -h '$REDIS_TEST_HOST' -p '$REDIS_TEST_PORT' ping 2>&1" 2>&1)
+            if echo "$REDIS_TEST_OUTPUT" | grep -q "PONG"; then
+                echo "✓ Collector container can reach Redis at $REDIS_ENDPOINT!"
+            else
+                echo "✗ WARNING: Collector container cannot reach Redis at $REDIS_ENDPOINT!"
+                echo "Redis test output: $REDIS_TEST_OUTPUT"
+                echo "Checking if containers are on the same network..."
+                COLLECTOR_NETWORK=$(docker inspect otel-collector --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}}{{end}}' 2>/dev/null)
+                REDIS_NETWORK=$(docker inspect redis --format '{{range $net, $conf := .NetworkSettings.Networks}}{{$net}}{{end}}' 2>/dev/null)
+                echo "Collector network: $COLLECTOR_NETWORK"
+                echo "Redis network: $REDIS_NETWORK"
+                if [ "$COLLECTOR_NETWORK" != "$REDIS_NETWORK" ]; then
+                    echo "ERROR: Containers are on different networks!"
+                else
+                    echo "Containers are on the same network, but connection still fails"
+                    echo "This might be a timing issue - waiting longer and retrying..."
+                    sleep 5
+                    if docker exec otel-collector sh -c "timeout 15 redis-cli -h '$REDIS_TEST_HOST' -p '$REDIS_TEST_PORT' ping 2>&1" 2>/dev/null | grep -q "PONG"; then
+                        echo "✓ Redis connection works after additional wait!"
+                    else
+                        echo "✗ Redis connection still fails after wait"
+                    fi
+                fi
+            fi
+            
             echo "Waiting for collector to initialize..."
             sleep 5
             
@@ -379,8 +473,12 @@ if [ -f "bin/otelcontribcol_linux_amd64" ]; then
             if docker logs otel-collector 2>&1 | grep -qi "Everything is ready\|Starting HTTP server"; then
                 echo "Collector started successfully in Docker!"
             elif docker logs otel-collector 2>&1 | grep -qi "error.*redis\|failed.*redis"; then
-                echo "Warning: Collector may have Redis connection issues. Checking logs..."
-                docker logs otel-collector 2>&1 | tail -20
+                echo "ERROR: Collector has Redis connection issues!"
+                echo "Last 30 lines of collector logs:"
+                docker logs otel-collector 2>&1 | tail -30
+                echo ""
+                echo "Testing Redis from collector container again..."
+                docker exec otel-collector sh -c "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq redis-tools >/dev/null 2>&1 && timeout 10 redis-cli -h redis -p 6379 ping 2>&1" 2>&1 || echo "Redis test failed"
             else
                 echo "Collector is starting up..."
                 docker logs otel-collector 2>&1 | tail -10
@@ -411,7 +509,33 @@ else
     exit 1
 fi
 
-echo "Step 12: Changing to opentelemetry-go directory..."
+echo "Step 10: Changing to opentelemetry-go directory..."
 cd ../opentelemetry-go
 
+echo "Step 11: Running stress test with -quick flag..."
+cd examples/audit-log-stress-test
+
+if [ -f "main.go" ]; then
+    echo "Starting quick stress test (10k logs)..."
+    echo "This will send logs to the collector and verify they are processed."
+    echo ""
+    go run . -quick
+    STRESS_TEST_EXIT_CODE=$?
+    if [ $STRESS_TEST_EXIT_CODE -eq 0 ]; then
+        echo ""
+        echo "✅ Stress test completed successfully!"
+    else
+        echo ""
+        echo "⚠️  Stress test completed with exit code: $STRESS_TEST_EXIT_CODE"
+        echo "Check the collector logs to see if logs were received:"
+        echo "  docker logs otel-collector --tail 50"
+    fi
+else
+    echo "Warning: stress test main.go not found in examples/audit-log-stress-test"
+    echo "Skipping stress test..."
+fi
+
+cd ../../..
+
+echo ""
 echo "Setup complete!"
