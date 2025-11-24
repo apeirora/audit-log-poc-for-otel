@@ -53,6 +53,34 @@ Failure considerations:
 - If the network is down, client-side persistence must retain events until restored.
 - If local disk fills, trigger alerts; do not silently discard audit entries.
 
+### Collector Agent with Local Persistence
+
+When using a node-local OpenTelemetry Collector agent (e.g. run as sidecar) to buffer audit logs, the agent receives log traffic from
+applications on the same node and persists it to the node filesystem before forwarding to the central collector or sink. This topology moves
+the responsibility for short-term durability from each application to a local agent and is operationally convenient in many environments.
+
+Key benefits:
+
+- [Reduced network dependency](https://kubernetes.io/docs/reference/networking/virtual-ips/#internal-traffic-policy): App-to-agent traffic
+  stays on the same node, lowering cross-node network failure exposure.
+- Simpler application footprint: Applications avoid implementing per-app persistent queues and complex stateful deployments.
+
+Risks and operational tradeoffs:
+
+- Node failure exposure: If a node is lost, any locally buffered data becomes unavailable unless additional replication or backup is in
+  place.
+- Vertical scaling limits: Large buffering needs require nodes with large disks; storage does not scale transparently across nodes.
+- Upgrade/maintenance impact: During agent downtime (e.g. rolling upgrades), applications may experience drops unless retry/backoff is
+  carefully tuned.
+
+Operational recommendations:
+
+- Monitor local queue depth and age; alert when oldest events exceed your SLA.
+- Use node‑local persistent volumes with appropriate capacity planning.
+- Ensure safe decommissioning: drain or wait for agent buffers to drain before removing nodes. (e.g. Gardener node hibernation)
+- Consider the agent topology for environments that can tolerate limited node‑level blast radius; prefer distributed storage if node loss is
+  unacceptable.
+
 ## 2. Collector Tier Guidelines
 
 Run a dedicated OTel Collector instance (or set of instances) for audit logs – do not share with high-volume telemetry.
@@ -114,7 +142,8 @@ Operational Notes:
 
 ## 3. Final Storage Sink Tier Guidelines
 
-Examples: SIEM (Security Information and Event Management), Data Lake (e.g. S3/GCS/HDFS), OpenSearch, Elasticsearch.
+Examples: SIEM (Security Information and Event Management), Data Lake (e.g. S3/GCS/HDFS), OpenSearch, Elasticsearch. Normally running as
+StatefulSets or managed services.
 
 Requirements:
 
