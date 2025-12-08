@@ -1,0 +1,40 @@
+version: "3"
+
+description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
+
+# set your OPENSEARCH_INITIAL_ADMIN_PASSWORD in .env file
+dotenv: [ '.env', '{{.HOME}}/.env' ]
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tasks/tools.yaml
+
+  otelcol-agent:
+    desc: Deploy and manage the OTel Collector agent setup with local filesystem-based persistence.
+    taskfile: ./tasks/otelcol-agent.yaml
+
+  monitoring:
+    desc: Install and manage Prometheus and Grafana monitoring stack with authentication.
+    taskfile: ./tasks/monitoring.yaml
+
+  garden:
+    desc: Gardener tasks.
+    taskfile: ./tasks/garden.yaml
+
+  helm:
+    desc: Helm tasks.
+    taskfile: ./tasks/helm.yaml
+
+tasks:
+  default:
+    desc: Create and start local kubernetes cluster and install otel-demo.
+    ignore_error: true
+    cmds:
+      - task: garden:set-kubeconfig
+      - task -a
+
+  show-env:
+    desc: Show loaded environment variables from .env files.
+    cmds:
+      - cat {{ .ROOT_DIR }}/.env && echo ""

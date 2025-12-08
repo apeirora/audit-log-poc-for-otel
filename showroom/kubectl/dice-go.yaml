@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dice-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dice-go
+  template:
+    metadata:
+      labels:
+        app: dice-go
+    spec:
+      containers:
+        - name: dice-go
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-go:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REST_PORT
+              value: "8081"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_GRPC
+              value: "http://otel-collector:4317"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_HTTP
+              value: "http://otel-collector:4318"
+          ports:
+            - containerPort: 8081
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dice-go
+spec:
+  selector:
+    app: dice-go
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      nodePort: 30381
+  type: NodePort

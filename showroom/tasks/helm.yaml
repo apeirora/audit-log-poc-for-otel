@@ -1,0 +1,21 @@
+version: "3"
+
+description: Taskfile with some Helm-related tasks.
+
+includes:
+  tools:
+    desc: Install required tools (helm, ...).
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  info:
+    desc: Walk through all available Helm repos and list available charts.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [ HELM_CMD ]
+    cmds:
+      - "{{ .HELM_CMD }} version"
+      - "{{ .HELM_CMD }} repo list"
+      - "{{ .HELM_CMD }} repo list -o json | jq -r '.[].name' | xargs -I {} sh -c '{{ .HELM_CMD }} search repo {}'"

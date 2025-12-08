@@ -1,0 +1,8 @@
+# Namespace of log-sink (opensearch), prometheus and grafana
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-3
+  labels:
+    name: otelcol-agent
+---

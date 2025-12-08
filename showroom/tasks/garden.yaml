@@ -1,0 +1,23 @@
+version: '3'
+
+vars:
+  GARDEN: "landscape-apeirora-one"
+  PROJECT: "msp06"
+  SHOOT: "otel-audit-log"
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  set-kubeconfig:
+    desc: Set the kubeconfig for {{ .GARDEN }}/{{ .PROJECT }}/{{ .SHOOT }} using gardenctl.
+    requires:
+      vars: [ GARDENCTL_CMD, GARDEN, PROJECT, SHOOT ]
+    deps:
+      - task: tools:install-gardenctl
+    cmds:
+      - eval $({{ .GARDENCTL_CMD }} kubectl-env bash)
+      - "{{ .GARDENCTL_CMD }} kubeconfig --garden {{ .GARDEN }} --project {{ .PROJECT }} --shoot {{ .SHOOT }} --raw > $KUBECONFIG"

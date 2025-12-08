@@ -1,0 +1,275 @@
+# Namespace for the OTel Collector Agent
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-2
+  labels:
+    name: tier-2
+---
+# ServiceAccount for the OTel Collector Agent
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otelcol-agent
+  namespace: tier-2
+---
+# ClusterRole for the OTel Collector Agent to access node and pod information
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otelcol-agent
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "events" ]
+    verbs: [ "get", "list", "watch" ]
+---
+# ClusterRoleBinding for the OTel Collector Agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otelcol-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otelcol-agent
+subjects:
+  - kind: ServiceAccount
+    name: otelcol-agent
+    namespace: tier-2
+---
+# ConfigMap containing the OTel Collector Agent configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otelcol-agent-config
+  namespace: tier-2
+data:
+  config.yaml: |
+    extensions:
+      file_storage:
+        directory: /var/lib/otelcol/storage
+        create_directory: true
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      # Export logs directly to OpenSearch in namespace 'tier-3'.
+      # If your OpenSearch installation requires authentication, provide username/password
+      # via Kubernetes Secret and reference them using env vars in the DaemonSet below.
+      elasticsearch:
+        endpoints: ["http://opensearch-cluster-master.tier-3.svc.cluster.local:9200"]
+        index: "otel-logs-%{+YYYY.MM.dd}"
+        # username: "admin"
+        # password: "changeme"
+        sending_queue:
+          enabled: true
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+
+      debug:
+
+    service:
+      extensions: [file_storage, health_check]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [elasticsearch, debug]
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: '0.0.0.0'
+                    port: 8888
+---
+# DaemonSet for deploying OTel Collector Agent on each node
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otelcol-agent
+  namespace: tier-2
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: otelcol-agent
+      component: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otelcol-agent
+        component: otel-collector
+    spec:
+      serviceAccountName: otelcol-agent
+      initContainers:
+        - command:
+            - chown
+            - -R
+            - "10001:0"
+            - /var/lib/otelcol/storage
+          image: alpine:latest
+          name: storage-dir-ownership-modifier
+          resources:
+            limits:
+              memory: 50Mi
+            requests:
+              cpu: 10m
+              memory: 10Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              add:
+                - CHOWN
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            runAsUser: 0
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /var/lib/otelcol/storage
+              name: storage
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.133.0
+          args:
+            - "--config=/etc/otelcol-contrib/config.yaml"
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+            - name: health-check
+              containerPort: 13133
+              protocol: TCP
+          env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            # If OpenSearch requires basic auth, you can pass credentials via env vars
+            # - name: OPENSEARCH_USERNAME
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: opensearch-credentials
+            #       key: username
+            # - name: OPENSEARCH_PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: opensearch-credentials
+            #       key: password
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 200m
+            requests:
+              memory: 128Mi
+              cpu: 100m
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol-contrib
+              readOnly: true
+            - name: storage
+              mountPath: /var/lib/otelcol/storage
+          livenessProbe:
+            httpGet:
+              path: /
+              port: health-check
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: health-check
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsGroup: 0
+            runAsNonRoot: true
+            runAsUser: 10001
+      volumes:
+        - name: config
+          configMap:
+            name: otelcol-agent-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+        - name: storage
+          hostPath:
+            path: /var/lib/otelcol/storage
+            type: DirectoryOrCreate
+---
+# Service for the OTel Collector Agent
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol-agent
+  namespace: tier-2
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+spec:
+  type: ClusterIP
+  internalTrafficPolicy: Local
+  clusterIP: None
+  selector:
+    app: otelcol-agent
+    component: otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+---
+# Service for OTel Collector Agent Metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol-agent-metrics
+  namespace: tier-2
+  labels:
+    app: otelcol-agent
+    component: otel-collector
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8888"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: otelcol-agent
+    component: otel-collector
+  ports:
+    - name: metrics
+      port: 8888
+      targetPort: 8888
+      protocol: TCP

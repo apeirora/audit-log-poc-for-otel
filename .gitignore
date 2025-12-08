@@ -11,7 +11,7 @@
 .idea/
 
 # where tasks store binary tools (e.g. kind, kubectl, etc.)
-/.tools/
+**/.tools/
 
 # where you can store your temporary local files
 /work_dir/

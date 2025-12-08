@@ -1,0 +1,121 @@
+version: "3"
+
+description: Taskfile for installing required tools (k3d, kubectl, kind).
+
+vars:
+  TOOL_DIR: "{{ .ROOT_DIR }}/.tools"
+  KUBECTL_CMD:
+    sh: |
+      if command -v kubectl >/dev/null 2>&1; then
+        command -v kubectl
+      else
+        echo {{ .TOOL_DIR }}/kubectl
+      fi
+  HELM_CMD:
+    sh: |
+      if command -v helm >/dev/null 2>&1; then
+        command -v helm
+      else
+        echo {{ .TOOL_DIR }}/helm
+      fi
+  K9S_CMD:
+    sh: |
+      if command -v k9s >/dev/null 2>&1; then
+        command -v k9s
+      else
+        echo {{ .TOOL_DIR }}/k9s
+      fi
+  GARDENCTL_CMD:
+    sh: |
+      if command -v gardenctl >/dev/null 2>&1; then
+        command -v gardenctl
+      else
+        echo {{ .TOOL_DIR }}/gardenctl
+      fi
+
+tasks:
+  info:
+    desc: Show the environment variables and tool paths.
+    cmds:
+      - "echo environment OS: {{ OS }}, ARCH: {{ ARCH }}, ROOT_DIR: {{ .ROOT_DIR }}, TOOL_DIR: {{ .TOOL_DIR }}"
+      - "echo tools in use: {{ .HELM_CMD }}, {{ .KUBECTL_CMD }}, {{ .GARDENCTL_CMD }}, {{ .K9S_CMD }}"
+
+  create-tool-dir:
+    desc: Create the tool directory ({{ .TOOL_DIR }}) if it doesn't exist.
+    internal: true
+    run: once
+    platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
+    status:
+      - test -d "{{ .TOOL_DIR }}"
+    cmds:
+      - mkdir -p "{{ .TOOL_DIR }}"
+
+  install-kubectl:
+    vars:
+      KUBECTL_VERSION: "1.33.0"
+    desc: "Install kubectl {{ .KUBECTL_VERSION }} to ({{ .TOOL_DIR }}/kubectl) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
+    platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
+    status:
+      - kubectl || {{ .TOOL_DIR }}/kubectl
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "https://dl.k8s.io/release/v{{ .KUBECTL_VERSION }}/bin/{{ OS }}/{{ ARCH }}/kubectl"
+      - chmod +x "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/kubectl_v{{ .KUBECTL_VERSION }}" "{{ .TOOL_DIR }}/kubectl"
+
+  install-helm:
+    vars:
+      HELM_VERSION: "3.17.3"
+    desc: "Install helm v{{ .HELM_VERSION }} to ({{ .TOOL_DIR }}/helm) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
+    platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
+    status:
+      - "helm || {{ .TOOL_DIR }}/helm"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" "https://get.helm.sh/helm-v{{ .HELM_VERSION }}-{{ OS }}-{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" --strip-components=1 "{{ OS }}-{{ ARCH }}/helm"
+      - mv "{{ .TOOL_DIR }}/helm" "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}" "{{ .TOOL_DIR }}/helm"
+      - rm -f "{{ .TOOL_DIR }}/helm_v{{ .HELM_VERSION }}.tar.gz"
+
+  install-k9s:
+    vars:
+      K9S_VERSION: "0.50.6"
+    desc: "Install k9s v{{ .K9S_VERSION }} to ({{ .TOOL_DIR }}/k9s) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
+    platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
+    status:
+      - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" "https://github.com/derailed/k9s/releases/download/v{{ .K9S_VERSION }}/k9s_{{ OS }}_{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "k9s"
+      - mv "{{ .TOOL_DIR }}/k9s" "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}" "{{ .TOOL_DIR }}/k9s"
+      - rm -f "{{ .TOOL_DIR }}/k9s_v{{ .K9S_VERSION }}.tar.gz"
+
+  install-gardenctl:
+    vars:
+      GARDENCTL_VERSION: "2.12.0"
+    desc: "Install gardenctl v{{ .GARDENCTL_VERSION }} to ({{ .TOOL_DIR }}/gardenctl) if not already present"
+    run: once
+    deps: [ create-tool-dir ]
+    platforms: [ linux, darwin ]
+    requires:
+      vars: [ TOOL_DIR ]
+    status:
+      - "gardenctl --help || {{ .TOOL_DIR }}/gardenctl --help"
+    cmds:
+      - curl -sSLo "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}" "https://github.com/gardener/gardenctl-v2/releases/download/v{{ .GARDENCTL_VERSION }}/gardenctl_v2_{{ OS }}_{{ ARCH }}"
+      - chmod +x "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}" "{{ .TOOL_DIR }}/gardenctl"

@@ -1,0 +1,99 @@
+# Namespace for the OTel Collector Agent
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-1
+  labels:
+    name: client-apps
+---
+
+
+---
+# ConfigMap containing the OTel Collector side-car configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otelcol-agent-config
+  namespace: tier-1
+data:
+  config.yaml: |
+    extensions:
+      file_storage:
+        directory: /var/lib/otelcol/storage
+        create_directory: true
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      otlp:
+        endpoint: log-sink:4317
+        tls:
+          insecure: true
+        sending_queue:
+          enabled: true
+          storage: file_storage
+        retry_on_failure:
+          enabled: true
+
+      debug:
+
+    service:
+      extensions: [file_storage, health_check]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp, debug]
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: '0.0.0.0'
+                    port: 8888
+---
+
+
+---
+# Generator
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-producer
+  namespace: tier-1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-producer
+  template:
+    metadata:
+      labels:
+        app: log-producer
+    spec:
+      containers:
+        - name: loggen-go
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest
+          resources:
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          env:
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otelcol-agent:4317/"
