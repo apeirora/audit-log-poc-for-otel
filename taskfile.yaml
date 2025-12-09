@@ -57,10 +57,6 @@ includes:
     desc: Miscellaneous utility tasks.
     taskfile: ./tasks/misc.yaml
 
-  showroom:
-    desc: Showroom helper tasks
-    taskfile: ./showroom/taskfile.yaml
-
 tasks:
   default:
     desc: Create and start local kubernetes cluster and install otel-demo.
