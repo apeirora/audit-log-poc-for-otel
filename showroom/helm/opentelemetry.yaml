@@ -707,4 +707,3 @@ networkPolicy:
 
 # Allow containers to share processes across pod namespace
 shareProcessNamespace: false
-

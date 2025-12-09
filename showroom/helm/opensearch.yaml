@@ -285,7 +285,6 @@ metricsPort: 9600
 httpHostPort: ""
 transportHostPort: ""
 
-
 service:
   labels: {}
   labelsHeadless: {}
@@ -575,4 +574,3 @@ serviceMonitor:
   #   password: my-password
   basicAuth:
     enabled: false
-
