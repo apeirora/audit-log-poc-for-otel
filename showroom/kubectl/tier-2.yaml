@@ -1,42 +1,3 @@
-# Namespace for the OTel Collector Agent
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: tier-2
-  labels:
-    name: tier-2
----
-# ServiceAccount for the OTel Collector Agent
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: otelcol-agent
-  namespace: tier-2
----
-# ClusterRole for the OTel Collector Agent to access node and pod information
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: otelcol-agent
-rules:
-  - apiGroups: [ "" ]
-    resources: [ "events" ]
-    verbs: [ "get", "list", "watch" ]
----
-# ClusterRoleBinding for the OTel Collector Agent
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: otelcol-agent
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: otelcol-agent
-subjects:
-  - kind: ServiceAccount
-    name: otelcol-agent
-    namespace: tier-2
----
 # ConfigMap containing the OTel Collector Agent configuration
 apiVersion: v1
 kind: ConfigMap
@@ -71,14 +32,11 @@ data:
       # via Kubernetes Secret and reference them using env vars in the DaemonSet below.
       elasticsearch:
         endpoints: ["http://opensearch-cluster-master.tier-3.svc.cluster.local:9200"]
-        index: "otel-logs-%{+YYYY.MM.dd}"
         # username: "admin"
         # password: "changeme"
         sending_queue:
           enabled: true
           storage: file_storage
-        retry_on_failure:
-          enabled: true
 
       debug:
 
