@@ -44,9 +44,9 @@ tasks:
     desc: Create the tool directory ({{ .TOOL_DIR }}) if it doesn't exist.
     internal: true
     run: once
-    platforms: [ linux, darwin ]
+    platforms: [linux, darwin]
     requires:
-      vars: [ TOOL_DIR ]
+      vars: [TOOL_DIR]
     status:
       - test -d "{{ .TOOL_DIR }}"
     cmds:
@@ -57,10 +57,10 @@ tasks:
       KUBECTL_VERSION: "1.33.0"
     desc: "Install kubectl {{ .KUBECTL_VERSION }} to ({{ .TOOL_DIR }}/kubectl) if not already present"
     run: once
-    deps: [ create-tool-dir ]
-    platforms: [ linux, darwin ]
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
     requires:
-      vars: [ TOOL_DIR ]
+      vars: [TOOL_DIR]
     status:
       - kubectl || {{ .TOOL_DIR }}/kubectl
     cmds:
@@ -73,10 +73,10 @@ tasks:
       HELM_VERSION: "3.17.3"
     desc: "Install helm v{{ .HELM_VERSION }} to ({{ .TOOL_DIR }}/helm) if not already present"
     run: once
-    deps: [ create-tool-dir ]
-    platforms: [ linux, darwin ]
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
     requires:
-      vars: [ TOOL_DIR ]
+      vars: [TOOL_DIR]
     status:
       - "helm || {{ .TOOL_DIR }}/helm"
     cmds:
@@ -91,10 +91,10 @@ tasks:
       K9S_VERSION: "0.50.6"
     desc: "Install k9s v{{ .K9S_VERSION }} to ({{ .TOOL_DIR }}/k9s) if not already present"
     run: once
-    deps: [ create-tool-dir ]
-    platforms: [ linux, darwin ]
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
     requires:
-      vars: [ TOOL_DIR ]
+      vars: [TOOL_DIR]
     status:
       - "k9s --help || {{ .TOOL_DIR }}/k9s --help"
     cmds:
@@ -109,10 +109,10 @@ tasks:
       GARDENCTL_VERSION: "2.12.0"
     desc: "Install gardenctl v{{ .GARDENCTL_VERSION }} to ({{ .TOOL_DIR }}/gardenctl) if not already present"
     run: once
-    deps: [ create-tool-dir ]
-    platforms: [ linux, darwin ]
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
     requires:
-      vars: [ TOOL_DIR ]
+      vars: [TOOL_DIR]
     status:
       - "gardenctl --help || {{ .TOOL_DIR }}/gardenctl --help"
     cmds:

@@ -14,7 +14,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD ]
+      vars: [HELM_CMD]
     cmds:
       - "{{ .HELM_CMD }} version"
       - "{{ .HELM_CMD }} repo list"

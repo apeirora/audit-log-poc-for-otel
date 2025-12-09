@@ -1,2 +1,6 @@
+extraEnvs:
+  - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+    # value: task will read it from ./.env file and replace it with yq
+
 service:
   type: LoadBalancer

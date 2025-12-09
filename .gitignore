@@ -20,5 +20,9 @@
 # java build files
 **/target/
 
+# environment file with secret password
+**/.env
+
 # potentially generated file
 /src/file-sink/received-logs.txt
+
