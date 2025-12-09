@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 vars:
   GARDEN: "landscape-apeirora-one"
@@ -15,7 +15,7 @@ tasks:
   set-kubeconfig:
     desc: Set the kubeconfig for {{ .GARDEN }}/{{ .PROJECT }}/{{ .SHOOT }} using gardenctl.
     requires:
-      vars: [ GARDENCTL_CMD, GARDEN, PROJECT, SHOOT ]
+      vars: [GARDENCTL_CMD, GARDEN, PROJECT, SHOOT]
     deps:
       - task: tools:install-gardenctl
     cmds:

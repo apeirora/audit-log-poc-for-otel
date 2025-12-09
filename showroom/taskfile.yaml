@@ -10,6 +10,10 @@ includes:
     desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tasks/tools.yaml
 
+  garden:
+    desc: Gardener tasks.
+    taskfile: ./tasks/garden.yaml
+
   cluster:
     desc: Create cluster resources (Namespaces, Role‑Based Access Control - RBAC) for all tiers.
     taskfile: ./tasks/cluster.yaml
@@ -21,10 +25,6 @@ includes:
   monitoring:
     desc: Install and manage Prometheus and Grafana monitoring stack with authentication.
     taskfile: ./tasks/monitoring.yaml
-
-  garden:
-    desc: Gardener tasks.
-    taskfile: ./tasks/garden.yaml
 
   helm:
     desc: Helm tasks.
