@@ -1,0 +1,45 @@
+# our 3-tier layered namespaces
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-1
+  labels:
+    name: tier-1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-2
+  labels:
+    name: tier-2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tier-3
+  labels:
+    name: tier-3
+---
+# ClusterRole for the OTel Collector Agent to access node and pod information
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otelcol-agent
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+---
+# ClusterRoleBinding for the OTel Collector Agent
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otelcol-agent
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otelcol-agent
+subjects:
+  - kind: ServiceAccount
+    name: otelcol-agent
+    namespace: tier-2

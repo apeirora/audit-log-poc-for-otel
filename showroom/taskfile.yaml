@@ -10,6 +10,10 @@ includes:
     desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tasks/tools.yaml
 
+  cluster:
+    desc: Create cluster resources (Namespaces, Role‑Based Access Control - RBAC) for all tiers.
+    taskfile: ./tasks/cluster.yaml
+
   otelcol-agent:
     desc: Deploy and manage the OTel Collector agent setup with local filesystem-based persistence.
     taskfile: ./tasks/otelcol-agent.yaml
