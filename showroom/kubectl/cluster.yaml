@@ -5,6 +5,7 @@ metadata:
   name: tier-1
   labels:
     name: tier-1
+    istio-injection: enabled
 ---
 apiVersion: v1
 kind: Namespace
@@ -26,9 +27,9 @@ kind: ClusterRole
 metadata:
   name: otelcol-agent
 rules:
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch"]
+  - apiGroups: [ "" ]
+    resources: [ "events" ]
+    verbs: [ "get", "list", "watch" ]
 ---
 # ClusterRoleBinding for the OTel Collector Agent
 apiVersion: rbac.authorization.k8s.io/v1
