@@ -1,3 +1,9 @@
+# ServiceAccount for the OTel Collector Agent
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otelcol-agent
+---
 # ConfigMap containing the OTel Collector Agent configuration
 apiVersion: v1
 kind: ConfigMap
