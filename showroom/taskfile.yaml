@@ -30,6 +30,10 @@ includes:
     desc: Helm tasks.
     taskfile: ./tasks/helm.yaml
 
+  dice:
+    desc: Install and manage the sample application (dice-java).
+    taskfile: ./tasks/tier-1.yaml
+
 tasks:
   default:
     desc: Create and start local kubernetes cluster and install otel-demo.

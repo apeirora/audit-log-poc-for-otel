@@ -1,18 +1,14 @@
-# ConfigMap containing the OTel Collector side-car configuration
+# Deploy `dice-java` with a per-pod OpenTelemetry Collector sidecar
+# - Deployment with 3 replicas
+# - Each pod runs the application container and an otelcol sidecar
+# - ConfigMap contains the otelcol config
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: otelcol-agent-config
-  namespace: tier-1
+  name: dice-java-otelcol-config
 data:
   config.yaml: |
-    extensions:
-      file_storage:
-        directory: /var/lib/otelcol/storage
-        create_directory: true
-      health_check:
-        endpoint: ${env:MY_POD_IP}:13133
-
     receivers:
       otlp:
         protocols:
@@ -22,64 +18,103 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
-      batch:
+      batch: # used to optimize export calls in all pipelines
         send_batch_size: 1024
         timeout: 5s
 
     exporters:
       otlp:
-        endpoint: log-sink:4317
+        endpoint: log-sink.tier-3.svc.cluster.local:4317
         tls:
           insecure: true
-        sending_queue:
-          enabled: true
-          storage: file_storage
-        retry_on_failure:
-          enabled: true
-
       debug:
 
     service:
-      extensions: [file_storage, health_check]
       pipelines:
         logs:
           receivers: [otlp]
           processors: [batch]
           exporters: [otlp, debug]
-      telemetry:
         metrics:
-          readers:
-            - pull:
-                exporter:
-                  prometheus:
-                    host: '0.0.0.0'
-                    port: 8888
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp, debug]
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp, debug]
 ---
-# Generator
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: log-producer
-  namespace: tier-1
+  name: dice-java
+  labels:
+    app: dice-java
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: log-producer
+      app: dice-java
   template:
     metadata:
       labels:
-        app: log-producer
+        app: dice-java
     spec:
       containers:
-        - name: loggen-go
-          image: ghcr.io/apeirora/audit-log-poc-for-otel/loggen-go:latest
-          resources:
-            limits:
-              cpu: 50m
-              memory: 32Mi
+        - name: dice-java
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest
+          imagePullPolicy: IfNotPresent
           env:
+            - name: REST_PORT
+              value: "8082"
+            # application should send OTLP to the sidecar on localhost
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_GRPC
+              value: "http://127.0.0.1:4317"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_HTTP
+              value: "http://127.0.0.1:4318"
             - name: OTEL_EXPORTER_OTLP_INSECURE
               value: "true"
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://otelcol-agent:4317/"
+          ports:
+            - containerPort: 8082
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 200m
+            requests:
+              memory: 128Mi
+              cpu: 100m
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
+          args:
+            # see ConfigMap mapped as volume below
+            - "--config=/etc/otelcol-contrib/config.yaml"
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+      volumes:
+        - name: otelcol-config
+          configMap:
+            name: dice-java-otelcol-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dice-java
+  labels:
+    app: dice-java
+spec:
+  selector:
+    app: dice-java
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

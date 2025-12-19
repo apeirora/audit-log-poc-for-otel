@@ -1,0 +1,53 @@
+version: "3"
+
+description: Taskfile for port-forwarding the otel-demo frontend-proxy service.
+
+vars:
+  NAMESPACE: "tier-1"
+
+includes:
+  tools:
+    taskfile: ./tools.yaml
+    internal: true
+  cluster:
+    taskfile: ./cluster.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Deploy dice-java app in {{ .NAMESPACE }} namespace.
+    deps:
+      - task: tools:install-kubectl
+      - task: cluster:install
+    requires:
+      vars: [ KUBECTL_CMD, NAMESPACE ]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that your kube config is set correctly. Try:\t'export KUBECONFIG=/path/to/your/kubeconfig.yaml'"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -n {{ .NAMESPACE }} -f kubectl/tier-1.yaml"
+      - "{{ .KUBECTL_CMD }} rollout status Deployment/dice-java -n {{ .NAMESPACE }} --timeout=120s"
+
+  upgrade:
+    desc: Upgrade the sample app.
+    deps:
+      - task: tools:install-kubectl
+      - task: cluster:install
+    requires:
+      vars: [ KUBECTL_CMD, NAMESPACE ]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that your kube config is set correctly. Try:\t'export KUBECONFIG=/path/to/your/kubeconfig.yaml'"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f {{ .ROOT_DIR }}/kubectl/tier-1.yaml -n {{ .NAMESPACE }} && echo Sample app upgraded successfully!"
+
+  uninstall:
+    desc: Uninstall sample app from {{ .NAMESPACE }} namespace.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [ KUBECTL_CMD, NAMESPACE ]
+    status:
+      - "! {{ .KUBECTL_CMD }} get ns {{ .NAMESPACE }} >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete -f {{ .ROOT_DIR }}/kubectl/tier-1.yaml -n {{ .NAMESPACE }} --ignore-not-found || echo Sample app deleted."
