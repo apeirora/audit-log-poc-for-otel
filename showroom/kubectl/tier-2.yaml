@@ -114,7 +114,8 @@ spec:
               name: storage
       containers:
         - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:0.133.0
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: Always
           args:
             - "--config=/etc/otelcol-contrib/config.yaml"
           ports:
