@@ -4,3 +4,6 @@ extraEnvs:
 
 service:
   type: LoadBalancer
+
+singleNode: true
+replicas: 1
