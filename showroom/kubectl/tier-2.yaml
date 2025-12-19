@@ -42,7 +42,8 @@ data:
         sending_queue:
           enabled: true
           storage: file_storage
-
+        # retry_on_failure: # FIXME elasticsearch exporter doesn't support retry_on_failure yet
+        #   enabled: true
       debug:
 
     service:
