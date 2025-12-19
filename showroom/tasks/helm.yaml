@@ -4,7 +4,6 @@ description: Taskfile with some Helm-related tasks.
 
 includes:
   tools:
-    desc: Install required tools (helm, ...).
     taskfile: ./tools.yaml
     internal: true
 

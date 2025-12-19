@@ -3,7 +3,7 @@ version: "3"
 description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
 
 # set your OPENSEARCH_INITIAL_ADMIN_PASSWORD in .env file
-dotenv: [".env", "{{.HOME}}/.env"]
+dotenv: [ ".env", "{{.HOME}}/.env" ]
 
 includes:
   tools:
@@ -47,17 +47,19 @@ tasks:
     cmds:
       - cat {{ .ROOT_DIR }}/.env && echo ""
 
-  install:
+  deploy:
     desc: Install the complete setup, monitoring stack (tier-3), OTel Collector agent (tier-2) and some client applications (tier-1).
     cmds:
       - task: garden:set-kubeconfig
       - task: cluster:install
       - task: monitoring:install
       - task: otelcol-agent:install
+      - task: dice:install
 
-  uninstall:
+  clean:
     desc: Uninstall the complete setup, client applications (tier-1), OTel Collector agent (tier-2) and monitoring stack (tier-3)
-    cmds:
+    deps:
+      - task: dice:uninstall
       - task: otelcol-agent:uninstall
       - task: monitoring:uninstall
       - task: cluster:uninstall

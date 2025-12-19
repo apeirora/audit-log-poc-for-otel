@@ -10,7 +10,6 @@ vars:
 
 includes:
   tools:
-    desc: Install required tools (kubectl, gardenctl, ...).
     taskfile: ./tools.yaml
     internal: true
 
@@ -20,7 +19,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [HELM_CMD]
+      vars: [ HELM_CMD ]
     status:
       - "{{ .HELM_CMD }} repo list | grep -q prometheus-community"
       - "{{ .HELM_CMD }} repo list | grep -q grafana"
@@ -37,7 +36,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -54,7 +53,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, GRAFANA_RELEASE ]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -71,13 +70,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars:
-        [
-          HELM_CMD,
-          MONITORING_NS,
-          OPENSEARCH_RELEASE,
-          OPENSEARCH_INITIAL_ADMIN_PASSWORD,
-        ]
+      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE, OPENSEARCH_INITIAL_ADMIN_PASSWORD ]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -109,7 +102,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [HELM_CMD, MONITORING_NS]
+      vars: [ HELM_CMD, MONITORING_NS ]
     cmds:
       - echo "=== Helm Releases in {{ .MONITORING_NS }} namespace ==="
       - "{{ .HELM_CMD }} list -n {{ .MONITORING_NS }}"
@@ -125,7 +118,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
     cmds:
       - |
         {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
@@ -137,7 +130,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, GRAFANA_RELEASE ]
     cmds:
       - |
         {{ .HELM_CMD }} upgrade {{ .GRAFANA_RELEASE }} grafana/grafana \
@@ -149,13 +142,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars:
-        [
-          HELM_CMD,
-          MONITORING_NS,
-          OPENSEARCH_RELEASE,
-          OPENSEARCH_INITIAL_ADMIN_PASSWORD,
-        ]
+      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE, OPENSEARCH_INITIAL_ADMIN_PASSWORD ]
     cmds:
       - |
         OVERRIDE=$(mktemp -u) # create new temp file, use yq to set password
@@ -179,7 +166,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PROMETHEUS_RELEASE }}"
     cmds:
@@ -190,7 +177,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, GRAFANA_RELEASE ]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .GRAFANA_RELEASE }}"
     cmds:
@@ -201,7 +188,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE]
+      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE ]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .OPENSEARCH_RELEASE }}"
     cmds:

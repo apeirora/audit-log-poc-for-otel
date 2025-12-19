@@ -4,14 +4,16 @@ description:
 
 includes:
   tools:
-    desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tools.yaml
+    internal: true
 
 tasks:
   install:
-    desc:
+    desc: Create kubernetes cluster resources (namespaces, roles, bindings).
     requires:
-      vars: [KUBECTL_CMD]
+      vars: [ KUBECTL_CMD ]
+    deps:
+      - task: tools:install-kubectl
     status:
       - "{{ .KUBECTL_CMD }} get ns | grep tier- >/dev/null 2>&1"
       - "{{ .KUBECTL_CMD }} get ClusterRole | grep otelcol-agent >/dev/null 2>&1"
@@ -20,9 +22,11 @@ tasks:
       - "{{ .KUBECTL_CMD }} apply -f kubectl/cluster.yaml"
 
   uninstall:
-    desc:
+    desc: Delete (namespaces, roles, bindings).
     requires:
-      vars: [KUBECTL_CMD]
+      vars: [ KUBECTL_CMD ]
+    deps:
+      - task: tools:install-kubectl
     status:
       - "! {{ .KUBECTL_CMD }} get ns | grep tier- >/dev/null 2>&1"
       - "! {{ .KUBECTL_CMD }} get ClusterRole | grep otelcol-agent >/dev/null 2>&1"

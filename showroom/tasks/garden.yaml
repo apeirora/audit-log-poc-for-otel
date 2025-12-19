@@ -7,7 +7,6 @@ vars:
 
 includes:
   tools:
-    desc: Install required tools (k3d, kubectl, kind).
     taskfile: ./tools.yaml
     internal: true
 
@@ -15,7 +14,7 @@ tasks:
   set-kubeconfig:
     desc: Set the kubeconfig for {{ .GARDEN }}/{{ .PROJECT }}/{{ .SHOOT }} using gardenctl.
     requires:
-      vars: [GARDENCTL_CMD, GARDEN, PROJECT, SHOOT]
+      vars: [ GARDENCTL_CMD, GARDEN, PROJECT, SHOOT ]
     deps:
       - task: tools:install-gardenctl
     cmds:
