@@ -1,0 +1,48 @@
+extensions:
+  file_storage/c3:
+    directory: /data/queue-c3
+    create_directory: true
+    timeout: 10s
+    compaction:
+      on_start: true
+      on_rebound: true
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  otlphttp:
+    endpoint: https://example.net/v1/traces
+    timeout: 10s
+    sending_queue:
+      enabled: true
+      storage: file_storage/c3
+
+  otlphttp/block:
+    endpoint: http://127.0.0.1:0
+    timeout: 2s
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 0s
+    sending_queue:
+      enabled: true
+      storage: file_storage/c3
+      block_on_overflow: true
+
+service:
+  extensions: [file_storage/c3]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: []
+      exporters: [otlphttp]
+    logs:
+      receivers: [otlp]
+      processors: []
+      exporters: [otlphttp/block]
+
