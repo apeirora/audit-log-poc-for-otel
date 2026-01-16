@@ -47,3 +47,7 @@ kubectl scale deploy/otelcol1 deploy/otelcol2 deploy/otelcol3 -n otel-demo --rep
 kubectl delete namespace otel-demo
 ```
 
+kubectl apply -f storage-inspect.yaml
+kubectl wait --for=condition=Ready pod/storage-inspect -n otel-demo --timeout=60s
+kubectl logs storage-inspect -n otel-demo
+kubectl delete pod storage-inspect -n otel-demo
