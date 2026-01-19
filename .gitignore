@@ -22,3 +22,7 @@
 
 # potentially generated file
 /src/file-sink/received-logs.txt
+
+# cloned by test script
+/opentelemetry-collector-contrib/
+/opentelemetry-go/
