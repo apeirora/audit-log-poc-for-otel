@@ -83,3 +83,35 @@ service:
 ## References
 
 - `opentelemetry-collector/config/configauth/README.md`
+
+## mTLS
+
+When using mutual TLS (mTLS) for authentication, both the client and server present their own certificates to verify each other's
+identities. For more details on setting up mTLS with OpenTelemetry Collector, refer to this guide:
+<https://dev.to/vipinvkmenon/setting-up-otel-collectors-for-mtls-4n4o>
+
+### in short
+
+#### mTLS receiver server
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        tls:
+          cert_file: /etc/certs/server-tls.pem
+          key_file: /etc/certs/server-tls.key
+          client_ca_file: /etc/certs/ca.pem
+```
+
+#### mTLS exporter client
+
+```yaml
+exporters:
+  otlp:
+    tls:
+      cert_file: /etc/certs/client-tls.pem
+      key_file: /etc/certs/client-tls.key
+      ca_file: /etc/certs/ca.pem
+```
