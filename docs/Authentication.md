@@ -15,10 +15,12 @@ Summary of how authentication works in OpenTelemetry Collector using server- and
 - Client (exporters): `asapauthextension`, `basicauthextension`, `bearertokenauthextension`, `oauth2clientauthextension`,
   `sigv4authextension`
 
-## Notes For example for client-side OAuth2 in the collector you need an OAuth2 authorization server that exposes a token endpoint. The
-oauth2client extension is configured with that server’s token_url, your client_id/client_secret (and optional scopes/audience/TLS). It will
-call the token endpoint to obtain/refresh access tokens and inject Authorization: Bearer <token> on exporter requests. Without a reachable
-OAuth2 server, the extension cannot get tokens.
+## Notes
+
+For example for client-side OAuth2 in the collector you need an OAuth2 authorization server that exposes a token endpoint. The oauth2client
+extension is configured with that server’s token_url, your client_id/client_secret (and optional scopes/audience/TLS). It will call the
+token endpoint to obtain/refresh access tokens and inject Authorization: Bearer token on exporter requests. Without a reachable OAuth2
+server, the extension cannot get tokens.
 
 ## Server-side example (basic auth)
 
