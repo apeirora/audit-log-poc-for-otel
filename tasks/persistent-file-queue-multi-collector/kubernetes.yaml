@@ -242,7 +242,12 @@ spec:
       initContainers:
         - name: init-data
           image: alpine:3.19
-          command: ["sh", "-c", "mkdir -p /data/queue-c1 && chmod -R 777 /data/queue-c1"]
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c1 && chmod -R 777 /data/queue-c1",
+            ]
           volumeMounts:
             - name: storage
               mountPath: /data
@@ -286,7 +291,12 @@ spec:
       initContainers:
         - name: init-data
           image: alpine:3.19
-          command: ["sh", "-c", "mkdir -p /data/queue-c2 && chmod -R 777 /data/queue-c2"]
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c2 && chmod -R 777 /data/queue-c2",
+            ]
           volumeMounts:
             - name: storage
               mountPath: /data
@@ -330,7 +340,12 @@ spec:
       initContainers:
         - name: init-data
           image: alpine:3.19
-          command: ["sh", "-c", "mkdir -p /data/queue-c3 && chmod -R 777 /data/queue-c3"]
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c3 && chmod -R 777 /data/queue-c3",
+            ]
           volumeMounts:
             - name: storage
               mountPath: /data
@@ -351,4 +366,3 @@ spec:
         - name: config
           configMap:
             name: otel-config-3
-

@@ -22,4 +22,3 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
-

@@ -1,7 +1,12 @@
 services:
   storage:
     image: alpine:3.19
-    command: ["sh", "-c", "mkdir -p /data/queue-c1 /data/queue-c2 /data/queue-c3 && chmod -R 777 /data && sleep infinity"]
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /data/queue-c1 /data/queue-c2 /data/queue-c3 && chmod -R 777 /data && sleep infinity",
+      ]
     volumes:
       - storage-data:/data
 
@@ -34,4 +39,3 @@ services:
 
 volumes:
   storage-data:
-

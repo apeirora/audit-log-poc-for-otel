@@ -45,4 +45,3 @@ service:
       receivers: [otlp]
       processors: []
       exporters: [otlphttp/block]
-

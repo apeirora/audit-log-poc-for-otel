@@ -3,16 +3,19 @@
 Namespace: `otel-demo`
 
 ## Deploy core resources
+
 ```
 kubectl apply -f kubernetes.yaml
 ```
 
 ## Check pods and logs
+
 - Pods: `kubectl get pods -n otel-demo`
 - Storage `kubectl get pvc -n otel-demo`
 - Collector logs (example): `kubectl logs deploy/otelcol1 -n otel-demo --tail=100`
 
 ## Send test logs from inside the cluster
+
 ```
 kubectl apply -f send-logs-job.yaml
 kubectl wait --for=condition=complete job/send-logs -n otel-demo --timeout=60s
@@ -21,12 +24,15 @@ kubectl delete job/send-logs -n otel-demo
 ```
 
 ## Send test logs from local machine (port-forward)
+
 ```
 bash send-logs-k8.sh
 ```
+
 - Set `KUBECONFIG`/`KCTX` envs if your kubeconfig/context is not the default.
 
 ## Inspect queue storage (shared PVC)
+
 ```
 kubectl apply -f storage-check.yaml
 kubectl wait --for=condition=complete job/storage-check -n otel-demo --timeout=60s
@@ -35,6 +41,7 @@ kubectl delete job/storage-check -n otel-demo
 ```
 
 ## Clear all queues (reset storage)
+
 ```
 kubectl scale deploy/otelcol1 deploy/otelcol2 deploy/otelcol3 -n otel-demo --replicas=0
 kubectl delete pvc storage-data -n otel-demo
@@ -43,7 +50,7 @@ kubectl scale deploy/otelcol1 deploy/otelcol2 deploy/otelcol3 -n otel-demo --rep
 ```
 
 ## Clean up everything
+
 ```
 kubectl delete namespace otel-demo
 ```
-
