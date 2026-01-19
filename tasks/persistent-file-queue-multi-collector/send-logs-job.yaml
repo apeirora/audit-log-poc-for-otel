@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: send-logs
+  namespace: otel-demo
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: send-logs
+          image: curlimages/curl:8.8.0
+          command:
+            - sh
+            - -c
+            - |
+              for collector in otelcol1 otelcol2 otelcol3; do
+                for i in $(seq 1 10); do
+                  ts=$(date +%s%N)
+                  payload='{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"loadgen"}}]},"scopeLogs":[{"scope":{},"logRecords":[{"timeUnixNano":"'"${ts}"'","severityNumber":9,"severityText":"INFO","body":{"stringValue":"test log '"${i}"' for '"${collector}"'"}}]}]}]}'
+                  status=$(curl -s -S -o /dev/null -w "%{http_code}" \
+                    --retry 5 --retry-delay 1 --retry-all-errors --max-time 5 \
+                    -X POST "http://${collector}:4318/v1/logs" \
+                    -H "Content-Type: application/json" \
+                    -d "${payload}" 2>&1) || true
+                  if [ "${status}" != "200" ]; then
+                    echo "collector=${collector} log=${i} status=${status}"
+                  fi
+                done
+              done
