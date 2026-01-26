@@ -46,4 +46,7 @@ EOF
     fi
   done
 done
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes

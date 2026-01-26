@@ -27,5 +27,9 @@ spec:
                     echo "collector=${collector} log=${i} status=${status}"
                   fi
                 done
+<<<<<<< Updated upstream
               done
 
+=======
+              done
+>>>>>>> Stashed changes
