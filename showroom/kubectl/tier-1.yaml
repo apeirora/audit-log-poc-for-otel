@@ -96,6 +96,10 @@ spec:
             - name: otlp-http
               containerPort: 4318
               protocol: TCP
+          volumeMounts:
+            - name: otelcol-config
+              mountPath: /etc/otelcol-contrib
+              readOnly: true
       volumes:
         - name: otelcol-config
           configMap:
