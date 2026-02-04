@@ -77,9 +77,11 @@ processors:
 
 This validates data structure and can catch some tampering.
 
-### 4. Use Isolation Forest processor 
+### 4. Use Isolation Forest processor
 
-  adds inline, unsupervised anomaly detection to any OpenTelemetry Collector pipeline (traces, metrics, or logs). It embeds a lightweight implementation of the Isolation Forest algorithm that automatically learns normal behaviour from recent telemetry and tags, scores, or optionally drops anomalies *in‑flight* – no external ML service required.
+  adds inline, unsupervised anomaly detection to any OpenTelemetry Collector pipeline (traces, metrics, or logs). It
+  embeds a lightweight implementation of the Isolation Forest algorithm that automatically learns normal behaviour from
+  recent telemetry and tags, scores, or optionally drops anomalies *in‑flight* – no external ML service required.
 
   If we implement it, we can say "we use Ai to detect log tampering" +10 point for gryfindor
 
