@@ -23,6 +23,7 @@
 ### 1. Enable TLS/mTLS Everywhere ✅
 
 **Application → Sidecar Collector:**
+
 ```yaml
 receivers:
   otlp:
@@ -37,6 +38,7 @@ receivers:
 ```
 
 **Collector → Sink:**
+
 ```yaml
 exporters:
   otlp:
@@ -79,11 +81,11 @@ This validates data structure and can catch some tampering.
 
 ### 4. Use Isolation Forest processor
 
-  adds inline, unsupervised anomaly detection to any OpenTelemetry Collector pipeline (traces, metrics, or logs). It
-  embeds a lightweight implementation of the Isolation Forest algorithm that automatically learns normal behaviour from
-  recent telemetry and tags, scores, or optionally drops anomalies *in‑flight* – no external ML service required.
+adds inline, unsupervised anomaly detection to any OpenTelemetry Collector pipeline (traces, metrics, or logs). It embeds a lightweight
+implementation of the Isolation Forest algorithm that automatically learns normal behaviour from recent telemetry and tags, scores, or
+optionally drops anomalies _in‑flight_ – no external ML service required.
 
-  If we implement it, we can say "we use Ai to detect log tampering" +10 point for gryfindor
+If we implement it, we can say "we use Ai to detect log tampering" +10 point for gryfindor
 
 ## New Features Needed
 
@@ -96,19 +98,21 @@ This validates data structure and can catch some tampering.
 **Proposed Location:** `processor/integrityprocessor/`
 
 **Features:**
+
 - Sign data at source (application/sidecar)
 - Verify signatures at collector
 - Re-sign for downstream verification
 - Support HMAC-SHA256, HMAC-SHA512
 
 **Key Management Options:**
+
 1. **Local Secret Storage** (Simple): Store HMAC secrets in environment variables or config
 2. **OpenBao Transit** (Recommended): Use OpenBao Transit secrets engine for centralized key management
    - Centralized key management and rotation
    - No secrets stored in collector config
    - Audit logging of cryptographic operations
    - API-based HMAC generation/verification via HTTP
-   - Reference: https://openbao.org/docs/secrets/transit/
+   - Reference: <https://openbao.org/docs/secrets/transit/>
 
 ### Priority 2: Enhanced OTLP Receiver with HMAC
 
@@ -119,12 +123,14 @@ This validates data structure and can catch some tampering.
 **Proposed Enhancement:** Add to `receiver/otlpreceiver/`
 
 **Features:**
+
 - HMAC signature in headers (`X-OTel-HMAC-Signature`)
 - Shared secret configuration (local or OpenBao Transit)
 - Signature verification before processing
 - Reject unsigned/invalid requests
 
 **Key Management Options:**
+
 1. **Local Secret**: Store HMAC secret in environment variable
 2. **OpenBao Transit**: Use OpenBao Transit API for HMAC verification
    - No secret storage in collector
@@ -138,6 +144,7 @@ This validates data structure and can catch some tampering.
 **Proposed Location:** `processor/auditprocessor/`
 
 **Features:**
+
 - Log before/after state of modifications
 - Track which processor made changes
 - Hash-based change detection
@@ -150,6 +157,7 @@ This validates data structure and can catch some tampering.
 **Proposed Location:** `extension/replayprotectionextension/`
 
 **Features:**
+
 - Nonce generation and validation
 - Timestamp-based replay window (e.g., 5 minutes)
 - Request ID tracking
@@ -163,7 +171,7 @@ extensions:
     client_id: ${OAUTH_CLIENT_ID}
     client_secret: ${OAUTH_CLIENT_SECRET}
     token_url: https://auth.example.com/token
-  
+
   replayprotection:
     window: 5m
     nonce_required: true
@@ -194,11 +202,11 @@ receivers:
 
 processors:
   batch:
-  
+
   schema:
     targets:
       - https://opentelemetry.io/schemas/1.26.0
-  
+
   # TODO: When implemented
   # integrity:
   #   sign:
@@ -212,7 +220,7 @@ processors:
   #     #   key_name: otel-hmac-key
   #     #   mount_path: transit
   #   verify: true
-  
+
   # TODO: When implemented
   # audit:
   #   log_level: info
@@ -234,7 +242,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch, schema]  # Add integrity, audit when implemented
+      processors: [batch, schema] # Add integrity, audit when implemented
       exporters: [otlp]
     metrics:
       receivers: [otlp]
@@ -248,16 +256,19 @@ service:
 
 ## Implementation Roadmap
 
-### Phase 1: Immediate 
+### Phase 1: Immediate
+
 - ✅ Enable TLS/mTLS
 - ✅ Add authentication
 - ✅ Use schema processor
 
-### Phase 2: Short-term 
+### Phase 2: Short-term
+
 - Implement Data Integrity Processor
 - Enhance OTLP Receiver with HMAC
 
-### Phase 3: Medium-term 
+### Phase 3: Medium-term
+
 - Implement Audit Logging Processor
 - Implement Replay Protection Extension
 
@@ -291,4 +302,4 @@ service:
 - **HMAC Implementation:** `receiver/mongodbatlasreceiver/alerts.go:429-445`
 - **Schema Processor:** `processor/schemaprocessor/README.md`
 - **Authentication Extensions:** `extension/` directory
-- **OpenBao Transit:** https://openbao.org/docs/secrets/transit/ (for centralized HMAC key management)
+- **OpenBao Transit:** <https://openbao.org/docs/secrets/transit/> (for centralized HMAC key management)
