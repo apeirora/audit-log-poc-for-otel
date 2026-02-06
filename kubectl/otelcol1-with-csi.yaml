@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol1
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol1
+  template:
+    metadata:
+      labels:
+        app: otelcol1
+    spec:
+      serviceAccountName: otelcol1
+      initContainers:
+      - name: wait-for-redis
+        image: redis:7.4-alpine
+        command: ["sh", "-c", "until redis-cli -h redis -p 6379 PING; do echo waiting for redis; sleep 2; done"]
+      containers:
+      - name: otelcol
+        image: apeirora/opentelemetry-collector-contrib:fixRedisStart
+        args: ["--config=/etc/otelcol/config.yaml"]
+        volumeMounts:
+        - mountPath: /etc/otelcol/config.yaml
+          name: config
+          subPath: config.yaml
+        - mountPath: /mnt/secrets-store
+          name: openbao-certificates
+          readOnly: true
+        - mountPath: /etc/otelcol/certs
+          name: otelcol1-certs
+          readOnly: true
+        - mountPath: /var/run/secrets/openbao.io
+          name: openbao-token
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: otel-config-1
+      - name: openbao-certificates
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: openbao-certificates
+      - name: otelcol1-certs
+        secret:
+          secretName: otelcol1-certs
+      - name: openbao-token
+        secret:
+          secretName: openbao-token
