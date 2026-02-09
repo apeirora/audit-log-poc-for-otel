@@ -56,15 +56,15 @@ EOF
 
 echo ""
 echo "Step 5: Applying RBAC configuration..."
-kubectl apply -f kubectl/openbao-csi-rbac.yaml
+kubectl apply -f openBaoSync/kubectl/openbao-csi-rbac.yaml
 
 echo ""
 echo "Step 6: Applying SecretProviderClass..."
-kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
+kubectl apply -f openBaoSync/kubectl/openbao-csi-secretproviderclass.yaml
 
 echo ""
 echo "Step 7: Updating otelcol1 deployment with CSI volumes..."
-kubectl apply -f kubectl/otelcol1-with-csi.yaml
+kubectl apply -f openBaoSync/kubectl/otelcol1-with-csi.yaml
 
 echo ""
 echo "Waiting for deployment to be ready..."

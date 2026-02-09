@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: openbao-csi-provider
+  namespace: kube-system
+  labels:
+    app: openbao-csi-provider
+spec:
+  selector:
+    matchLabels:
+      app: openbao-csi-provider
+  template:
+    metadata:
+      labels:
+        app: openbao-csi-provider
+    spec:
+      serviceAccountName: openbao-csi-provider
+      containers:
+      - name: provider
+        image: openbao/openbao-csi-provider:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - |
+          BINARY_PATH=$(which openbao-csi-provider || find / -name "openbao-csi-provider" -type f 2>/dev/null | head -1)
+          if [ -z "$BINARY_PATH" ]; then
+            echo "Error: openbao-csi-provider binary not found"
+            exit 1
+          fi
+          echo "Found binary at: $BINARY_PATH"
+          mkdir -p /var/run/secrets-store-csi-providers
+          mkdir -p /etc/kubernetes/secrets-store-csi-providers
+          mkdir -p /var/lib/kubelet/plugins/csi-secrets-store
+          cp "$BINARY_PATH" /var/run/secrets-store-csi-providers/openbao
+          cp "$BINARY_PATH" /etc/kubernetes/secrets-store-csi-providers/openbao
+          chmod +x /var/run/secrets-store-csi-providers/openbao
+          chmod +x /etc/kubernetes/secrets-store-csi-providers/openbao
+          echo "Provider binary installed at both locations"
+          exec "$BINARY_PATH" -endpoint=/var/lib/kubelet/plugins/csi-secrets-store/provider-openbao.sock -debug -openbao-tls-skip-verify -openbao-addr=http://openbao.openbao.svc.cluster.local:8200
+        volumeMounts:
+        - name: providers-dir-0
+          mountPath: /var/run/secrets-store-csi-providers
+          readOnly: false
+        - name: providers-dir
+          mountPath: /etc/kubernetes/secrets-store-csi-providers
+          readOnly: false
+        - name: plugin-dir
+          mountPath: /var/lib/kubelet/plugins/csi-secrets-store
+          readOnly: false
+      volumes:
+      - name: providers-dir-0
+        hostPath:
+          path: /var/run/secrets-store-csi-providers
+          type: DirectoryOrCreate
+      - name: providers-dir
+        hostPath:
+          path: /etc/kubernetes/secrets-store-csi-providers
+          type: DirectoryOrCreate
+      - name: plugin-dir
+        hostPath:
+          path: /var/lib/kubelet/plugins/csi-secrets-store
+          type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: openbao-csi-provider
+  namespace: kube-system
+  labels:
+    app: openbao-csi-provider

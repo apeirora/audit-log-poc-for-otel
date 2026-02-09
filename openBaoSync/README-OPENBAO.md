@@ -97,6 +97,46 @@ This script will:
 5. Create SecretProviderClass
 6. Update `otelcol1` deployment with CSI volumes
 
+### Step 3.5: Setup Kubernetes Authentication (Required)
+
+**Important:** The setup script configures token auth, but we use Kubernetes authentication for better security. You need to manually configure it:
+
+1. **Enable Kubernetes Auth in OpenBao:**
+   ```powershell
+   $podName = kubectl get pods -n openbao -l app=openbao -o jsonpath='{.items[0].metadata.name}'
+   $logs = kubectl logs -n openbao $podName
+   $tokenMatch = $logs | Select-String -Pattern "Root Token:\s+(.+)" | ForEach-Object { $_.Matches.Groups[1].Value }
+   $OPENBAO_TOKEN = $tokenMatch.Trim()
+   kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && bao auth enable kubernetes"
+   ```
+
+2. **Configure Kubernetes Auth:**
+   ```powershell
+   $K8S_HOST = "https://kubernetes.default.svc"
+   $saToken = kubectl exec -n openbao $podName -- cat /var/run/secrets/kubernetes.io/serviceaccount/token
+   $caCert = kubectl exec -n openbao $podName -- cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+   kubectl exec -n openbao $podName -- sh -c "cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt > /tmp/k8s-ca.crt"
+   kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && bao write auth/kubernetes/config token_reviewer_jwt='$saToken' kubernetes_host='$K8S_HOST' kubernetes_ca_cert=@/tmp/k8s-ca.crt disable_iss_validation=true"
+   ```
+
+3. **Create Policy:**
+   ```powershell
+   $policyBase64 = "cGF0aCAiY2VydHMvZGF0YS8qIiB7CiAgY2FwYWJpbGl0aWVzID0gWyJyZWFkIl0KfQ=="
+   kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && echo '$policyBase64' | base64 -d | bao policy write otelcol1-policy -"
+   ```
+
+4. **Create Role:**
+   ```powershell
+   kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && bao write auth/kubernetes/role/otelcol1-role bound_service_account_names=otelcol1 bound_service_account_namespaces=otel-demo policies=otelcol1-policy ttl=1h"
+   ```
+
+5. **Update SecretProviderClass to use Kubernetes auth:**
+   ```powershell
+   kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
+   ```
+   
+   (The SecretProviderClass is already configured with `vaultAuthMethod: "kubernetes"` and `roleName: "otelcol1-role"`)
+
 ### Step 4: Verify
 
 Check that the secret was created by CSI provider:
@@ -123,7 +163,7 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
 
 1. **SecretProviderClass** defines:
    - Which secrets to fetch from OpenBao (`certs/data/test1`)
-   - How to authenticate (token auth for dev mode)
+   - How to authenticate (Kubernetes authentication using ServiceAccount)
    - Which keys to extract (`certificate`, `private_key`, `ca_chain`)
 
 2. **CSI Driver** mounts the secrets:
@@ -160,14 +200,16 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
 #### `kubectl/openbao-csi-secretproviderclass.yaml`
 - **SecretProviderClass** resource defining:
   - OpenBao connection details
-  - Authentication method (token for dev mode)
+  - Authentication method (Kubernetes authentication)
+  - Role name for authentication (`otelcol1-role`)
   - Which secrets to fetch from KV store
   - How to map to Kubernetes secret
 
 #### `kubectl/otelcol1-with-csi.yaml`
 - Updated `otelcol1` deployment with:
   - CSI volume mount for OpenBao certificates
-  - ServiceAccount reference
+  - ServiceAccount reference (`otelcol1`) - **Required for Kubernetes auth**
+  - Secret volume marked as `optional: true` (allows pod to start before secret exists)
   - No init containers needed!
 
 ### Script Files
@@ -181,8 +223,10 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
 #### `scripts/setup-openbao-csi.ps1` / `scripts/setup-openbao-csi.sh`
 - Installs CSI Secret Store Driver
 - Installs OpenBao CSI Provider
-- Configures token authentication
-- Applies all CSI-related resources
+- Creates OpenBao token secret (for initial setup)
+- Applies RBAC configuration
+- Creates SecretProviderClass
+- **Note:** This script sets up token auth, but we use Kubernetes auth (see below)
 - **Run once** after certificates are stored
 
 ## Configuration
@@ -207,16 +251,23 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
 
 ### Authentication Methods
 
-**Current (Dev Mode):**
-- Uses token authentication
-- Token stored in Kubernetes secret
-- Suitable for development/testing only
-
-**Production (Recommended):**
-- Use Kubernetes authentication method
-- Pods authenticate using ServiceAccount tokens
-- More secure, no token storage needed
+**Current Implementation (Kubernetes Auth):**
+- ✅ Uses Kubernetes authentication method
+- ✅ Pods authenticate using ServiceAccount tokens
+- ✅ No token storage needed (more secure)
+- ✅ Production-ready approach
+- ✅ Requires:
+  - Kubernetes auth method enabled in OpenBao
+  - Policy created for certificate access
+  - Role mapping ServiceAccount to policy
 - See [OpenBao Kubernetes Auth documentation](https://openbao.org/docs/auth/kubernetes)
+
+**Alternative (Token Auth - Not Used):**
+- Uses token authentication
+- Token stored in Kubernetes secret `openbao-token`
+- Simpler setup but less secure
+- Suitable for development/testing only
+- The `setup-openbao-csi.ps1` script sets this up, but we use Kubernetes auth instead
 
 ## Certificate Locations
 
@@ -332,14 +383,13 @@ kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-stor
 ⚠️ **Important:**
 - This setup uses OpenBao in **dev mode** which is **NOT suitable for production**
 - Root tokens are stored in pod logs (dev mode only)
-- Token authentication is used (simpler but less secure)
+- **Kubernetes authentication is used** (production-ready approach)
 - Certificates are stored in plain text in OpenBao KV store
-- For production, use:
+- For production, additionally use:
   - Proper OpenBao deployment with seal/unseal
-  - Kubernetes authentication method (not token)
   - Encrypted storage
-  - Proper RBAC policies
   - TLS for OpenBao communication
+  - Proper certificate rotation
 
 ## Benefits of CSI Provider Approach
 

@@ -19,20 +19,30 @@ try {
     }
 }
 
-Write-Host "`nStep 2: Checking if OpenBao CSI Provider is installed..." -ForegroundColor Yellow
-try {
-    $null = kubectl get daemonset -n kube-system -l app=openbao-csi-provider -o name 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "OpenBao CSI Provider is already installed" -ForegroundColor Green
-    } else {
-        throw "Not found"
-    }
-} catch {
-    Write-Host "OpenBao CSI Provider not found. Installing..." -ForegroundColor Yellow
+Write-Host "`nStep 2: Installing OpenBao CSI Provider..." -ForegroundColor Yellow
+$providerPods = kubectl get pods -n kube-system -l app=openbao-csi-provider --no-headers 2>$null
+if ($providerPods -and ($providerPods | Select-String -Pattern "Running" -Quiet)) {
+    Write-Host "OpenBao CSI Provider is already running" -ForegroundColor Green
+} else {
+    Write-Host "Installing OpenBao CSI Provider..." -ForegroundColor Yellow
     kubectl apply -f https://raw.githubusercontent.com/openbao/openbao-csi-provider/main/deploy/install.yaml
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Waiting for CSI provider to be ready..." -ForegroundColor Yellow
-        kubectl wait --for=condition=ready pod -l app=openbao-csi-provider -n kube-system --timeout=120s
+    Write-Host "Waiting for CSI provider pods to be ready..." -ForegroundColor Yellow
+    $maxWait = 60
+    $waited = 0
+    while ($waited -lt $maxWait) {
+        $pods = kubectl get pods -n kube-system -l app=openbao-csi-provider --no-headers 2>$null
+        if ($pods -and ($pods | Select-String -Pattern "Running" -Quiet)) {
+            Write-Host "OpenBao CSI Provider is ready!" -ForegroundColor Green
+            kubectl get pods -n kube-system -l app=openbao-csi-provider
+            break
+        }
+        Start-Sleep -Seconds 2
+        $waited += 2
+        Write-Host "  Waiting... ($waited/$maxWait seconds)" -ForegroundColor Gray
+    }
+    if ($waited -ge $maxWait) {
+        Write-Host "Warning: OpenBao CSI Provider pods not ready after $maxWait seconds" -ForegroundColor Yellow
+        kubectl get pods -n kube-system -l app=openbao-csi-provider
     }
 }
 
@@ -67,13 +77,13 @@ stringData:
 $tokenSecret | kubectl apply -f -
 
 Write-Host "`nStep 5: Applying RBAC configuration..." -ForegroundColor Yellow
-kubectl apply -f kubectl/openbao-csi-rbac.yaml
+kubectl apply -f openBaoSync/kubectl/openbao-csi-rbac.yaml
 
 Write-Host "`nStep 6: Applying SecretProviderClass..." -ForegroundColor Yellow
-kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
+kubectl apply -f openBaoSync/kubectl/openbao-csi-secretproviderclass.yaml
 
 Write-Host "`nStep 7: Updating otelcol1 deployment with CSI volumes..." -ForegroundColor Yellow
-kubectl apply -f kubectl/otelcol1-with-csi.yaml
+kubectl apply -f openBaoSync/kubectl/otelcol1-with-csi.yaml
 
 Write-Host "`nWaiting for deployment to be ready..." -ForegroundColor Yellow
 kubectl rollout status deployment/otelcol1 -n otel-demo --timeout=120s
