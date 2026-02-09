@@ -32,9 +32,6 @@ spec:
         - mountPath: /etc/otelcol/certs
           name: otelcol1-certs
           readOnly: true
-        - mountPath: /var/run/secrets/openbao.io
-          name: openbao-token
-          readOnly: true
       volumes:
       - name: config
         configMap:
@@ -48,6 +45,4 @@ spec:
       - name: otelcol1-certs
         secret:
           secretName: otelcol1-certs
-      - name: openbao-token
-        secret:
-          secretName: openbao-token
+          optional: true
