@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26-alpine AS builder
 # build the application
 WORKDIR /usr/src/app/
 # let's create separate layers for dependencies and source code
@@ -10,7 +10,7 @@ COPY main.go main.go
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o dice-go main.go
 
 # --- Run Stage ---
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 
 ARG REST_PORT=8081
 ENV REST_PORT=${REST_PORT}
