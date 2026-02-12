@@ -42,7 +42,6 @@ func main() {
 	if err := run(); err != nil {
 		fmt.Printf("Failed to run dice-go service: %v\n", err)
 		log.Fatalln(err)
-		os.Exit(1)
 	}
 }
 
@@ -130,7 +129,7 @@ func newHTTPHandler() http.Handler {
 	// which enriches the handler's HTTP instrumentation with the pattern as the http.route.
 	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) {
 		// Configure the "http.route" for the HTTP instrumentation.
-		handler := otelhttp.WithRouteTag(pattern, http.HandlerFunc(handlerFunc))
+		handler := otelhttp.NewHandler(http.HandlerFunc(handlerFunc), pattern)
 		mux.Handle(pattern, handler)
 	}
 
