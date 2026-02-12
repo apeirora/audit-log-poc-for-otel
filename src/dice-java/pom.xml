@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
+		<version>4.0.2</version>
 	</parent>
 	<groupId>com.sap.otel</groupId>
 	<artifactId>dice</artifactId>
@@ -45,8 +45,8 @@
 		<url>https://github.com/apeirora/audit-log-poc-for-otel</url>
 	</scm>
 	<properties>
-		<java.version>24</java.version>
-		<opentelemetry.version>1.51.0</opentelemetry.version>
+		<java.version>25</java.version>
+		<opentelemetry.version>1.59.0</opentelemetry.version>
 	</properties>
 
 	<dependencies>
@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>io.opentelemetry.semconv</groupId>
 			<artifactId>opentelemetry-semconv</artifactId>
-			<version>1.32.0</version>
+			<version>1.39.0</version>
 		</dependency>
 	</dependencies>
 
@@ -186,7 +186,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>3.6.3</version>
 				<configuration>
 					<mainClass>org.springframework.boot.loader.JarLauncher</mainClass>
 					<arguments></arguments>
