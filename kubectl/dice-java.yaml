@@ -25,6 +25,12 @@ spec:
               value: "http://otel-collector:4318"
           ports:
             - containerPort: 8082
+          volumeMounts:
+            - name: audit-logs
+              mountPath: /var/log/audit
+      volumes:
+        - name: audit-logs
+          emptyDir: {} # Survives container crashes, not pod restarts
 ---
 apiVersion: v1
 kind: Service
