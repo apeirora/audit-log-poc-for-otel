@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
+		<version>4.0.2</version>
 	</parent>
 	<groupId>com.sap.otel</groupId>
 	<artifactId>dice</artifactId>
@@ -45,8 +45,8 @@
 		<url>https://github.com/apeirora/audit-log-poc-for-otel</url>
 	</scm>
 	<properties>
-		<java.version>24</java.version>
-		<opentelemetry.version>1.54.0</opentelemetry.version>
+		<java.version>25</java.version>
+		<opentelemetry.version>1.59.0</opentelemetry.version>
 		<otel.version>1.55.0-SNAPSHOT</otel.version>
 	</properties>
 
@@ -63,29 +63,11 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/src/opentelemetry-sdk-logs-${otel.version}.jar</systemPath>
     </dependency>
-		<!--	
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-			<exclusions>
-        <exclusion>
-            <groupId>io.micrometer</groupId>
-            <artifactId>*</artifactId>
-        </exclusion>
-    </exclusions>
-		</dependency>
-		-->
-		<dependency>
+
+    <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		<!--	
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-registry-otlp</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -126,7 +108,7 @@
 		<dependency>
 			<groupId>io.opentelemetry.semconv</groupId>
 			<artifactId>opentelemetry-semconv</artifactId>
-			<version>1.32.0</version>
+			<version>1.39.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -140,6 +122,96 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce-maven</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireMavenVersion>
+									<version>3.8</version>
+								</requireMavenVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+				<configuration>
+					<ruleSet>
+						<ignoreVersions>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Development -->
+								<version>(?i).*[\.-]Dev-?\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Alpha -->
+								<version>(?i).*[\.-]Alpha\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Beta -->
+								<version>(?i).*[\.-]Beta-?\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Milestones -->
+								<version>(?i).*-M\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Release Candidates -->
+								<version>(?i).*-RC[\.-]?\d*</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<version>.*\.(C|M)R\d*</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<version>.*-(ij253|jbossorg|atlassian|jboss|mars)-\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<version>
+									.*-(does-not-exist|nf-execution|preview|ce|ccs)</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<version>.*-internal\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<version>.*_special_\d+</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Date and Time -->
+								<version>\d{8}\.\d{6}</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Date only -->
+								<version>\d{8}</version>
+							</ignoreVersion>
+							<ignoreVersion>
+								<type>regex</type>
+								<!-- Timestamp -->
+								<version>\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}.*</version>
+							</ignoreVersion>
+						</ignoreVersions>
+					</ruleSet>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -156,7 +228,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>3.6.3</version>
 				<configuration>
 					<mainClass>org.springframework.boot.loader.JarLauncher</mainClass>
 					<arguments></arguments>

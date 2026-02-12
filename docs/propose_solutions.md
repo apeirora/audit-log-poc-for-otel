@@ -9,7 +9,7 @@ This document outlines potential solutions for handling **audit logs** in the Op
 We propose creating a **new pipeline** dedicated to audit logs, running in parallel to the standard log pipeline. This pipeline would use a
 new receiver/exporter, or additional configuration, to enable audit log flow and connect to a persistence queue.
 
-![Solution.1](solution1.jpg)
+![Solution.1](assets/solution1.jpg)
 
 ### Receiver
 

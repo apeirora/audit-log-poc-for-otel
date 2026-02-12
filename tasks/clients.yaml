@@ -133,6 +133,19 @@ tasks:
     vars:
       GOPROJECTS:
         sh: find . -name go.mod -exec dirname {} \;
+      MVNPROJECTS:
+        sh: find . -name pom.xml -exec dirname {} \;
     cmds:
       - for: { var: GOPROJECTS }
         cmd: (cd {{ .ITEM }} && go get -u ./... && go mod tidy)
+      - for: { var: MVNPROJECTS }
+        cmd: (cd {{ .ITEM }} && mvn versions:use-latest-releases -DgenerateBackupPoms=false)
+
+  mvn-versions:
+    desc: Displays all available updates for maven projects
+    vars:
+      MVNPROJECTS:
+        sh: find . -name pom.xml -exec dirname {} \;
+    cmds:
+      - for: { var: MVNPROJECTS }
+        cmd: (cd {{ .ITEM }} && mvn versions:display-extension-updates versions:display-dependency-updates versions:display-parent-updates versions:display-plugin-updates versions:display-property-updates)

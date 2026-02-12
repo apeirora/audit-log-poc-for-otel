@@ -64,7 +64,7 @@ tasks:
     deps:
       - task: cluster:start
     cmds:
-      - task: otel:demo-status
+      - task: otel-demo:status
       - task -a
 
   kube-context:

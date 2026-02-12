@@ -31,7 +31,7 @@ var (
 func main() {
 	if err := run(); err != nil {
 		fmt.Printf("Failed to run log generator: %v\n", err)
-		os.Exit(1)
+		log.Fatalln(err)
 	}
 }
 
