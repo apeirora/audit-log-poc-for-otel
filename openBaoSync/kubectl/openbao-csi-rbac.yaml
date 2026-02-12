@@ -10,9 +10,9 @@ metadata:
   name: openbao-csi-secrets
   namespace: otel-demo
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -24,6 +24,6 @@ roleRef:
   kind: Role
   name: openbao-csi-secrets
 subjects:
-- kind: ServiceAccount
-  name: otelcol1
-  namespace: otel-demo
+  - kind: ServiceAccount
+    name: otelcol1
+    namespace: otel-demo

@@ -36,6 +36,7 @@ Files available immediately:
 ```
 
 **This is the PRIMARY way** certificates are accessed. The CSI provider:
+
 1. Authenticates to OpenBao using Kubernetes auth
 2. Fetches certificates from `certs/data/test1`
 3. Mounts them directly as files in the pod
@@ -59,6 +60,7 @@ Files available:
 ```
 
 **This is OPTIONAL** and happens because `secretObjects` is defined in SecretProviderClass. The CSI provider:
+
 1. Fetches from OpenBao (same as Path 1)
 2. **Additionally** creates/updates a Kubernetes secret
 3. The secret is mounted as a regular Kubernetes volume
@@ -117,12 +119,14 @@ Files available:
 ## Why Two Mount Points?
 
 ### `/mnt/secrets-store/` (CSI Direct Mount)
+
 - **Always available** - Direct from OpenBao
 - **Real-time** - Fetched fresh on each pod start
 - **File names**: `certificate`, `private_key`, `ca_chain`
 - **Use this for**: Direct file access, applications that read files
 
 ### `/etc/otelcol/certs/` (Kubernetes Secret)
+
 - **Optional** - Only if secret sync is enabled
 - **May be delayed** - Secret is created after CSI mount
 - **File names**: `cert.crt`, `cert.key`, `ca.crt` (mapped names)
@@ -162,12 +166,12 @@ Files available:
 
 ## Storage Locations Summary
 
-| Location | Type | When Created | Persistence | Purpose |
-|----------|------|-------------|-------------|---------|
-| **OpenBao KV** | Source | Manual (setup script) | Permanent | Single source of truth |
-| `/mnt/secrets-store/` | CSI Mount | Pod start | Ephemeral (pod lifetime) | Direct file access |
-| `otelcol1-certs` Secret | K8s Secret | Pod start (optional) | Until deleted | K8s integration |
-| `/etc/otelcol/certs/` | Secret Mount | Pod start (if secret exists) | Ephemeral (pod lifetime) | Alternative access |
+| Location                | Type         | When Created                 | Persistence              | Purpose                |
+| ----------------------- | ------------ | ---------------------------- | ------------------------ | ---------------------- |
+| **OpenBao KV**          | Source       | Manual (setup script)        | Permanent                | Single source of truth |
+| `/mnt/secrets-store/`   | CSI Mount    | Pod start                    | Ephemeral (pod lifetime) | Direct file access     |
+| `otelcol1-certs` Secret | K8s Secret   | Pod start (optional)         | Until deleted            | K8s integration        |
+| `/etc/otelcol/certs/`   | Secret Mount | Pod start (if secret exists) | Ephemeral (pod lifetime) | Alternative access     |
 
 ---
 

@@ -26,28 +26,28 @@ spec:
     spec:
       serviceAccountName: openbao
       containers:
-      - name: openbao
-        image: openbao/openbao:latest
-        imagePullPolicy: IfNotPresent
-        args:
-        - server
-        - -dev
-        - -dev-listen-address=0.0.0.0:8200
-        ports:
-        - containerPort: 8200
-          name: http
-        env:
-        - name: VAULT_DEV_ROOT_TOKEN_ID
-          value: "root-token"
-        - name: VAULT_DEV_LISTEN_ADDRESS
-          value: "0.0.0.0:8200"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
+        - name: openbao
+          image: openbao/openbao:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - server
+            - -dev
+            - -dev-listen-address=0.0.0.0:8200
+          ports:
+            - containerPort: 8200
+              name: http
+          env:
+            - name: VAULT_DEV_ROOT_TOKEN_ID
+              value: "root-token"
+            - name: VAULT_DEV_LISTEN_ADDRESS
+              value: "0.0.0.0:8200"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
 ---
 apiVersion: v1
 kind: Service
@@ -57,9 +57,9 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - port: 8200
-    targetPort: 8200
-    protocol: TCP
-    name: http
+    - port: 8200
+      targetPort: 8200
+      protocol: TCP
+      name: http
   selector:
     app: openbao

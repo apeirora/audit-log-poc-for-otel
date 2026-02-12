@@ -9,6 +9,7 @@ kubectl get pods -n otel-demo -l app=otelcol1
 ```
 
 **Expected Output:**
+
 ```
 NAME                        READY   STATUS    RESTARTS   AGE
 otelcol1-xxxxx-xxxxx        1/1     Running   0          Xm
@@ -25,6 +26,7 @@ kubectl get secretproviderclasspodstatus -n otel-demo
 ```
 
 **Expected Output:**
+
 ```
 NAME                                                       AGE
 otelcol1-xxxxx-xxxxx-otel-demo-openbao-certificates       Xm
@@ -37,6 +39,7 @@ kubectl get secretproviderclasspodstatus -n otel-demo -o yaml | Select-String -P
 ```
 
 **Expected Output:**
+
 ```
 status:
   mounted: true
@@ -67,16 +70,19 @@ Write-Host "Pod: $podName"
 **Note:** The collector container may not have `ls` command. Use these alternatives:
 
 **Option 1: Check via describe pod**
+
 ```powershell
 kubectl describe pod -n otel-demo $podName | Select-String -Pattern "Mounts:|openbao-certificates" -Context 3
 ```
 
 **Option 2: Verify mount exists by reading a file**
+
 ```powershell
 kubectl exec -n otel-demo $podName -- sh -c "test -f /mnt/secrets-store/certificate && echo 'Certificate file exists' || echo 'File not found'"
 ```
 
 **Expected Output:**
+
 ```
 Certificate file exists
 ```
@@ -90,6 +96,7 @@ kubectl exec -n otel-demo $podName -- cat /mnt/secrets-store/certificate
 ```
 
 **Expected Output:**
+
 ```
 -----BEGIN CERTIFICATE-----
 [Certificate content]
@@ -105,6 +112,7 @@ kubectl exec -n otel-demo $podName -- cat /mnt/secrets-store/private_key
 ```
 
 **Expected Output:**
+
 ```
 -----BEGIN PRIVATE KEY-----
 [Private key content]
@@ -120,6 +128,7 @@ kubectl exec -n otel-demo $podName -- sh -c "test -f /mnt/secrets-store/certific
 ```
 
 **Expected Output:**
+
 ```
 All certificate files exist!
 ```
@@ -135,6 +144,7 @@ kubectl describe pod -n otel-demo $podName | Select-String -Pattern "Mounts:|ope
 ```
 
 **Expected Output:**
+
 ```
 Mounts:
   /mnt/secrets-store from openbao-certificates (ro)
@@ -153,6 +163,7 @@ kubectl get secret otelcol1-certs -n otel-demo
 ```
 
 **Expected Output (if synced):**
+
 ```
 NAME            TYPE     DATA   AGE
 otelcol1-certs  Opaque   3      5m
@@ -165,6 +176,7 @@ kubectl get secret otelcol1-certs -n otel-demo -o jsonpath='{.data}' | ConvertFr
 ```
 
 **Expected Output:**
+
 ```
   - cert.crt
   - cert.key
@@ -188,6 +200,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 Key                                         Value
 ---                                         -----
@@ -208,6 +221,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 == Secret Path ==
 certs/data/test1
@@ -278,6 +292,7 @@ $podName = kubectl get pods -n otel-demo -l app=otelcol1 --field-selector=status
 ```
 
 This shows:
+
 - The running pod name
 - Verification that all certificate files exist
 - A preview of the certificate content
@@ -292,6 +307,6 @@ This shows:
 ✅ Certificate content is valid  
 ✅ Kubernetes auth is configured  
 ✅ Certificates exist in OpenBao  
-✅ (Optional) Kubernetes secret is synced  
+✅ (Optional) Kubernetes secret is synced
 
 **If all checks pass, the certificate sync is working!** 🎉

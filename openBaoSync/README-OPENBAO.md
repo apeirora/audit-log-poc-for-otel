@@ -1,10 +1,13 @@
 # OpenBao Certificate Management with CSI Provider
 
-This setup provides automated certificate management using OpenBao (a Vault fork) with the **OpenBao CSI Provider** in your Kubernetes cluster. Certificates are stored in OpenBao's KV store and automatically mounted into pods via CSI volumes, following the [official OpenBao CSI Provider documentation](https://openbao.org/docs/platform/k8s/csi/examples/).
+This setup provides automated certificate management using OpenBao (a Vault fork) with the **OpenBao CSI Provider** in your Kubernetes
+cluster. Certificates are stored in OpenBao's KV store and automatically mounted into pods via CSI volumes, following the
+[official OpenBao CSI Provider documentation](https://openbao.org/docs/platform/k8s/csi/examples/).
 
 ## Overview
 
 The solution uses the **OpenBao CSI Provider** which:
+
 - Automatically mounts secrets as files in pods
 - Optionally syncs secrets to Kubernetes secrets
 - Uses native Kubernetes CSI volume interface
@@ -52,22 +55,26 @@ kubectl wait --for=condition=ready pod -l app=openbao -n openbao --timeout=120s
 ### Step 2: Generate and Store Certificates
 
 Run the setup script to:
+
 - Enable PKI secrets engine
 - Generate root CA
 - Create test certificates (`test1.test.local` and `test2.test.local`)
 - Store certificates in OpenBao KV store
 
 **PowerShell (Windows):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-openbao-certs.ps1
 ```
 
 **Bash (Linux/Mac):**
+
 ```bash
 bash scripts/setup-openbao-certs.sh
 ```
 
 This script will:
+
 1. Extract the root token from OpenBao logs
 2. Enable PKI secrets engine
 3. Generate a root CA
@@ -80,16 +87,19 @@ This script will:
 Install CSI drivers and configure the integration:
 
 **PowerShell (Windows):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-openbao-csi.ps1
 ```
 
 **Bash (Linux/Mac):**
+
 ```bash
 bash scripts/setup-openbao-csi.sh
 ```
 
 This script will:
+
 1. Install CSI Secret Store Driver (if not already installed)
 2. Install OpenBao CSI Provider (if not already installed)
 3. Extract OpenBao root token and create a secret
@@ -99,9 +109,11 @@ This script will:
 
 ### Step 3.5: Setup Kubernetes Authentication (Required)
 
-**Important:** The setup script configures token auth, but we use Kubernetes authentication for better security. You need to manually configure it:
+**Important:** The setup script configures token auth, but we use Kubernetes authentication for better security. You need to manually
+configure it:
 
 1. **Enable Kubernetes Auth in OpenBao:**
+
    ```powershell
    $podName = kubectl get pods -n openbao -l app=openbao -o jsonpath='{.items[0].metadata.name}'
    $logs = kubectl logs -n openbao $podName
@@ -111,6 +123,7 @@ This script will:
    ```
 
 2. **Configure Kubernetes Auth:**
+
    ```powershell
    $K8S_HOST = "https://kubernetes.default.svc"
    $saToken = kubectl exec -n openbao $podName -- cat /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -120,21 +133,24 @@ This script will:
    ```
 
 3. **Create Policy:**
+
    ```powershell
    $policyBase64 = "cGF0aCAiY2VydHMvZGF0YS8qIiB7CiAgY2FwYWJpbGl0aWVzID0gWyJyZWFkIl0KfQ=="
    kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && echo '$policyBase64' | base64 -d | bao policy write otelcol1-policy -"
    ```
 
 4. **Create Role:**
+
    ```powershell
    kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && bao write auth/kubernetes/role/otelcol1-role bound_service_account_names=otelcol1 bound_service_account_namespaces=otel-demo policies=otelcol1-policy ttl=1h"
    ```
 
 5. **Update SecretProviderClass to use Kubernetes auth:**
+
    ```powershell
    kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
    ```
-   
+
    (The SecretProviderClass is already configured with `vaultAuthMethod: "kubernetes"` and `roleName: "otelcol1-role"`)
 
 ### Step 4: Verify
@@ -187,17 +203,20 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
 ### Deployment Files
 
 #### `kubectl/openbao-deployment.yaml`
+
 - Deploys OpenBao in dev mode
 - Creates namespace, service account, deployment, and service
 - OpenBao runs unsealed with a root token (dev mode only)
 - **Note:** Dev mode should NOT be used in production
 
 #### `kubectl/openbao-csi-rbac.yaml`
+
 - Creates ServiceAccount `otelcol1` in `otel-demo` namespace
 - Grants permissions to create/update secrets (for CSI secret sync)
 - Required for CSI provider to sync secrets to Kubernetes
 
 #### `kubectl/openbao-csi-secretproviderclass.yaml`
+
 - **SecretProviderClass** resource defining:
   - OpenBao connection details
   - Authentication method (Kubernetes authentication)
@@ -206,6 +225,7 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
   - How to map to Kubernetes secret
 
 #### `kubectl/otelcol1-with-csi.yaml`
+
 - Updated `otelcol1` deployment with:
   - CSI volume mount for OpenBao certificates
   - ServiceAccount reference (`otelcol1`) - **Required for Kubernetes auth**
@@ -215,12 +235,14 @@ kubectl exec -n otel-demo <otelcol1-pod-name> -- ls -la /mnt/secrets-store/
 ### Script Files
 
 #### `scripts/setup-openbao-certs.ps1` / `scripts/setup-openbao-certs.sh`
+
 - Sets up OpenBao PKI
 - Generates root CA and test certificates
 - Stores certificates in OpenBao KV store
 - **Run once** after deploying OpenBao
 
 #### `scripts/setup-openbao-csi.ps1` / `scripts/setup-openbao-csi.sh`
+
 - Installs CSI Secret Store Driver
 - Installs OpenBao CSI Provider
 - Creates OpenBao token secret (for initial setup)
@@ -252,6 +274,7 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
 ### Authentication Methods
 
 **Current Implementation (Kubernetes Auth):**
+
 - ✅ Uses Kubernetes authentication method
 - ✅ Pods authenticate using ServiceAccount tokens
 - ✅ No token storage needed (more secure)
@@ -263,6 +286,7 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
 - See [OpenBao Kubernetes Auth documentation](https://openbao.org/docs/auth/kubernetes)
 
 **Alternative (Token Auth - Not Used):**
+
 - Uses token authentication
 - Token stored in Kubernetes secret `openbao-token`
 - Simpler setup but less secure
@@ -272,10 +296,12 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
 ## Certificate Locations
 
 ### In OpenBao KV Store
+
 - Path: `certs/data/test1` and `certs/data/test2`
 - Contains: `certificate`, `private_key`, `ca_chain`
 
 ### In Pod (CSI Mount)
+
 - Mount path: `/mnt/secrets-store/`
 - Files:
   - `certificate` - Certificate content
@@ -283,6 +309,7 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
   - `ca_chain` - CA chain content
 
 ### In Kubernetes Secret (Synced)
+
 - Name: `otelcol1-certs` (configurable)
 - Namespace: `otel-demo` (configurable)
 - Keys:
@@ -381,6 +408,7 @@ kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-stor
 ## Security Notes
 
 ⚠️ **Important:**
+
 - This setup uses OpenBao in **dev mode** which is **NOT suitable for production**
 - Root tokens are stored in pod logs (dev mode only)
 - **Kubernetes authentication is used** (production-ready approach)
@@ -398,7 +426,7 @@ kubectl delete -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-stor
 ✅ **Automatic rotation** - CSI driver can refresh secrets  
 ✅ **Better security** - Proper authentication methods supported  
 ✅ **Simpler configuration** - Declarative SecretProviderClass  
-✅ **Production ready** - Follows OpenBao's official recommendations  
+✅ **Production ready** - Follows OpenBao's official recommendations
 
 ## Next Steps
 

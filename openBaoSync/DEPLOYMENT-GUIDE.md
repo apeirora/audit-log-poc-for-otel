@@ -43,6 +43,7 @@ kubectl get pods -n openbao -l app=openbao
 ```
 
 **Expected Output:**
+
 ```
 NAME                       READY   STATUS    RESTARTS   AGE
 openbao-xxxxx-xxxxx        1/1     Running   0          Xm
@@ -55,16 +56,19 @@ openbao-xxxxx-xxxxx        1/1     Running   0          Xm
 Run the certificate setup script:
 
 **PowerShell (Windows):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-openbao-certs.ps1
 ```
 
 **Bash (Linux/Mac):**
+
 ```bash
 bash scripts/setup-openbao-certs.sh
 ```
 
 This script will:
+
 - Extract root token from OpenBao logs
 - Enable PKI secrets engine
 - Generate root CA
@@ -72,6 +76,7 @@ This script will:
 - Store certificates in OpenBao KV store at `certs/data/test1` and `certs/data/test2`
 
 **Verify certificates were created:**
+
 ```powershell
 $podName = kubectl get pods -n openbao -l app=openbao -o jsonpath='{.items[0].metadata.name}'
 $logs = kubectl logs -n openbao $podName
@@ -89,16 +94,19 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 Install the CSI Secret Store Driver and OpenBao CSI Provider:
 
 **PowerShell (Windows):**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-openbao-csi.ps1
 ```
 
 **Bash (Linux/Mac):**
+
 ```bash
 bash scripts/setup-openbao-csi.sh
 ```
 
 This script will:
+
 1. Install CSI Secret Store Driver (if not already installed)
 2. Install OpenBao CSI Provider (if not already installed)
 3. Create OpenBao token secret (for initial setup)
@@ -107,6 +115,7 @@ This script will:
 6. Update `otelcol1` deployment with CSI volumes
 
 **Verify CSI drivers are running:**
+
 ```powershell
 kubectl get pods -n kube-system -l app=secrets-store-csi-driver
 kubectl get pods -n kube-system -l app=openbao-csi-provider
@@ -118,7 +127,8 @@ kubectl get pods -n kube-system -l app=openbao-csi-provider
 
 ## Step 5: Setup Kubernetes Authentication in OpenBao
 
-**Important:** This is required for the CSI provider to authenticate. The setup script uses token auth, but we configure Kubernetes auth for better security.
+**Important:** This is required for the CSI provider to authenticate. The setup script uses token auth, but we configure Kubernetes auth for
+better security.
 
 ### 5.1: Get OpenBao Root Token
 
@@ -137,6 +147,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 Success! Enabled kubernetes auth method at: kubernetes/
 ```
@@ -151,6 +162,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 Success! Data written to: auth/kubernetes/config
 ```
@@ -163,6 +175,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 Success! Uploaded policy: otelcol1-policy
 ```
@@ -174,6 +187,7 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ```
 
 **Expected Output:**
+
 ```
 Success! Data written to: auth/kubernetes/role/otelcol1-role
 ```
@@ -197,11 +211,13 @@ kubectl apply -f kubectl/openbao-csi-secretproviderclass.yaml
 ```
 
 **Verify configuration:**
+
 ```powershell
 kubectl get secretproviderclass openbao-certificates -n otel-demo -o jsonpath='{.spec.parameters.vaultAuthMethod}'
 ```
 
 **Expected Output:**
+
 ```
 kubernetes
 ```
@@ -223,11 +239,13 @@ kubectl rollout status deployment/otelcol1 -n otel-demo --timeout=120s
 ```
 
 **Verify pod is running:**
+
 ```powershell
 kubectl get pods -n otel-demo -l app=otelcol1
 ```
 
 **Expected Output:**
+
 ```
 NAME                        READY   STATUS    RESTARTS   AGE
 otelcol1-xxxxx-xxxxx        1/1     Running   0          Xm
@@ -347,11 +365,13 @@ powershell -ExecutionPolicy Bypass -File scripts/proof-certificate-sync.ps1
 ### Pod Stuck in Init State
 
 Check pod events:
+
 ```powershell
 kubectl describe pod -n otel-demo -l app=otelcol1 | Select-String -Pattern "Events:" -Context 10
 ```
 
 Common issues:
+
 - **CSI driver not installed** → Run `setup-openbao-csi.ps1` again
 - **Kubernetes auth not configured** → Complete Step 5
 - **Certificates missing** → Run `setup-openbao-certs.ps1` again
@@ -359,11 +379,13 @@ Common issues:
 ### Authentication Failures
 
 Check OpenBao logs:
+
 ```powershell
 kubectl logs -n openbao -l app=openbao --tail=20 | Select-String -Pattern "403|permission|auth"
 ```
 
 Verify Kubernetes auth is configured:
+
 ```powershell
 $podName = kubectl get pods -n openbao -l app=openbao -o jsonpath='{.items[0].metadata.name}'
 $logs = kubectl logs -n openbao $podName
@@ -375,11 +397,13 @@ kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8
 ### Certificates Not Found
 
 Verify certificates exist in OpenBao:
+
 ```powershell
 kubectl exec -n openbao $podName -- sh -c "export VAULT_ADDR='http://127.0.0.1:8200' && export VAULT_TOKEN='$OPENBAO_TOKEN' && bao kv get certs/data/test1"
 ```
 
 If missing, run certificate setup again:
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup-openbao-certs.ps1
 ```
@@ -394,13 +418,15 @@ After successful deployment:
    - `/mnt/secrets-store/` in the pod (CSI direct mount from OpenBao)
    - `/etc/otelcol/certs/` (Kubernetes secret mount, if synced)
 
-**Important:** Certificates are stored **ONLY in OpenBao**. The CSI provider fetches them directly from OpenBao when the pod starts - they are NOT stored in Kubernetes first, then copied to the pod. Both mount points get their data directly from OpenBao. See `CERTIFICATE-FLOW-EXPLAINED.md` for detailed flow diagram.
+**Important:** Certificates are stored **ONLY in OpenBao**. The CSI provider fetches them directly from OpenBao when the pod starts - they
+are NOT stored in Kubernetes first, then copied to the pod. Both mount points get their data directly from OpenBao. See
+`CERTIFICATE-FLOW-EXPLAINED.md` for detailed flow diagram.
 
-2. **Configure your application** to use certificates from these paths
+1. **Configure your application** to use certificates from these paths
 
-3. **Monitor certificate rotation** if you set it up
+2. **Monitor certificate rotation** if you set it up
 
-4. **For production:**
+3. **For production:**
    - Set up proper OpenBao seal/unseal
    - Enable TLS for OpenBao
    - Use encrypted storage

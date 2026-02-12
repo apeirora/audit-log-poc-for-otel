@@ -3,6 +3,7 @@
 ## Files Status
 
 ### ✅ Moved to openBaoSync/ (All OpenBao-related files)
+
 All OpenBao-specific files have been moved to the `openBaoSync/` folder.
 
 ### ❌ Remaining CSI Files in kubectl/ (OLD - Not Used)
