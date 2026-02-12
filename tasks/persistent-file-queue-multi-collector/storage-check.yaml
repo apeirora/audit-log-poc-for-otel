@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: storage-check
+  namespace: otel-demo
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: storage-data
+      containers:
+        - name: storage-check
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              ls -ld /data && ls -l /data && ls -l /data/queue-* && du -sh /data/queue-*
+          volumeMounts:
+            - name: data
+              mountPath: /data

@@ -1,0 +1,41 @@
+services:
+  storage:
+    image: alpine:3.19
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /data/queue-c1 /data/queue-c2 /data/queue-c3 && chmod -R 777 /data && sleep infinity",
+      ]
+    volumes:
+      - storage-data:/data
+
+  otelcol1:
+    image: otel/opentelemetry-collector-contrib:latest
+    depends_on: [storage]
+    user: "0"
+    volumes:
+      - storage-data:/data
+      - ./config1.yaml:/etc/otelcol/config.yaml:ro
+    command: ["--config=/etc/otelcol/config.yaml"]
+
+  otelcol2:
+    image: otel/opentelemetry-collector-contrib:latest
+    depends_on: [storage]
+    user: "0"
+    volumes:
+      - storage-data:/data
+      - ./config2.yaml:/etc/otelcol/config.yaml:ro
+    command: ["--config=/etc/otelcol/config.yaml"]
+
+  otelcol3:
+    image: otel/opentelemetry-collector-contrib:latest
+    depends_on: [storage]
+    user: "0"
+    volumes:
+      - storage-data:/data
+      - ./config3.yaml:/etc/otelcol/config.yaml:ro
+    command: ["--config=/etc/otelcol/config.yaml"]
+
+volumes:
+  storage-data:
