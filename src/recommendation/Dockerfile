@@ -1,4 +1,4 @@
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /usr/src/app/
 
@@ -11,7 +11,7 @@ COPY main.go main.go
 
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o recommendation main.go
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 
 WORKDIR /usr/src/app/
 
