@@ -1,9 +1,28 @@
 # Guidance Document: Reliable Audit Logging with OpenTelemetry
 
-This document describes the recommended 3-tier architecture (Client SDK → OpenTelemetry Collector → Final Storage Sink) for highly reliable
-audit log delivery. It focuses on minimizing data loss, ensuring long retention, and keeping operational complexity under control.
+This guidance paper explains recommended practices and an operational architecture for building a highly reliable audit logging pipeline
+using OpenTelemetry (OTel). Its primary goal is to help architects, platform engineers and application developers design audit log delivery
+that minimizes data loss, supports long retention, and remains operationally manageable.
+
+Purpose and motivation:
+
+- Provide concise, actionable recommendations for each layer of the pipeline (Client SDK → Collector → Final Storage) so teams can make
+  consistent design choices across environments.
+- Emphasize durability and predictable retention over low latency: audit logs often have legal and compliance requirements where losing
+  events is unacceptable and duplicates are preferable to missing data.
+- Reduce operational complexity by recommending focused components (dedicated collector pipelines, node‑local buffering where appropriate,
+  and clear monitoring/alerting points) rather than mixing audit logs with high‑volume telemetry.
+
+Audience:
+
+- Platform and SRE teams building or operating OTel collection and processing infrastructure.
+- Application and SDK developers who implement audit logging clients and integrations.
+- Security, compliance, and data governance teams evaluating retention and immutable storage requirements.
 
 ## Scope & Goals
+
+In scope: reliable delivery patterns, buffering strategies (client vs. agent), collector configuration recommendations, monitoring and
+runbooks, and guidance for final sink durability and compliance controls.
 
 Primary goals:
 
@@ -13,6 +32,9 @@ Primary goals:
 - Operable at scale with simple failure recovery.
 
 Non-goals:
+
+Out of scope: vendor‑specific implementation details for every storage backend, full legal retention policy text, and high‑performance
+telemetry optimizations that trade durability for throughput.
 
 - Ultra low latency for audit logs (latency is secondary to durability).
 - Mixing audit and high-volume debug/info logs in the same pipeline.
@@ -52,6 +74,34 @@ Failure considerations:
 
 - If the network is down, client-side persistence must retain events until restored.
 - If local disk fills, trigger alerts; do not silently discard audit entries.
+
+### Collector Agent with Local Persistence
+
+When using a node-local OpenTelemetry Collector agent (e.g. run as sidecar) to buffer audit logs, the agent receives log traffic from
+applications on the same node and persists it to the node filesystem before forwarding to the central collector or sink. This topology moves
+the responsibility for short-term durability from each application to a local agent and is operationally convenient in many environments.
+
+Key benefits:
+
+- [Reduced network dependency](https://kubernetes.io/docs/reference/networking/virtual-ips/#internal-traffic-policy): App-to-agent traffic
+  stays on the same node, lowering cross-node network failure exposure.
+- Simpler application footprint: Applications avoid implementing per-app persistent queues and complex stateful deployments.
+
+Risks and operational tradeoffs:
+
+- Node failure exposure: If a node is lost, any locally buffered data becomes unavailable unless additional replication or backup is in
+  place.
+- Vertical scaling limits: Large buffering needs require nodes with large disks; storage does not scale transparently across nodes.
+- Upgrade/maintenance impact: During agent downtime (e.g. rolling upgrades), applications may experience drops unless retry/backoff is
+  carefully tuned.
+
+Operational recommendations:
+
+- Monitor local queue depth and age; alert when oldest events exceed your SLA.
+- Use node‑local persistent volumes with appropriate capacity planning.
+- Ensure safe decommissioning: drain or wait for agent buffers to drain before removing nodes. (e.g. Gardener node hibernation)
+- Consider the agent topology for environments that can tolerate limited node‑level blast radius; prefer distributed storage if node loss is
+  unacceptable.
 
 ## 2. Collector Tier Guidelines
 
@@ -114,7 +164,8 @@ Operational Notes:
 
 ## 3. Final Storage Sink Tier Guidelines
 
-Examples: SIEM (Security Information and Event Management), Data Lake (e.g. S3/GCS/HDFS), OpenSearch, Elasticsearch.
+Examples: SIEM (Security Information and Event Management), Data Lake (e.g. S3/GCS/HDFS), OpenSearch, Elasticsearch. Normally running as
+StatefulSets or managed services.
 
 Requirements:
 
