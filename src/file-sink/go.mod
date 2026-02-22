@@ -10,7 +10,7 @@ tool (
 
 require (
 	go.opentelemetry.io/proto/otlp v1.9.0
-	google.golang.org/grpc v1.78.0
+	google.golang.org/grpc v1.79.1
 	google.golang.org/protobuf v1.36.11
 )
 
