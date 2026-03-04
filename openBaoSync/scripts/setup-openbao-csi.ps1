@@ -3,29 +3,57 @@ $ErrorActionPreference = "Continue"
 Write-Host "Setting up OpenBao CSI Provider integration..." -ForegroundColor Green
 
 Write-Host "`nStep 1: Checking if CSI Secret Store Driver is installed..." -ForegroundColor Yellow
-try {
-    $null = kubectl get csidriver secrets-store.csi.k8s.io -o name 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "CSI Secret Store Driver is already installed" -ForegroundColor Green
-    } else {
-        throw "Not found"
-    }
-} catch {
-    Write-Host "CSI Secret Store Driver not found. Installing..." -ForegroundColor Yellow
+$csiDriver = kubectl get csidriver secrets-store.csi.k8s.io -o name 2>&1
+$crdCheck = kubectl get crd secretproviderclasses.secrets-store.csi.x-k8s.io -o name 2>&1
+if ($LASTEXITCODE -eq 0 -and $crdCheck) {
+    Write-Host "CSI Secret Store Driver is already installed" -ForegroundColor Green
+} else {
+    Write-Host "CSI Secret Store Driver not found. Installing all components..." -ForegroundColor Yellow
+    Write-Host "  Installing CRDs..." -ForegroundColor Gray
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.0/deploy/secrets-store.csi.x-k8s.io_secretproviderclasses.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.0/deploy/secrets-store.csi.x-k8s.io_secretproviderclasspodstatuses.yaml
+    Write-Host "  Installing RBAC..." -ForegroundColor Gray
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.0/deploy/rbac-secretproviderclass.yaml
+    Write-Host "  Installing CSIDriver..." -ForegroundColor Gray
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.0/deploy/csidriver.yaml
+    Write-Host "  Installing DaemonSet..." -ForegroundColor Gray
     kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/secrets-store-csi-driver/v1.4.0/deploy/secrets-store-csi-driver.yaml
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Waiting for CSI driver to be ready..." -ForegroundColor Yellow
-        kubectl wait --for=condition=ready pod -l app=secrets-store-csi-driver -n kube-system --timeout=120s
+        Start-Sleep -Seconds 5
+        $maxWait = 120
+        $waited = 0
+        while ($waited -lt $maxWait) {
+            $pods = kubectl get pods -n kube-system -l app=csi-secrets-store --no-headers 2>$null
+            if ($pods -and ($pods | Select-String -Pattern "Running" -Quiet)) {
+                Write-Host "CSI Secret Store Driver is ready!" -ForegroundColor Green
+                kubectl get pods -n kube-system -l app=csi-secrets-store
+                break
+            }
+            Start-Sleep -Seconds 2
+            $waited += 2
+        }
+        if ($waited -ge $maxWait) {
+            Write-Host "Warning: CSI driver pods not ready after $maxWait seconds" -ForegroundColor Yellow
+            kubectl get pods -n kube-system -l app=csi-secrets-store
+        }
     }
 }
 
 Write-Host "`nStep 2: Installing OpenBao CSI Provider..." -ForegroundColor Yellow
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$kubectlDir = Join-Path $scriptDir "..\kubectl"
+$kubectlDir = Resolve-Path $kubectlDir
+
 $providerPods = kubectl get pods -n kube-system -l app=openbao-csi-provider --no-headers 2>$null
 if ($providerPods -and ($providerPods | Select-String -Pattern "Running" -Quiet)) {
     Write-Host "OpenBao CSI Provider is already running" -ForegroundColor Green
 } else {
     Write-Host "Installing OpenBao CSI Provider..." -ForegroundColor Yellow
-    kubectl apply -f https://raw.githubusercontent.com/openbao/openbao-csi-provider/main/deploy/install.yaml
+    Write-Host "  Applying RBAC first..." -ForegroundColor Gray
+    kubectl apply -f "$kubectlDir\openbao-csi-rbac.yaml"
+    Write-Host "  Applying DaemonSet..." -ForegroundColor Gray
+    kubectl apply -f "$kubectlDir\openbao-csi-provider-daemonset.yaml"
     Write-Host "Waiting for CSI provider pods to be ready..." -ForegroundColor Yellow
     $maxWait = 60
     $waited = 0
@@ -77,13 +105,18 @@ stringData:
 $tokenSecret | kubectl apply -f -
 
 Write-Host "`nStep 5: Applying RBAC configuration..." -ForegroundColor Yellow
-kubectl apply -f openBaoSync/kubectl/openbao-csi-rbac.yaml
+if (-not $kubectlDir) {
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $kubectlDir = Join-Path $scriptDir "..\kubectl"
+    $kubectlDir = Resolve-Path $kubectlDir
+}
+kubectl apply -f "$kubectlDir\openbao-csi-rbac.yaml"
 
 Write-Host "`nStep 6: Applying SecretProviderClass..." -ForegroundColor Yellow
-kubectl apply -f openBaoSync/kubectl/openbao-csi-secretproviderclass.yaml
+kubectl apply -f "$kubectlDir\openbao-csi-secretproviderclass.yaml"
 
 Write-Host "`nStep 7: Updating otelcol1 deployment with CSI volumes..." -ForegroundColor Yellow
-kubectl apply -f openBaoSync/kubectl/otelcol1-with-csi.yaml
+kubectl apply -f "$kubectlDir\otelcol1-with-csi.yaml"
 
 Write-Host "`nWaiting for deployment to be ready..." -ForegroundColor Yellow
 kubectl rollout status deployment/otelcol1 -n otel-demo --timeout=120s
