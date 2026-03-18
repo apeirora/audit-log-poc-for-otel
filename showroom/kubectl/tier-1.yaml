@@ -9,6 +9,14 @@ metadata:
   name: dice-java-otelcol-config
 data:
   config.yaml: |
+    extensions:
+      basicauth/client:
+        client_auth:
+          # TEST-ONLY: plaintext credentials in a ConfigMap are NOT production-ready.
+          # For production use a Kubernetes Secret and/or external secret store, and rotate credentials.
+          username: tier1-ingest
+          password: tier1-ingest-secret
+
     receivers:
       otlp:
         protocols:
@@ -18,31 +26,34 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
-      batch: # used to optimize export calls in all pipelines
+      batch:
         send_batch_size: 1024
         timeout: 5s
 
     exporters:
-      otlp:
-        endpoint: log-sink.tier-3.svc.cluster.local:4317
+      otlphttp:
+        endpoint: http://otelcol-agent.tier-2.svc.cluster.local:4318
         tls:
           insecure: true
+        auth:
+          authenticator: basicauth/client
       debug:
 
     service:
+      extensions: [basicauth/client]
       pipelines:
         logs:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlp, debug]
+          exporters: [otlphttp, debug]
         metrics:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlp, debug]
+          exporters: [otlphttp, debug]
         traces:
           receivers: [otlp]
           processors: [batch]
-          exporters: [otlp, debug]
+          exporters: [otlphttp, debug]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -87,7 +98,6 @@ spec:
           image: otel/opentelemetry-collector-contrib:latest
           imagePullPolicy: Always
           args:
-            # see ConfigMap mapped as volume below
             - "--config=/etc/otelcol-contrib/config.yaml"
           ports:
             - name: otlp-grpc
