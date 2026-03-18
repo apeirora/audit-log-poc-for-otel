@@ -17,14 +17,29 @@ data:
         create_directory: true
       health_check:
         endpoint: ${env:MY_POD_IP}:13133
+      basicauth/server:
+        htpasswd:
+          inline: |
+            # TEST-ONLY: plaintext htpasswd entries are NOT production-ready.
+            # For production generate a bcrypt htpasswd line (e.g. `htpasswd -nbBC 10 USER PASS`)
+            # and store it in a Kubernetes Secret (or external secret store).
+         #####
+      basicauth/client:
+        client_auth:
+          username: ${env:OPENSEARCH_USERNAME}
+          password: ${env:OPENSEARCH_PASSWORD}
 
     receivers:
       otlp:
         protocols:
           grpc:
             endpoint: 0.0.0.0:4317
+            auth:
+              authenticator: basicauth/server
           http:
             endpoint: 0.0.0.0:4318
+            auth:
+              authenticator: basicauth/server
 
     processors:
       batch:
@@ -35,24 +50,34 @@ data:
       # Export logs directly to OpenSearch in namespace 'tier-3'.
       # If your OpenSearch installation requires authentication, provide username/password
       # via Kubernetes Secret and reference them using env vars in the DaemonSet below.
-      elasticsearch:
-        endpoints: ["http://opensearch-cluster-master.tier-3.svc.cluster.local:9200"]
-        # username: "admin"
-        # password: "changeme"
+      opensearch:
+        http:
+          endpoint: https://opensearch-cluster-master.tier-3.svc.cluster.local:9200
+          tls:
+            insecure_skip_verify: true
+          auth:
+            authenticator: basicauth/client
+        logs_index: otel-logs
+        traces_index: otel-traces
         sending_queue:
           enabled: true
           storage: file_storage
-        # retry_on_failure: # FIXME elasticsearch exporter doesn't support retry_on_failure yet
-        #   enabled: true
-      debug:
+      debug/logs:
+        verbosity: detailed
+      debug/metrics:
+        verbosity: basic
 
     service:
-      extensions: [file_storage, health_check]
+      extensions: [file_storage, health_check, basicauth/server, basicauth/client]
       pipelines:
         logs:
           receivers: [otlp]
           processors: [batch]
-          exporters: [elasticsearch, debug]
+          exporters: [opensearch, debug/logs]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug/metrics]
       telemetry:
         metrics:
           readers:
@@ -134,16 +159,16 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             # If OpenSearch requires basic auth, you can pass credentials via env vars
-            # - name: OPENSEARCH_USERNAME
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: opensearch-credentials
-            #       key: username
-            # - name: OPENSEARCH_PASSWORD
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: opensearch-credentials
-            #       key: password
+            - name: OPENSEARCH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: username
+            - name: OPENSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: opensearch-credentials
+                  key: password
           resources:
             limits:
               memory: 256Mi
@@ -197,9 +222,7 @@ metadata:
     app: otelcol-agent
     component: otel-collector
 spec:
-  type: ClusterIP
-  internalTrafficPolicy: Local
-  clusterIP: None
+  type: LoadBalancer
   selector:
     app: otelcol-agent
     component: otel-collector
