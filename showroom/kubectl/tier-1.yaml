@@ -55,6 +55,32 @@ data:
           processors: [batch]
           exporters: [otlphttp, debug]
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dice-java-cert-sync
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dice-java-cert-sync
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dice-java-cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: dice-java-cert-sync
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dice-java-cert-sync
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -71,6 +97,48 @@ spec:
       labels:
         app: dice-java
     spec:
+      serviceAccountName: dice-java-cert-sync
+      initContainers:
+        - name: fetch-openbao-certs
+          image: alpine:3.21
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              apk add --no-cache curl jq
+              RESPONSE="$(curl -sS --fail --show-error --insecure \
+                -H "X-Vault-Token: ${OPENBAO_TOKEN}" \
+                -H "X-Vault-Namespace: ${OPENBAO_NAMESPACE}" \
+                -H "X-Vault-Request: true" \
+                "${OPENBAO_ADDR}/v1/${OPENBAO_CERT_PATH}")"
+              echo "${RESPONSE}" | jq -er '.data.data.cert' > /etc/dice-java/certs/cert
+              echo "${RESPONSE}" | jq -er '.data.data.key' > /etc/dice-java/certs/key
+          env:
+            - name: OPENBAO_ADDR
+              value: "https://openbao.cc-d2.showroom.apeirora.eu"
+            - name: OPENBAO_NAMESPACE
+              value: "otel/"
+            - name: OPENBAO_CERT_PATH
+              value: "kv/data/secret"
+            - name: OPENBAO_TOKEN
+              value: "###"
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+        - name: sync-k8s-tls-secret
+          image: bitnami/kubectl:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              kubectl create secret generic dice-java-openbao-tls \
+                --from-file=cert=/etc/dice-java/certs/cert \
+                --from-file=key=/etc/dice-java/certs/key \
+                --dry-run=client -o yaml \
+                | kubectl apply -f -
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
       containers:
         - name: dice-java
           image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest
@@ -87,6 +155,9 @@ spec:
               value: "true"
           ports:
             - containerPort: 8082
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
           resources:
             limits:
               memory: 256Mi
@@ -110,6 +181,9 @@ spec:
             - name: otelcol-config
               mountPath: /etc/otelcol-contrib
               readOnly: true
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+              readOnly: true
       volumes:
         - name: otelcol-config
           configMap:
@@ -117,6 +191,8 @@ spec:
             items:
               - key: config.yaml
                 path: config.yaml
+        - name: dice-java-certs
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
