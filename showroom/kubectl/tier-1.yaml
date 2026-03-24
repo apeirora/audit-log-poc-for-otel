@@ -14,8 +14,8 @@ data:
         client_auth:
           # TEST-ONLY: plaintext credentials in a ConfigMap are NOT production-ready.
           # For production use a Kubernetes Secret and/or external secret store, and rotate credentials.
-          username: tier1-ingest
-          password: tier1-ingest-secret
+          username: "##########"
+          password: "##########"
 
     receivers:
       otlp:
@@ -26,6 +26,14 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
+      certificatehash:
+        hash_algorithm: SHA256
+        sign_content: body
+        k8s_secret:
+          name: dice-java-openbao-tls
+          namespace: tier-1
+          cert_key: cert
+          key_key: key
       batch:
         send_batch_size: 1024
         timeout: 5s
@@ -44,7 +52,7 @@ data:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [batch]
+          processors: [certificatehash, batch]
           exporters: [otlphttp, debug]
         metrics:
           receivers: [otlp]
@@ -81,6 +89,29 @@ roleRef:
   kind: Role
   name: dice-java-cert-sync
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otelcol-agent-secret-reader
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["dice-java-openbao-tls"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: otelcol-agent-secret-reader
+subjects:
+  - kind: ServiceAccount
+    name: otelcol-agent
+    namespace: tier-2
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otelcol-agent-secret-reader
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -88,7 +119,9 @@ metadata:
   labels:
     app: dice-java
 spec:
-  replicas: 2
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: dice-java
@@ -121,7 +154,7 @@ spec:
             - name: OPENBAO_CERT_PATH
               value: "kv/data/secret"
             - name: OPENBAO_TOKEN
-              value: "###"
+              value: "##########"
           volumeMounts:
             - name: dice-java-certs
               mountPath: /etc/dice-java/certs
@@ -166,8 +199,8 @@ spec:
               memory: 128Mi
               cpu: 100m
         - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:latest
-          imagePullPolicy: Always
+          image: ghcr.io/apeirora/otelcol-contrib:signlogsinsideprocesor-0fbeec707ed4
+          imagePullPolicy: IfNotPresent
           args:
             - "--config=/etc/otelcol-contrib/config.yaml"
           ports:

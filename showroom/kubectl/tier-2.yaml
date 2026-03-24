@@ -23,7 +23,7 @@ data:
             # TEST-ONLY: plaintext htpasswd entries are NOT production-ready.
             # For production generate a bcrypt htpasswd line (e.g. `htpasswd -nbBC 10 USER PASS`)
             # and store it in a Kubernetes Secret (or external secret store).
-         #####
+            ##########:##########
       basicauth/client:
         client_auth:
           username: ${env:OPENSEARCH_USERNAME}
@@ -42,6 +42,13 @@ data:
               authenticator: basicauth/server
 
     processors:
+      certificatelogverify:
+        hash_algorithm: SHA256
+        sign_content: body
+        k8s_secret:
+          name: dice-java-openbao-tls
+          namespace: tier-1
+          cert_key: cert
       batch:
         send_batch_size: 1024
         timeout: 5s
@@ -72,7 +79,7 @@ data:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [batch]
+          processors: [certificatelogverify, batch]
           exporters: [opensearch, debug/logs]
         metrics:
           receivers: [otlp]
@@ -139,7 +146,7 @@ spec:
               name: storage
       containers:
         - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:latest
+          image: ghcr.io/apeirora/otelcol-certificatelogverify:latest
           imagePullPolicy: Always
           args:
             - "--config=/etc/otelcol-contrib/config.yaml"
