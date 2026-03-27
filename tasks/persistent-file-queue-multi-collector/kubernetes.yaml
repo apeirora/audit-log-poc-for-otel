@@ -1,0 +1,368 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otel-demo
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-data
+  namespace: otel-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol1
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol1
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol2
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol2
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol3
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol3
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-1
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      file_storage/c1:
+        directory: /data/queue-c1
+        create_directory: true
+        timeout: 10s
+        compaction:
+          on_start: true
+          on_rebound: true
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: file_storage/c1
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s # infinite retries
+        sending_queue:
+          enabled: true
+          storage: file_storage/c1
+          block_on_overflow: true
+
+    service:
+      extensions: [file_storage/c1]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-2
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      file_storage/c2:
+        directory: /data/queue-c2
+        create_directory: true
+        timeout: 10s
+        compaction:
+          on_start: true
+          on_rebound: true
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: file_storage/c2
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          enabled: true
+          storage: file_storage/c2
+          block_on_overflow: true
+
+    service:
+      extensions: [file_storage/c2]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-3
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      file_storage/c3:
+        directory: /data/queue-c3
+        create_directory: true
+        timeout: 10s
+        compaction:
+          on_start: true
+          on_rebound: true
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: file_storage/c3
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0 # force-queue (unreachable)
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          enabled: true
+          storage: file_storage/c3
+          block_on_overflow: true
+
+    service:
+      extensions: [file_storage/c3]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol1
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol1
+  template:
+    metadata:
+      labels:
+        app: otelcol1
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      initContainers:
+        - name: init-data
+          image: alpine:3.19
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c1 && chmod -R 777 /data/queue-c1",
+            ]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: storage-data
+        - name: config
+          configMap:
+            name: otel-config-1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol2
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol2
+  template:
+    metadata:
+      labels:
+        app: otelcol2
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      initContainers:
+        - name: init-data
+          image: alpine:3.19
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c2 && chmod -R 777 /data/queue-c2",
+            ]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: storage-data
+        - name: config
+          configMap:
+            name: otel-config-2
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol3
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol3
+  template:
+    metadata:
+      labels:
+        app: otelcol3
+    spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      initContainers:
+        - name: init-data
+          image: alpine:3.19
+          command:
+            [
+              "sh",
+              "-c",
+              "mkdir -p /data/queue-c3 && chmod -R 777 /data/queue-c3",
+            ]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:latest
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: storage
+              mountPath: /data
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: storage-data
+        - name: config
+          configMap:
+            name: otel-config-3
