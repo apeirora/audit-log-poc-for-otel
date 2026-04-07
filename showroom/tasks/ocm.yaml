@@ -1,0 +1,24 @@
+version: "3"
+
+description: Taskfile with some Helm-related tasks.
+
+includes:
+  tools:
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  create:
+    desc: Walk through all available component constructors and create the component versions.
+    deps:
+      - task: tools:install-ocm-v1
+    requires:
+      vars: [OCM_CMD]
+    cmds:
+      - "{{ .OCM_CMD }} version | jq"
+      - |
+        shopt -s nullglob
+        for FILE in ./ocm/*.yaml ; do
+          {{ .OCM_CMD }} add componentversion --create --file ctf "$FILE"
+        done
+    silent: false

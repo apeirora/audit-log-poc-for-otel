@@ -21,7 +21,7 @@ tasks:
       - task: tools:install-kubectl
       - task: cluster:install
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask garden:set-kubeconfig"
@@ -36,7 +36,7 @@ tasks:
       - task: tools:install-kubectl
       - task: cluster:install
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask garden:set-kubeconfig"
@@ -49,7 +49,7 @@ tasks:
     deps:
       - task: tools:install-kubectl
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     status:
       - "! {{ .KUBECTL_CMD }} get ns {{ .NAMESPACE }} >/dev/null 2>&1"
     cmds:

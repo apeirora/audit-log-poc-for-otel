@@ -11,7 +11,7 @@ tasks:
   install:
     desc: Create kubernetes cluster resources (namespaces, roles, bindings).
     requires:
-      vars: [ KUBECTL_CMD ]
+      vars: [KUBECTL_CMD]
     deps:
       - task: tools:install-kubectl
     status:
@@ -24,7 +24,7 @@ tasks:
   uninstall:
     desc: Delete (namespaces, roles, bindings).
     requires:
-      vars: [ KUBECTL_CMD ]
+      vars: [KUBECTL_CMD]
     deps:
       - task: tools:install-kubectl
     status:

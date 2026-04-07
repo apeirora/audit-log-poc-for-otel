@@ -32,6 +32,13 @@ vars:
       else
         echo {{ .TOOL_DIR }}/gardenctl
       fi
+  OCM_CMD:
+    sh: |
+      if command -v ocm >/dev/null 2>&1; then
+        command -v ocm
+      else
+        echo {{ .TOOL_DIR }}/ocm
+      fi
 
 tasks:
   info:
@@ -119,3 +126,37 @@ tasks:
       - curl -sSLo "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}" "https://github.com/gardener/gardenctl-v2/releases/download/v{{ .GARDENCTL_VERSION }}/gardenctl_v2_{{ OS }}_{{ ARCH }}"
       - chmod +x "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}"
       - ln -sf "{{ .TOOL_DIR }}/gardenctl_v{{ .GARDENCTL_VERSION }}" "{{ .TOOL_DIR }}/gardenctl"
+
+  install-ocm-v1:
+    vars:
+      OCM_VERSION: "0.38.0"
+    desc: "Install ocm-v1 v{{ .OCM_VERSION }} to ({{ .TOOL_DIR }}/ocm) if not already present"
+    run: once
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
+    requires:
+      vars: [TOOL_DIR]
+    status:
+      - "ocm --help || {{ .TOOL_DIR }}/ocm --help"
+    cmds:
+      - curl -fsSLo "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}.tar.gz" -L "https://github.com/open-component-model/ocm/releases/download/v{{ .OCM_VERSION }}/ocm-{{ .OCM_VERSION }}-{{ OS }}-{{ ARCH }}.tar.gz"
+      - tar -xzf "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}.tar.gz" -C "{{ .TOOL_DIR }}" "ocm"
+      - mv "{{ .TOOL_DIR }}/ocm" "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}" "{{ .TOOL_DIR }}/ocm"
+      - rm -f "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}.tar.gz"
+
+  install-ocm-v2:
+    vars:
+      OCM_VERSION: "0.3.0"
+    desc: "Install ocm-v2 v{{ .OCM_VERSION }} to ({{ .TOOL_DIR }}/ocm) if not already present"
+    run: once
+    deps: [create-tool-dir]
+    platforms: [linux, darwin]
+    requires:
+      vars: [TOOL_DIR]
+    status:
+      - "ocm --help || {{ .TOOL_DIR }}/ocm --help"
+    cmds:
+      - curl -fsSLo "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}" -L "https://github.com/open-component-model/open-component-model/releases/download/cli/v{{ .OCM_VERSION }}/ocm-{{ OS }}-{{ ARCH }}"
+      - chmod +x "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}"
+      - ln -sf "{{ .TOOL_DIR }}/ocm_v{{ .OCM_VERSION }}" "{{ .TOOL_DIR }}/ocm"

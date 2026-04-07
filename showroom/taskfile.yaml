@@ -3,7 +3,7 @@ version: "3"
 description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
 
 # set your OPENSEARCH_INITIAL_ADMIN_PASSWORD in .env file
-dotenv: [ ".env", "{{.HOME}}/.env" ]
+dotenv: [".env", "{{.HOME}}/.env"]
 
 includes:
   tools:
@@ -29,6 +29,10 @@ includes:
   helm:
     desc: Helm tasks.
     taskfile: ./tasks/helm.yaml
+
+  ocm:
+    desc: OCM tasks.
+    taskfile: ./tasks/ocm.yaml
 
   dice:
     desc: Install and manage the sample application (dice-java).
