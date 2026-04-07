@@ -53,7 +53,13 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE, OPENSEARCH_INITIAL_ADMIN_PASSWORD ]
+      vars:
+        [
+          HELM_CMD,
+          MONITORING_NS,
+          OPENSEARCH_RELEASE,
+          OPENSEARCH_INITIAL_ADMIN_PASSWORD,
+        ]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -73,7 +79,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PERSES_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -137,7 +143,13 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE, OPENSEARCH_INITIAL_ADMIN_PASSWORD ]
+      vars:
+        [
+          HELM_CMD,
+          MONITORING_NS,
+          OPENSEARCH_RELEASE,
+          OPENSEARCH_INITIAL_ADMIN_PASSWORD,
+        ]
     cmds:
       - |
         OVERRIDE=$(mktemp -u) # create new temp file, use yq to set password
@@ -152,7 +164,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PERSES_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
     cmds:
       - |
         OVERRIDE=$(mktemp -u)
@@ -191,7 +203,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, OPENSEARCH_RELEASE]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .OPENSEARCH_RELEASE }}"
     cmds:
@@ -202,7 +214,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PERSES_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PERSES_RELEASE }}"
     cmds:
