@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26-alpine AS builder
 # build the application
 WORKDIR /usr/src/app/
 RUN mkdir -p data
@@ -11,7 +11,7 @@ COPY main.go main.go
 RUN CGO_ENABLED=0 GOOS=linux GO111MODULE=on go build -ldflags "-s -w" -o file-sink main.go
 
 # --- Run Stage ---
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 
 ARG GRPC_PORT=5317
 ENV GRPC_PORT=${GRPC_PORT}

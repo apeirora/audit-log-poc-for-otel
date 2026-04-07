@@ -1,21 +1,19 @@
-name: build and push recommendation
+name: build clients
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    branches: [main]
     paths:
-      - "src/recommendation/**"
+      - "src/**"
 
 jobs:
   # test locally with: `act -s GITHUB_TOKEN=$(gh auth token) --env github.actor=$USER`
   # get 'act': https://nektosact.com/installation/index.html
-  build-and-push-recommendation:
-    name: Build and Push
+  build-clients:
+    name: Build clients
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Install Task
         uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
@@ -24,9 +22,5 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout Code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Build image
-        run: task clients:build-recommendation
-      - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Push to registry
-        run: task clients:push-recommendation
+      - name: run task clients:build
+        run: task clients:build
