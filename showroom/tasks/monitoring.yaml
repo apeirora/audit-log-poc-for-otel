@@ -81,9 +81,16 @@ tasks:
       - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .PERSES_RELEASE }}") | .status'' | grep -q deployed'
     cmds:
       - |
+        OVERRIDE=$(mktemp -u)
+        yq e '
+          .extraObjects[0].data."01-project.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/01-project.json") |
+          .extraObjects[0].data."02-datasource.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/02-datasource.json") |
+          .extraObjects[0].data."03-dashboard.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/03-dashboard.json")
+        ' {{ .ROOT_DIR }}/helm/perses-overrides.yaml > $OVERRIDE
         {{ .HELM_CMD }} install {{ .PERSES_RELEASE }} perses/perses \
           --namespace {{ .MONITORING_NS }} --create-namespace \
-          --values {{ .ROOT_DIR }}/helm/perses-overrides.yaml
+          --values $OVERRIDE
+        rm -f $OVERRIDE
 
   install:
     desc: Install complete monitoring stack (Prometheus, OpenSearch, Perses).
@@ -148,9 +155,16 @@ tasks:
       vars: [ HELM_CMD, MONITORING_NS, PERSES_RELEASE ]
     cmds:
       - |
+        OVERRIDE=$(mktemp -u)
+        yq e '
+          .extraObjects[0].data."01-project.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/01-project.json") |
+          .extraObjects[0].data."02-datasource.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/02-datasource.json") |
+          .extraObjects[0].data."03-dashboard.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/03-dashboard.json")
+        ' {{ .ROOT_DIR }}/helm/perses-overrides.yaml > $OVERRIDE
         {{ .HELM_CMD }} upgrade {{ .PERSES_RELEASE }} perses/perses \
           --namespace {{ .MONITORING_NS }} \
-          --values {{ .ROOT_DIR }}/helm/perses-overrides.yaml
+          --values $OVERRIDE
+        rm -f $OVERRIDE
 
   upgrade:
     desc: Upgrade complete monitoring stack.
