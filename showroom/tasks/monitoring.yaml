@@ -19,7 +19,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD ]
+      vars: [HELM_CMD]
     status:
       - "{{ .HELM_CMD }} repo list | grep -q prometheus-community"
       - "{{ .HELM_CMD }} repo list | grep -q opensearch"
@@ -36,7 +36,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
@@ -109,7 +109,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD, MONITORING_NS ]
+      vars: [HELM_CMD, MONITORING_NS]
     cmds:
       - echo "=== Helm Releases in {{ .MONITORING_NS }} namespace ==="
       - "{{ .HELM_CMD }} list -n {{ .MONITORING_NS }}"
@@ -125,7 +125,7 @@ tasks:
     deps:
       - task: add-helm-repos
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
     cmds:
       - |
         {{ .HELM_CMD }} upgrade {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
@@ -180,7 +180,7 @@ tasks:
     deps:
       - task: tools:install-helm
     requires:
-      vars: [ HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE ]
+      vars: [HELM_CMD, MONITORING_NS, PROMETHEUS_RELEASE]
     status:
       - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PROMETHEUS_RELEASE }}"
     cmds:

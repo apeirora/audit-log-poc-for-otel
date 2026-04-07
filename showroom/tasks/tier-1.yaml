@@ -20,7 +20,7 @@ tasks:
       - task: tools:install-kubectl
       - task: cluster:install
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that your kube config is set correctly. Try:\t'export KUBECONFIG=/path/to/your/kubeconfig.yaml'"
@@ -34,7 +34,7 @@ tasks:
       - task: tools:install-kubectl
       - task: cluster:install
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that your kube config is set correctly. Try:\t'export KUBECONFIG=/path/to/your/kubeconfig.yaml'"
@@ -46,7 +46,7 @@ tasks:
     deps:
       - task: tools:install-kubectl
     requires:
-      vars: [ KUBECTL_CMD, NAMESPACE ]
+      vars: [KUBECTL_CMD, NAMESPACE]
     status:
       - "! {{ .KUBECTL_CMD }} get ns {{ .NAMESPACE }} >/dev/null 2>&1"
     cmds:

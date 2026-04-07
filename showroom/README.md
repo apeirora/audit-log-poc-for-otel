@@ -15,21 +15,21 @@ This folder contains a Proof of Concept (PoC) for sending OpenTelemetry logs.
 
 1. Clone the repository:
 
-  ```bash
-  git clone https://github.com/apeirora/audit-log-poc-for-otel.git
-  cd audit-log-poc-for-otel
-  git checkout showroom
-  cd showroom
-  ```
+```bash
+git clone https://github.com/apeirora/audit-log-poc-for-otel.git
+cd audit-log-poc-for-otel
+git checkout showroom
+cd showroom
+```
 
 1. Check your Garden cluster access:
 
-  ```bash
-  task
-  ```
+```bash
+task
+```
 
 1. Deploy the whole stack:
 
-  ```bash
-  task deploy
-  ```
+```bash
+task deploy
+```
