@@ -48,11 +48,6 @@ data:
           - type: container
 
     processors:
-      transform/fixlogtime:
-        log_statements:
-          - context: log
-            statements:
-              - set(time_unix_nano, observed_time_unix_nano) where time_unix_nano == 0
       certificatelogverify:
         hash_algorithm: SHA256
         sign_content: body
@@ -102,11 +97,11 @@ data:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [transform/fixlogtime, certificatelogverify, batch]
+          processors: [certificatelogverify, batch]
           exporters: [opensearch, debug/logs]
         logs/tier2self:
           receivers: [filelog/tier2]
-          processors: [transform/fixlogtime, batch]
+          processors: [batch]
           exporters: [opensearch/tier2self]
         metrics:
           receivers: [otlp]
