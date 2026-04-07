@@ -2,6 +2,10 @@
 # - Deployment with 3 replicas
 # - Each pod runs the application container and an otelcol sidecar
 # - ConfigMap contains the otelcol config
+#
+# Apply namespace secrets before this manifest: task secrets:apply (kubectl/secrets.env), or see secrets.example.yaml.
+#   dice-java-openbao-token (key: token)
+#   otel-otlp-client-auth (keys: username, password) — must match tier-2 otel-otlp-ingest-htpasswd line
 
 apiVersion: v1
 kind: ConfigMap
@@ -12,10 +16,8 @@ data:
     extensions:
       basicauth/client:
         client_auth:
-          # TEST-ONLY: plaintext credentials in a ConfigMap are NOT production-ready.
-          # For production use a Kubernetes Secret and/or external secret store, and rotate credentials.
-          username: "##########"
-          password: "##########"
+          username: ${env:OTEL_OTLP_EXPORTER_USERNAME}
+          password: ${env:OTEL_OTLP_EXPORTER_PASSWORD}
 
     receivers:
       otlp:
@@ -26,6 +28,11 @@ data:
             endpoint: 0.0.0.0:4318
 
     processors:
+      transform/fixlogtime:
+        log_statements:
+          - context: log
+            statements:
+              - set(time_unix_nano, observed_time_unix_nano) where time_unix_nano == 0
       certificatehash:
         hash_algorithm: SHA256
         sign_content: body
@@ -52,7 +59,7 @@ data:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [certificatehash, batch]
+          processors: [transform/fixlogtime, certificatehash, batch]
           exporters: [otlphttp, debug]
         metrics:
           receivers: [otlp]
@@ -154,7 +161,10 @@ spec:
             - name: OPENBAO_CERT_PATH
               value: "kv/data/secret"
             - name: OPENBAO_TOKEN
-              value: "##########"
+              valueFrom:
+                secretKeyRef:
+                  name: dice-java-openbao-token
+                  key: token
           volumeMounts:
             - name: dice-java-certs
               mountPath: /etc/dice-java/certs
@@ -203,6 +213,17 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "--config=/etc/otelcol-contrib/config.yaml"
+          env:
+            - name: OTEL_OTLP_EXPORTER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: otel-otlp-client-auth
+                  key: username
+            - name: OTEL_OTLP_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: otel-otlp-client-auth
+                  key: password
           ports:
             - name: otlp-grpc
               containerPort: 4317

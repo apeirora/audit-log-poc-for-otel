@@ -1,4 +1,7 @@
 # ServiceAccount for the OTel Collector Agent
+# Apply namespace secrets before this manifest: task secrets:apply (kubectl/secrets.env), or see secrets.example.yaml.
+#   otel-otlp-ingest-htpasswd (key: htpasswd) -> /etc/otelcol-secrets/htpasswd
+#   opensearch-credentials (keys: username, password) -> OPENSEARCH_USERNAME / OPENSEARCH_PASSWORD
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -19,11 +22,7 @@ data:
         endpoint: ${env:MY_POD_IP}:13133
       basicauth/server:
         htpasswd:
-          inline: |
-            # TEST-ONLY: plaintext htpasswd entries are NOT production-ready.
-            # For production generate a bcrypt htpasswd line (e.g. `htpasswd -nbBC 10 USER PASS`)
-            # and store it in a Kubernetes Secret (or external secret store).
-            ##########:##########
+          file: /etc/otelcol-secrets/htpasswd
       basicauth/client:
         client_auth:
           username: ${env:OPENSEARCH_USERNAME}
@@ -40,8 +39,20 @@ data:
             endpoint: 0.0.0.0:4318
             auth:
               authenticator: basicauth/server
+      filelog/tier2:
+        include:
+          - /var/log/pods/tier-2_*/*/*.log
+        start_at: end
+        include_file_path: true
+        operators:
+          - type: container
 
     processors:
+      transform/fixlogtime:
+        log_statements:
+          - context: log
+            statements:
+              - set(time_unix_nano, observed_time_unix_nano) where time_unix_nano == 0
       certificatelogverify:
         hash_algorithm: SHA256
         sign_content: body
@@ -69,6 +80,18 @@ data:
         sending_queue:
           enabled: true
           storage: file_storage
+      opensearch/tier2self:
+        http:
+          endpoint: https://opensearch-cluster-master.tier-3.svc.cluster.local:9200
+          tls:
+            insecure_skip_verify: true
+          auth:
+            authenticator: basicauth/client
+        logs_index: otel-logs-tier2
+        traces_index: otel-traces
+        sending_queue:
+          enabled: true
+          storage: file_storage
       debug/logs:
         verbosity: detailed
       debug/metrics:
@@ -79,8 +102,12 @@ data:
       pipelines:
         logs:
           receivers: [otlp]
-          processors: [certificatelogverify, batch]
+          processors: [transform/fixlogtime, certificatelogverify, batch]
           exporters: [opensearch, debug/logs]
+        logs/tier2self:
+          receivers: [filelog/tier2]
+          processors: [transform/fixlogtime, batch]
+          exporters: [opensearch/tier2self]
         metrics:
           receivers: [otlp]
           processors: [batch]
@@ -182,13 +209,19 @@ spec:
               cpu: 200m
             requests:
               memory: 128Mi
-              cpu: 100m
+              cpu: 50m
           volumeMounts:
             - name: config
               mountPath: /etc/otelcol-contrib
               readOnly: true
             - name: storage
               mountPath: /var/lib/otelcol/storage
+            - name: pod-logs
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: otlp-ingest-htpasswd
+              mountPath: /etc/otelcol-secrets
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /
@@ -219,6 +252,14 @@ spec:
           hostPath:
             path: /var/lib/otelcol/storage
             type: DirectoryOrCreate
+        - name: otlp-ingest-htpasswd
+          secret:
+            secretName: otel-otlp-ingest-htpasswd
+            defaultMode: 288
+        - name: pod-logs
+          hostPath:
+            path: /var/log/pods
+            type: Directory
 ---
 # Service for the OTel Collector Agent
 apiVersion: v1
