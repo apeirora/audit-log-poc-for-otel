@@ -1,11 +1,12 @@
 version: "3"
 
-description: Taskfile for installing and managing Prometheus and Grafana monitoring stack with authentication.
+description: Taskfile for installing and managing Prometheus, Grafana, and Perses monitoring stack with authentication.
 
 vars:
   MONITORING_NS: "monitoring"
   PROMETHEUS_RELEASE: "prometheus"
   GRAFANA_RELEASE: "grafana"
+  PERSES_RELEASE: "perses"
 
 includes:
   tools:
@@ -15,7 +16,7 @@ includes:
 
 tasks:
   add-helm-repos:
-    desc: Add Prometheus and Grafana Helm repositories.
+    desc: Add Prometheus, Grafana, and Perses Helm repositories.
     deps:
       - task: tools:install-helm
     requires:
@@ -23,9 +24,11 @@ tasks:
     status:
       - "{{ .HELM_CMD }} repo list | grep -q prometheus-community"
       - "{{ .HELM_CMD }} repo list | grep -q grafana"
+      - "{{ .HELM_CMD }} repo list | grep -q perses"
     cmds:
       - "{{ .HELM_CMD }} repo add prometheus-community https://prometheus-community.github.io/helm-charts"
       - "{{ .HELM_CMD }} repo add grafana https://grafana.github.io/helm-charts"
+      - "{{ .HELM_CMD }} repo add perses https://perses.github.io/helm-charts"
       - "{{ .HELM_CMD }} repo update"
 
   install-prometheus:
@@ -62,15 +65,34 @@ tasks:
           --namespace {{ .MONITORING_NS }} --create-namespace \
           --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
 
+  install-perses:
+    desc: Install Perses using Helm.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    status:
+      - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .PERSES_RELEASE }}") | .status'' | grep -q deployed'
+    cmds:
+      - |
+        {{ .HELM_CMD }} install {{ .PERSES_RELEASE }} perses/perses \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
+          --values {{ .ROOT_DIR }}/helm/perses-overrides.yaml \
+
   install:
-    desc: Install complete monitoring stack (Prometheus and Grafana).
+    desc: Install complete monitoring stack (Prometheus, Grafana, Perses).
     deps:
       - task: install-prometheus
       - task: install-grafana
+      - task: install-perses
     cmds:
       - echo "Monitoring stack installed successfully!"
       - echo "Prometheus - {{ .PROMETHEUS_RELEASE }} in namespace {{ .MONITORING_NS }}"
       - echo "Grafana - {{ .GRAFANA_RELEASE }} in namespace {{ .MONITORING_NS }}"
+      - echo "Perses - {{ .PERSES_RELEASE }} in namespace {{ .MONITORING_NS }}"
 
   status:
     desc: Check the status of monitoring components.
@@ -112,11 +134,24 @@ tasks:
           --namespace {{ .MONITORING_NS }} \
           --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
 
+  upgrade-perses:
+    desc: Upgrade Perses installation.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    cmds:
+      - |
+        {{ .HELM_CMD }} upgrade {{ .PERSES_RELEASE }} perses/perses \
+          --namespace {{ .MONITORING_NS }} \
+          --values {{ .ROOT_DIR }}/helm/perses-overrides.yaml
+
   upgrade:
     desc: Upgrade complete monitoring stack.
     deps:
       - task: upgrade-prometheus
       - task: upgrade-grafana
+      - task: upgrade-perses
     cmds:
       - echo "Monitoring stack upgraded successfully!"
 
@@ -142,11 +177,23 @@ tasks:
     cmds:
       - "{{ .HELM_CMD }} uninstall {{ .GRAFANA_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
 
+  uninstall-perses:
+    desc: Uninstall Perses.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    status:
+      - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PERSES_RELEASE }}"
+    cmds:
+      - "{{ .HELM_CMD }} uninstall {{ .PERSES_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
+
   uninstall:
     desc: Uninstall complete monitoring stack.
     deps:
       - task: uninstall-prometheus
       - task: uninstall-grafana
+      - task: uninstall-perses
     cmds:
       - echo "Monitoring stack uninstalled successfully!"
 
@@ -179,3 +226,18 @@ tasks:
     cmds:
       - echo "Accessing Grafana at http://localhost:3000"
       - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .GRAFANA_RELEASE }} 3000:80"
+
+  port-forward-perses:
+    desc: Port-forward Perses to localhost:8080.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD, MONITORING_NS, PERSES_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} get svc/{{ .PERSES_RELEASE }} -n {{ .MONITORING_NS }} >/dev/null 2>&1"
+        msg: "Perses service not found. Please install first: task monitoring:install"
+      - sh: "{{ .KUBECTL_CMD }} get pods -n {{ .MONITORING_NS }} --field-selector=status.phase=Running | grep -q {{ .PERSES_RELEASE }}"
+        msg: "Please wait for Perses pod to be in Running state."
+    cmds:
+      - echo "Accessing Perses at http://localhost:8080"
+      - "{{ .KUBECTL_CMD }} -n {{ .MONITORING_NS }} port-forward svc/{{ .PERSES_RELEASE }} 8080:8080"

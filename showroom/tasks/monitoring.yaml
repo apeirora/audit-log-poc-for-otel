@@ -1,12 +1,12 @@
 version: "3"
 
-description: Taskfile for installing and managing Prometheus and Grafana monitoring stack with authentication.
+description: Taskfile for installing and managing Prometheus, OpenSearch, and Perses monitoring stack.
 
 vars:
   MONITORING_NS: "tier-3"
   PROMETHEUS_RELEASE: "prometheus"
-  GRAFANA_RELEASE: "grafana"
   OPENSEARCH_RELEASE: "opensearch"
+  PERSES_RELEASE: "perses"
 
 includes:
   tools:
@@ -15,19 +15,19 @@ includes:
 
 tasks:
   add-helm-repos:
-    desc: Add Prometheus, Grafana, and OpenSearch Helm repositories.
+    desc: Add Prometheus, OpenSearch, and Perses Helm repositories.
     deps:
       - task: tools:install-helm
     requires:
       vars: [HELM_CMD]
     status:
       - "{{ .HELM_CMD }} repo list | grep -q prometheus-community"
-      - "{{ .HELM_CMD }} repo list | grep -q grafana"
       - "{{ .HELM_CMD }} repo list | grep -q opensearch"
+      - "{{ .HELM_CMD }} repo list | grep -q perses"
     cmds:
       - "{{ .HELM_CMD }} repo add prometheus-community https://prometheus-community.github.io/helm-charts"
-      - "{{ .HELM_CMD }} repo add grafana https://grafana.github.io/helm-charts"
       - "{{ .HELM_CMD }} repo add opensearch https://opensearch-project.github.io/helm-charts/"
+      - "{{ .HELM_CMD }} repo add perses https://perses.github.io/helm-charts"
       - "{{ .HELM_CMD }} repo update"
 
   # TODO: reuse existing instance: https://p-msp06--otel-audit-log.ingress.seed-ha-1.seed.gardener.cc-one.showroom.apeirora.eu/
@@ -47,23 +47,6 @@ tasks:
         {{ .HELM_CMD }} install {{ .PROMETHEUS_RELEASE }} prometheus-community/prometheus \
           --namespace {{ .MONITORING_NS }} --create-namespace \
           --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml \
-
-  install-grafana:
-    desc: Install Grafana using Helm with authentication enabled.
-    deps:
-      - task: add-helm-repos
-    requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
-    preconditions:
-      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
-        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
-    status:
-      - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .GRAFANA_RELEASE }}") | .status'' | grep -q deployed'
-    cmds:
-      - |
-        {{ .HELM_CMD }} install {{ .GRAFANA_RELEASE }} grafana/grafana \
-          --namespace {{ .MONITORING_NS }} --create-namespace \
-          --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml
 
   install-opensearch:
     desc: Install OpenSearch using Helm.
@@ -91,17 +74,41 @@ tasks:
           --values $OVERRIDE
         rm -f $OVERRIDE
 
+  install-perses:
+    desc: Install Perses using Helm.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask cluster:start"
+    status:
+      - '{{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} -o json | jq -r ''.[] | select(.name=="{{ .PERSES_RELEASE }}") | .status'' | grep -q deployed'
+    cmds:
+      - |
+        OVERRIDE=$(mktemp -u)
+        yq e '
+          .extraObjects[0].data."01-project.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/01-project.json") |
+          .extraObjects[0].data."02-datasource.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/02-datasource.json") |
+          .extraObjects[0].data."03-dashboard.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/03-dashboard.json")
+        ' {{ .ROOT_DIR }}/helm/perses-overrides.yaml > $OVERRIDE
+        {{ .HELM_CMD }} install {{ .PERSES_RELEASE }} perses/perses \
+          --namespace {{ .MONITORING_NS }} --create-namespace \
+          --values $OVERRIDE
+        rm -f $OVERRIDE
+
   install:
-    desc: Install complete monitoring stack (Prometheus and Grafana).
+    desc: Install complete monitoring stack (Prometheus, OpenSearch, Perses).
     deps:
       - task: install-opensearch
       - task: install-prometheus
-      - task: install-grafana
+      - task: install-perses
     cmds:
       - echo "Monitoring stack installed successfully!"
       - echo "OpenSearch - {{ .OPENSEARCH_RELEASE }} in namespace {{ .MONITORING_NS }}"
       - echo "Prometheus - {{ .PROMETHEUS_RELEASE }} in namespace {{ .MONITORING_NS }}"
-      - echo "Grafana - {{ .GRAFANA_RELEASE }} in namespace {{ .MONITORING_NS }}"
+      - echo "Perses - {{ .PERSES_RELEASE }} in namespace {{ .MONITORING_NS }}"
 
   status:
     desc: Check the status of monitoring components.
@@ -131,18 +138,6 @@ tasks:
           --namespace {{ .MONITORING_NS }} \
           --values {{ .ROOT_DIR }}/helm/prometheus-overrides.yaml
 
-  upgrade-grafana:
-    desc: Upgrade Grafana installation.
-    deps:
-      - task: add-helm-repos
-    requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
-    cmds:
-      - |
-        {{ .HELM_CMD }} upgrade {{ .GRAFANA_RELEASE }} grafana/grafana \
-          --namespace {{ .MONITORING_NS }} \
-          --values {{ .ROOT_DIR }}/helm/grafana-overrides.yaml \
-
   upgrade-opensearch:
     desc: Upgrade OpenSearch installation.
     deps:
@@ -164,12 +159,31 @@ tasks:
           --values $OVERRIDE
         rm -f $OVERRIDE
 
+  upgrade-perses:
+    desc: Upgrade Perses installation.
+    deps:
+      - task: add-helm-repos
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    cmds:
+      - |
+        OVERRIDE=$(mktemp -u)
+        yq e '
+          .extraObjects[0].data."01-project.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/01-project.json") |
+          .extraObjects[0].data."02-datasource.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/02-datasource.json") |
+          .extraObjects[0].data."03-dashboard.json" = load_str("{{ .ROOT_DIR }}/helm/perses-provisioning/03-dashboard.json")
+        ' {{ .ROOT_DIR }}/helm/perses-overrides.yaml > $OVERRIDE
+        {{ .HELM_CMD }} upgrade {{ .PERSES_RELEASE }} perses/perses \
+          --namespace {{ .MONITORING_NS }} \
+          --values $OVERRIDE
+        rm -f $OVERRIDE
+
   upgrade:
     desc: Upgrade complete monitoring stack.
     deps:
       - task: upgrade-opensearch
       - task: upgrade-prometheus
-      - task: upgrade-grafana
+      - task: upgrade-perses
     cmds:
       - echo "Monitoring stack upgraded successfully!"
 
@@ -184,17 +198,6 @@ tasks:
     cmds:
       - "{{ .HELM_CMD }} uninstall {{ .PROMETHEUS_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
 
-  uninstall-grafana:
-    desc: Uninstall Grafana.
-    deps:
-      - task: tools:install-helm
-    requires:
-      vars: [HELM_CMD, MONITORING_NS, GRAFANA_RELEASE]
-    status:
-      - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .GRAFANA_RELEASE }}"
-    cmds:
-      - "{{ .HELM_CMD }} uninstall {{ .GRAFANA_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
-
   uninstall-opensearch:
     desc: Uninstall OpenSearch.
     deps:
@@ -206,11 +209,22 @@ tasks:
     cmds:
       - "{{ .HELM_CMD }} uninstall {{ .OPENSEARCH_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
 
+  uninstall-perses:
+    desc: Uninstall Perses.
+    deps:
+      - task: tools:install-helm
+    requires:
+      vars: [HELM_CMD, MONITORING_NS, PERSES_RELEASE]
+    status:
+      - "! {{ .HELM_CMD }} list --namespace {{ .MONITORING_NS }} | grep -q {{ .PERSES_RELEASE }}"
+    cmds:
+      - "{{ .HELM_CMD }} uninstall {{ .PERSES_RELEASE }} -n {{ .MONITORING_NS }} --ignore-not-found"
+
   uninstall:
     desc: Uninstall complete monitoring stack.
     deps:
       - task: uninstall-prometheus
-      - task: uninstall-grafana
       - task: uninstall-opensearch
+      - task: uninstall-perses
     cmds:
       - echo "Monitoring stack uninstalled successfully!"

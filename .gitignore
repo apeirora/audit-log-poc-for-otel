@@ -23,6 +23,11 @@
 # environment file with secret password
 **/.env
 
+# local kubectl secrets (copy from showroom/kubectl/secrets.example.yaml)
+showroom/kubectl/secrets.local.yaml
+showroom/kubectl/secrets.env
+showroom/kubectl/htpasswd.secret
+
 # potentially generated file
 /src/file-sink/received-logs.txt
 
