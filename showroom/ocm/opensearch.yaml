@@ -1,0 +1,34 @@
+components:
+  - name: apeirora.eu/opensearch-project/opensearch
+    version: 3.5.0
+    provider:
+      name: SAP SE (Apeiro Reference Architecture)
+    resources:
+      - name: chart
+        version: 3.5.0
+        type: helmChart
+        access:
+          type: helm
+          helmChart: opensearch:3.5.0
+          helmRepository: https://opensearch-project.github.io/helm-charts
+      - name: dashboards-chart
+        version: 3.5.0
+        type: helmChart
+        access:
+          type: helm
+          helmChart: opensearch-dashboards:3.5.0
+          helmRepository: https://opensearch-project.github.io/helm-charts
+      - name: image
+        version: 3.5.0
+        type: ociImage
+        access:
+          imageReference: docker.io/opensearchproject/opensearch:3.5.0
+          type: ociArtifact
+    sources:
+      - name: src
+        version: 3.5.0
+        type: filesystem
+        access:
+          commit: bbc94f0bdc3a759011e6529ecfe52840856f91a3
+          repoUrl: https://github.com/opensearch-project/OpenSearch
+          type: gitHub
