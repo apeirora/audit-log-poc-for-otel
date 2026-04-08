@@ -25,6 +25,8 @@ tasks:
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask garden:set-kubeconfig"
+      - sh: "{{ .KUBECTL_CMD }} get secret opensearch-ca-cert -n {{ .NAMESPACE }} >/dev/null 2>&1"
+        msg: "Missing required secret tier-2/opensearch-ca-cert (key: ca.crt). Apply showroom/kubectl/secrets.example.yaml first."
     status:
       - "{{ .KUBECTL_CMD }} get pods -n {{ .NAMESPACE }} | grep otelcol-agent >/dev/null 2>&1"
     cmds:
@@ -40,6 +42,8 @@ tasks:
     preconditions:
       - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
         msg: "Please ensure that you have a k8s-cluster running. Try:\ttask garden:set-kubeconfig"
+      - sh: "{{ .KUBECTL_CMD }} get secret opensearch-ca-cert -n {{ .NAMESPACE }} >/dev/null 2>&1"
+        msg: "Missing required secret tier-2/opensearch-ca-cert (key: ca.crt). Apply showroom/kubectl/secrets.example.yaml first."
     cmds:
       - "{{ .KUBECTL_CMD }} apply -f kubectl/tier-2.yaml -n {{ .NAMESPACE }}"
       - echo "OpenTelemetry Collector agent setup upgraded successfully!"
