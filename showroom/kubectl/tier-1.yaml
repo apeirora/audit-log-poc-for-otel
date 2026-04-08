@@ -1,5 +1,5 @@
 # Deploy `dice-java` with a per-pod OpenTelemetry Collector sidecar
-# - Deployment with 3 replicas
+# - Deployment with 1 replica
 # - Each pod runs the application container and an otelcol sidecar
 # - ConfigMap contains the otelcol config
 #
@@ -146,7 +146,7 @@ spec:
           args:
             - |
               apk add --no-cache curl jq
-              RESPONSE="$(curl -sS --fail --show-error --insecure \
+              RESPONSE="$(curl -sS --fail --show-error \
                 -H "X-Vault-Token: ${OPENBAO_TOKEN}" \
                 -H "X-Vault-Namespace: ${OPENBAO_NAMESPACE}" \
                 -H "X-Vault-Request: true" \

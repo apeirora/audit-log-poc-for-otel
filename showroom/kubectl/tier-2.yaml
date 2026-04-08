@@ -2,6 +2,7 @@
 # Apply namespace secrets before this manifest: task secrets:apply (kubectl/secrets.env), or see secrets.example.yaml.
 #   otel-otlp-ingest-htpasswd (key: htpasswd) -> /etc/otelcol-secrets/htpasswd
 #   opensearch-credentials (keys: username, password) -> OPENSEARCH_USERNAME / OPENSEARCH_PASSWORD
+#   opensearch-ca-cert (key: ca.crt) -> /etc/opensearch-ca/ca.crt for TLS validation
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -67,7 +68,7 @@ data:
         http:
           endpoint: https://opensearch-cluster-master.tier-3.svc.cluster.local:9200
           tls:
-            insecure_skip_verify: true
+            ca_file: /etc/opensearch-ca/ca.crt
           auth:
             authenticator: basicauth/client
         logs_index: otel-logs
@@ -79,7 +80,7 @@ data:
         http:
           endpoint: https://opensearch-cluster-master.tier-3.svc.cluster.local:9200
           tls:
-            insecure_skip_verify: true
+            ca_file: /etc/opensearch-ca/ca.crt
           auth:
             authenticator: basicauth/client
         logs_index: otel-logs-tier2
@@ -217,6 +218,9 @@ spec:
             - name: otlp-ingest-htpasswd
               mountPath: /etc/otelcol-secrets
               readOnly: true
+            - name: opensearch-ca-cert
+              mountPath: /etc/opensearch-ca
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /
@@ -255,6 +259,9 @@ spec:
           hostPath:
             path: /var/log/pods
             type: Directory
+        - name: opensearch-ca-cert
+          secret:
+            secretName: opensearch-ca-cert
 ---
 # Service for the OTel Collector Agent
 apiVersion: v1
@@ -265,7 +272,7 @@ metadata:
     app: otelcol-agent
     component: otel-collector
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: otelcol-agent
     component: otel-collector
