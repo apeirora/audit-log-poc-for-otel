@@ -1,0 +1,143 @@
+name: OCM
+on:
+  workflow_call:
+    inputs:
+      ocm_version:
+        description: ocm-cli version to install
+        required: false
+        type: string
+        default: "0.38.0"
+      oci_registry:
+        description: OCI registry namespace target (without OCIRegistry:: prefix)
+        required: false
+        type: string
+        default: ""
+      chart_path:
+        description: Optional local Helm chart path
+        required: false
+        type: string
+        default: "charts/audit-log-poc"
+      constructor_path:
+        description: Optional OCM constructor template path
+        required: false
+        type: string
+        default: "ocm/component-constructor.yaml"
+    secrets:
+      GHCR_TOKEN:
+        required: false
+
+jobs:
+  ocm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Install tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq
+          YQ_VERSION="v4.44.5"
+          sudo curl -fsSL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Setup ocm-cli
+        shell: bash
+        run: |
+          set -euxo pipefail
+          VERSION="${{ inputs.ocm_version }}"
+          ARCHIVE_FILE="ocm-${VERSION}-linux-amd64.tar.gz"
+          URL="https://github.com/open-component-model/ocm/releases/download/v${VERSION}/${ARCHIVE_FILE}"
+          echo "Installing ocm-cli version v${VERSION} from ${URL}"
+          curl -fsSL -o ocm-cli.tgz "${URL}"
+          sudo tar --overwrite -xvzf ocm-cli.tgz -C /usr/local/bin
+          sudo chmod a+x /usr/local/bin/ocm
+          ocm version
+
+      - name: Setup helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.17.3
+
+      - name: Write .ocmconfig
+        shell: bash
+        env:
+          OCM_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euxo pipefail
+          OCM_PASSWORD="${GHCR_TOKEN:-$GITHUB_TOKEN}"
+          cat <<EOF > "${HOME}/.ocmconfig"
+          type: generic.config.ocm.software/v1
+          configurations:
+            - type: credentials.config.ocm.software
+              consumers:
+                - identity:
+                    type: OCIRegistry
+                    scheme: https
+                    hostname: ghcr.io
+                  credentials:
+                    - type: Credentials
+                      properties:
+                        username: ${OCM_USERNAME}
+                        password: ${OCM_PASSWORD}
+          EOF
+
+      - name: Build OCM transport archive
+        shell: bash
+        run: |
+          set -euxo pipefail
+          rm -f ocm/transport.ctf
+          mkdir -p ocm
+
+          if [[ -f "${{ inputs.constructor_path }}" && -f "${{ inputs.chart_path }}/Chart.yaml" ]]; then
+            echo "Detected constructor and chart, using templated Option-A flow"
+            CHART_VERSION="$(yq -r '.version' "${{ inputs.chart_path }}/Chart.yaml")"
+            APP_VERSION="$(yq -r '.appVersion // .version' "${{ inputs.chart_path }}/Chart.yaml")"
+            PROVIDER="${{ github.repository_owner }}"
+            COMPONENT_NAME="${{ github.repository_owner }}/audit-log-poc-for-otel"
+            if [[ -f "${{ inputs.chart_path }}/values.yaml" ]]; then
+              PRIMARY_IMAGE="$(yq -r '.image.registry + "/" + .image.repository + ":" + .image.tag' "${{ inputs.chart_path }}/values.yaml" 2>/dev/null || true)"
+            else
+              PRIMARY_IMAGE=""
+            fi
+            helm package "${{ inputs.chart_path }}"
+            ocm add componentversions --create --templater=go --file=ocm/transport.ctf "${{ inputs.constructor_path }}" -- \
+              COMPONENT_NAME="${COMPONENT_NAME}" \
+              PROVIDER="${PROVIDER}" \
+              CHART_VERSION="${CHART_VERSION}" \
+              APP_VERSION="${APP_VERSION}" \
+              PRIMARY_IMAGE="${PRIMARY_IMAGE}"
+          else
+            echo "No local chart constructor flow detected, using showroom/ocm descriptors"
+            shopt -s nullglob
+            files=(showroom/ocm/*.yaml)
+            if [[ ${#files[@]} -eq 0 ]]; then
+              echo "No OCM descriptor files found under showroom/ocm/*.yaml"
+              exit 1
+            fi
+            for file in "${files[@]}"; do
+              echo "Adding component from ${file}"
+            done
+            ocm add componentversions --create --file ocm/transport.ctf "${files[@]}"
+          fi
+
+      - name: Push OCM artifact to OCI
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if [[ -n "${{ inputs.oci_registry }}" ]]; then
+            OCI_REGISTRY="${{ inputs.oci_registry }}"
+          else
+            OCI_REGISTRY="ghcr.io/${{ github.repository_owner }}"
+          fi
+          echo "Pushing OCM transport archive to ${OCI_REGISTRY}"
+          ocm transfer ctf ./ocm/transport.ctf "OCIRegistry::${OCI_REGISTRY}"

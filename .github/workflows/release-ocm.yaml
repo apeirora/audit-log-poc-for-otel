@@ -1,0 +1,27 @@
+name: Release OCM
+
+on:
+  workflow_dispatch:
+    inputs:
+      oci_registry:
+        description: Optional registry namespace override (e.g. ghcr.io/my-org)
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - "showroom/ocm/**"
+      - ".github/workflows/job-ocm.yaml"
+      - ".github/workflows/release-ocm.yaml"
+      - "charts/**"
+      - "ocm/**"
+
+jobs:
+  ocm:
+    uses: ./.github/workflows/job-ocm.yaml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      oci_registry: ${{ github.event.inputs.oci_registry || '' }}
+    secrets: inherit
