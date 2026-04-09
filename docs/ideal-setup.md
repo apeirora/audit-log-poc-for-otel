@@ -141,6 +141,12 @@ exporters:
     endpoint: log-sink:4317
     # See: https://github.com/open-telemetry/opentelemetry-collector/issues/8122
     sending_queue:
+      sizer: items # can be 'bytes'
+      queue_size: 10000 # items, not batches
+      batch:
+        flush_timeout: 200ms
+        min_size: 512
+        max_size: 16384
       enabled: true
       storage: file_storage
     retry_on_failure:
