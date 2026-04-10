@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       oci_registry:
-        description: Optional registry namespace override (e.g. ghcr.io/my-org)
+        description: "Optional; empty = ghcr.io/<owner>/<repo> (this repo ghcr.io/apeirora/audit-log-poc-for-otel)"
         required: false
         type: string
   push:

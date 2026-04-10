@@ -8,7 +8,7 @@ on:
         type: string
         default: "0.38.0"
       oci_registry:
-        description: "OCI registry namespace target (without OCIRegistry:: prefix)"
+        description: "Optional override; default is ghcr.io/<owner>/<repo> (no OCIRegistry:: prefix)"
         required: false
         type: string
         default: ""
@@ -154,7 +154,7 @@ jobs:
           if [[ -n "${{ inputs.oci_registry }}" ]]; then
             OCI_REGISTRY="${{ inputs.oci_registry }}"
           else
-            OCI_REGISTRY="ghcr.io/${{ github.repository_owner }}"
+            OCI_REGISTRY="ghcr.io/${{ github.repository }}"
           fi
           echo "Pushing OCM transport archive to ${OCI_REGISTRY}"
           ocm transfer ctf ./ocm/transport.ctf "OCIRegistry::${OCI_REGISTRY}"
