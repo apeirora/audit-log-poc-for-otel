@@ -1,44 +1,42 @@
 name: OCM
+
 on:
-  workflow_call:
+  pull_request:
+    branches: [showroom]
+    paths:
+      - "showroom/ocm/**"
+      - ".github/workflows/ocm.yaml"
+      - "charts/**"
+      - "ocm/**"
+  workflow_dispatch:
     inputs:
-      ocm_version:
-        description: ocm-cli version to install
-        required: false
-        type: string
-        default: "0.38.0"
       oci_registry:
-        description: "Optional override; default is ghcr.io/<owner>/<repo> (no OCIRegistry:: prefix)"
+        description: "Optional; empty = ghcr.io/<owner>/<repo> (e.g. ghcr.io/apeirora/audit-log-poc-for-otel)"
         required: false
         type: string
-        default: ""
-      chart_path:
-        description: Optional local Helm chart path
-        required: false
-        type: string
-        default: "charts/audit-log-poc"
-      constructor_path:
-        description: Optional OCM constructor template path
-        required: false
-        type: string
-        default: "ocm/component-constructor.yaml"
-      push_to_registry:
-        description: "If false, only build ocm/transport.ctf (no GHCR push)"
-        required: false
-        type: string
-        default: "true"
-      upload_transport_ctf:
-        description: "If true, upload ocm/transport.ctf as a workflow artifact"
-        required: false
-        type: string
-        default: "false"
-    secrets:
-      GHCR_TOKEN:
-        required: false
+  push:
+    branches: [showroom]
+    paths:
+      - "showroom/ocm/**"
+      - ".github/workflows/ocm.yaml"
+      - "charts/**"
+      - "ocm/**"
+
+concurrency:
+  group: ocm-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 
 jobs:
   ocm:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      actions: write
+    env:
+      OCM_VERSION: "0.38.0"
+      OCI_REGISTRY_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oci_registry || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -56,17 +54,9 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       - name: Setup ocm-cli
-        shell: bash
-        run: |
-          set -euxo pipefail
-          VERSION="${{ inputs.ocm_version }}"
-          ARCHIVE_FILE="ocm-${VERSION}-linux-amd64.tar.gz"
-          URL="https://github.com/open-component-model/ocm/releases/download/v${VERSION}/${ARCHIVE_FILE}"
-          echo "Installing ocm-cli version v${VERSION} from ${URL}"
-          curl -fsSL -o ocm-cli.tgz "${URL}"
-          sudo tar --overwrite -xvzf ocm-cli.tgz -C /usr/local/bin
-          sudo chmod a+x /usr/local/bin/ocm
-          ocm version
+        uses: open-component-model/ocm-setup-action@8c71929f38d3486e352e5d7aaf813f36accaaf43
+        with:
+          version: ${{ env.OCM_VERSION }}
 
       - name: Setup helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
@@ -74,15 +64,19 @@ jobs:
           version: v3.17.3
 
       - name: Write .ocmconfig
-        if: inputs.push_to_registry != 'false'
         shell: bash
         env:
-          OCM_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
-          OCM_PASSWORD="${GHCR_TOKEN:-$GITHUB_TOKEN}"
+          if [[ -n "${GHCR_TOKEN:-}" ]]; then
+            OCM_USERNAME="${{ github.actor }}"
+            OCM_PASSWORD="${GHCR_TOKEN}"
+          else
+            OCM_USERNAME="${{ github.repository_owner }}"
+            OCM_PASSWORD="${GITHUB_TOKEN}"
+          fi
           cat <<EOF > "${HOME}/.ocmconfig"
           type: generic.config.ocm.software/v1
           configurations:
@@ -103,22 +97,23 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          rm -f ocm/transport.ctf
+          rm -rf ocm/transport.ctf
           mkdir -p ocm
-
-          if [[ -f "${{ inputs.constructor_path }}" && -f "${{ inputs.chart_path }}/Chart.yaml" ]]; then
+          CHART_PATH="charts/audit-log-poc"
+          CONSTRUCTOR_PATH="ocm/component-constructor.yaml"
+          if [[ -f "${CONSTRUCTOR_PATH}" && -f "${CHART_PATH}/Chart.yaml" ]]; then
             echo "Detected constructor and chart, using templated Option-A flow"
-            CHART_VERSION="$(yq -r '.version' "${{ inputs.chart_path }}/Chart.yaml")"
-            APP_VERSION="$(yq -r '.appVersion // .version' "${{ inputs.chart_path }}/Chart.yaml")"
+            CHART_VERSION="$(yq -r '.version' "${CHART_PATH}/Chart.yaml")"
+            APP_VERSION="$(yq -r '.appVersion // .version' "${CHART_PATH}/Chart.yaml")"
             PROVIDER="${{ github.repository_owner }}"
             COMPONENT_NAME="${{ github.repository_owner }}/audit-log-poc-for-otel"
-            if [[ -f "${{ inputs.chart_path }}/values.yaml" ]]; then
-              PRIMARY_IMAGE="$(yq -r '.image.registry + "/" + .image.repository + ":" + .image.tag' "${{ inputs.chart_path }}/values.yaml" 2>/dev/null || true)"
+            if [[ -f "${CHART_PATH}/values.yaml" ]]; then
+              PRIMARY_IMAGE="$(yq -r '.image.registry + "/" + .image.repository + ":" + .image.tag' "${CHART_PATH}/values.yaml" 2>/dev/null || true)"
             else
               PRIMARY_IMAGE=""
             fi
-            helm package "${{ inputs.chart_path }}"
-            ocm add componentversions --create --templater=go --file=ocm/transport.ctf "${{ inputs.constructor_path }}" -- \
+            helm package "${CHART_PATH}"
+            ocm add componentversions --create --templater=go --file=ocm/transport.ctf "${CONSTRUCTOR_PATH}" -- \
               COMPONENT_NAME="${COMPONENT_NAME}" \
               PROVIDER="${PROVIDER}" \
               CHART_VERSION="${CHART_VERSION}" \
@@ -139,22 +134,20 @@ jobs:
           fi
 
       - name: Upload OCM transport archive
-        if: inputs.upload_transport_ctf == 'true'
+        if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ocm-transport-ctf
           path: ocm/transport.ctf
-          if-no-files-found: error
 
       - name: Push OCM artifact to OCI
-        if: inputs.push_to_registry != 'false'
         shell: bash
         run: |
           set -euxo pipefail
-          if [[ -n "${{ inputs.oci_registry }}" ]]; then
-            OCI_REGISTRY="${{ inputs.oci_registry }}"
+          if [[ -n "${OCI_REGISTRY_INPUT}" ]]; then
+            OCI_REGISTRY="${OCI_REGISTRY_INPUT}"
           else
             OCI_REGISTRY="ghcr.io/${{ github.repository }}"
           fi
           echo "Pushing OCM transport archive to ${OCI_REGISTRY}"
-          ocm transfer ctf ./ocm/transport.ctf "OCIRegistry::${OCI_REGISTRY}"
+          env -u GITHUB_TOKEN ocm transfer ctf ./ocm/transport.ctf "OCIRegistry::${OCI_REGISTRY}"
