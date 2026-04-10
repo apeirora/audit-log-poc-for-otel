@@ -8,7 +8,7 @@ on:
         type: string
         default: "0.38.0"
       oci_registry:
-        description: OCI registry namespace target (without OCIRegistry:: prefix)
+        description: "OCI registry namespace target (without OCIRegistry:: prefix)"
         required: false
         type: string
         default: ""
