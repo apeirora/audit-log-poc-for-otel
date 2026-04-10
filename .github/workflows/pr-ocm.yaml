@@ -1,29 +1,28 @@
-name: Release OCM
+name: PR OCM
 
 on:
-  workflow_dispatch:
-    inputs:
-      oci_registry:
-        description: Optional registry namespace override (e.g. ghcr.io/my-org)
-        required: false
-        type: string
-  push:
+  pull_request:
     branches: [showroom]
     paths:
       - "showroom/ocm/**"
       - ".github/workflows/job-ocm.yaml"
-      - ".github/workflows/release-ocm.yaml"
       - ".github/workflows/pr-ocm.yaml"
       - "charts/**"
       - "ocm/**"
 
+concurrency:
+  group: pr-ocm-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ocm:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/job-ocm.yaml
     permissions:
       contents: read
       packages: write
+      actions: write
     with:
-      oci_registry: ${{ github.event.inputs.oci_registry || '' }}
       push_to_registry: "true"
+      upload_transport_ctf: "true"
     secrets: inherit

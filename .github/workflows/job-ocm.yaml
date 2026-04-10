@@ -22,6 +22,16 @@ on:
         required: false
         type: string
         default: "ocm/component-constructor.yaml"
+      push_to_registry:
+        description: "If false, only build ocm/transport.ctf (no GHCR push)"
+        required: false
+        type: string
+        default: "true"
+      upload_transport_ctf:
+        description: "If true, upload ocm/transport.ctf as a workflow artifact"
+        required: false
+        type: string
+        default: "false"
     secrets:
       GHCR_TOKEN:
         required: false
@@ -29,9 +39,6 @@ on:
 jobs:
   ocm:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -67,6 +74,7 @@ jobs:
           version: v3.17.3
 
       - name: Write .ocmconfig
+        if: inputs.push_to_registry != 'false'
         shell: bash
         env:
           OCM_USERNAME: ${{ github.actor }}
@@ -130,7 +138,16 @@ jobs:
             ocm add componentversions --create --file ocm/transport.ctf "${files[@]}"
           fi
 
+      - name: Upload OCM transport archive
+        if: inputs.upload_transport_ctf == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ocm-transport-ctf
+          path: ocm/transport.ctf
+          if-no-files-found: error
+
       - name: Push OCM artifact to OCI
+        if: inputs.push_to_registry != 'false'
         shell: bash
         run: |
           set -euxo pipefail
