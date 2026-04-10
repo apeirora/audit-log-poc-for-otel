@@ -9,7 +9,7 @@ includes:
 
 tasks:
   create:
-    desc: Walk through all available component constructors and create the component versions.
+    desc: Build OCM transport archive from showroom descriptors.
     deps:
       - task: tools:install-ocm-v1
     requires:
@@ -18,7 +18,12 @@ tasks:
       - "{{ .OCM_CMD }} version | jq"
       - |
         shopt -s nullglob
-        for FILE in ./ocm/*.yaml ; do
-          {{ .OCM_CMD }} add componentversion --create --file ctf "$FILE"
-        done
+        FILES=(./showroom/ocm/*.yaml)
+        if [[ ${#FILES[@]} -eq 0 ]]; then
+          echo "No OCM descriptor files found under showroom/ocm/*.yaml"
+          exit 1
+        fi
+        mkdir -p ./ocm
+        rm -f ./ocm/transport.ctf
+        {{ .OCM_CMD }} add componentversions --create --file ./ocm/transport.ctf "${FILES[@]}"
     silent: false
