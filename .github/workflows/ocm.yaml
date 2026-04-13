@@ -33,7 +33,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write
     env:
       OCM_VERSION: "0.38.0"
       OCI_REGISTRY_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oci_registry || '' }}
@@ -132,13 +131,6 @@ jobs:
             done
             ocm add componentversions --create --file ocm/transport.ctf "${files[@]}"
           fi
-
-      - name: Upload OCM transport archive
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: ocm-transport-ctf
-          path: ocm/transport.ctf
 
       - name: Push OCM artifact to OCI
         shell: bash
