@@ -1,0 +1,74 @@
+version: "3"
+
+description: Main Taskfile for managing the otel-audit-log-poc project. This file references other Taskfiles for specific functionalities.
+
+# set your OPENSEARCH_INITIAL_ADMIN_PASSWORD in .env file
+dotenv: [".env", "{{.HOME}}/.env"]
+
+includes:
+  tools:
+    desc: Install required tools (k3d, kubectl, kind).
+    taskfile: ./tasks/tools.yaml
+
+  garden:
+    desc: Gardener tasks.
+    taskfile: ./tasks/garden.yaml
+
+  cluster:
+    desc: Create cluster resources (Namespaces, Role‑Based Access Control - RBAC) for all tiers.
+    taskfile: ./tasks/cluster.yaml
+
+  otelcol-agent:
+    desc: Deploy and manage the OTel Collector agent setup with local filesystem-based persistence.
+    taskfile: ./tasks/otelcol-agent.yaml
+
+  monitoring:
+    desc: Install and manage Prometheus and Grafana monitoring stack with authentication.
+    taskfile: ./tasks/monitoring.yaml
+
+  helm:
+    desc: Helm tasks.
+    taskfile: ./tasks/helm.yaml
+
+  ocm:
+    desc: OCM tasks.
+    taskfile: ./tasks/ocm.yaml
+
+  dice:
+    desc: Install and manage the sample application (dice-java).
+    taskfile: ./tasks/tier-1.yaml
+
+  secrets:
+    desc: Apply workload secrets from kubectl/secrets.env.
+    taskfile: ./tasks/secrets.yaml
+
+tasks:
+  default:
+    desc: Create and start local kubernetes cluster and install otel-demo.
+    ignore_error: true
+    cmds:
+      - task: garden:set-kubeconfig
+      - task -a
+
+  show-env:
+    desc: Show loaded environment variables from .env files.
+    cmds:
+      - cat {{ .ROOT_DIR }}/.env && echo ""
+
+  deploy:
+    desc: Install the complete setup, monitoring stack (tier-3), OTel Collector agent (tier-2) and some client applications (tier-1).
+    cmds:
+      - task: garden:set-kubeconfig
+      - task: cluster:install
+      - task: secrets:apply
+      - task: monitoring:install
+      - task: otelcol-agent:install
+      - task: dice:install
+
+  clean:
+    desc: Uninstall the complete setup, client applications (tier-1), OTel Collector agent (tier-2) and monitoring stack (tier-3)
+    deps:
+      - task: dice:uninstall
+      - task: otelcol-agent:uninstall
+      - task: monitoring:uninstall
+      - task: cluster:uninstall
