@@ -34,7 +34,6 @@ jobs:
       contents: read
       packages: write
     env:
-      OCM_VERSION: "0.38.0"
       OCI_REGISTRY_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oci_registry || '' }}
     steps:
       - name: Checkout
@@ -55,7 +54,7 @@ jobs:
       - name: Setup ocm-cli
         uses: open-component-model/ocm-setup-action@8c71929f38d3486e352e5d7aaf813f36accaaf43
         with:
-          version: ${{ env.OCM_VERSION }}
+          version: "0.38.0"
 
       - name: Setup helm
         uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
