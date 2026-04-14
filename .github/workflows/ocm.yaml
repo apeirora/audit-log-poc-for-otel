@@ -1,13 +1,6 @@
 name: OCM
 
 on:
-  pull_request:
-    branches: [showroom]
-    paths:
-      - "showroom/ocm/**"
-      - ".github/workflows/ocm.yaml"
-      - "charts/**"
-      - "ocm/**"
   workflow_dispatch:
     inputs:
       oci_registry:
@@ -28,10 +21,9 @@ concurrency:
 
 jobs:
   ocm:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
     env:
       OCI_REGISTRY_INPUT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.oci_registry || '' }}
@@ -142,3 +134,32 @@ jobs:
           fi
           echo "Pushing OCM transport archive to ${OCI_REGISTRY}"
           env -u GITHUB_TOKEN ocm transfer ctf ./ocm/transport.ctf "OCIRegistry::${OCI_REGISTRY}"
+
+      - name: Sync tier manifests from OCM descriptors
+        id: sync_tier_images
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SIGNING_IMAGE="$(yq -r '.components[0].resources[] | select(.name == "image") | .access.imageReference' showroom/ocm/collector-contrib-signing.yaml)"
+          VERIFY_IMAGE="$(yq -r '.components[0].resources[] | select(.name == "image") | .access.imageReference' showroom/ocm/collector-contrib-verify.yaml)"
+          test -n "${SIGNING_IMAGE}"
+          test -n "${VERIFY_IMAGE}"
+          yq -i '(. | select(.kind == "Deployment") | .spec.template.spec.containers[] | select(.name == "otel-collector") | .image) = strenv(SIGNING_IMAGE)' showroom/kubectl/tier-1.yaml
+          yq -i '(. | select(.kind == "DaemonSet") | .spec.template.spec.containers[] | select(.name == "otel-collector") | .image) = strenv(VERIFY_IMAGE)' showroom/kubectl/tier-2.yaml
+          if git diff --quiet -- showroom/kubectl/tier-1.yaml showroom/kubectl/tier-2.yaml; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+
+      - name: Commit synced tier manifests
+        if: github.event_name != 'pull_request' && steps.sync_tier_images.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add showroom/kubectl/tier-1.yaml showroom/kubectl/tier-2.yaml
+          git commit -m "chore(showroom): sync tier collector images from OCM descriptors"
+          git push

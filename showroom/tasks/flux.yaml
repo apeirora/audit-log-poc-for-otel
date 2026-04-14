@@ -1,0 +1,58 @@
+version: "3"
+
+description: Taskfile for Flux reconciliation of tier-1 and tier-2.
+
+includes:
+  tools:
+    taskfile: ./tools.yaml
+    internal: true
+  cluster:
+    taskfile: ./cluster.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Install Flux GitRepository and Kustomization for tier-1 and tier-2.
+    deps:
+      - task: tools:install-kubectl
+      - task: cluster:install
+    requires:
+      vars: [KUBECTL_CMD]
+    preconditions:
+      - sh: "{{ .KUBECTL_CMD }} cluster-info >/dev/null 2>&1"
+        msg: "Please ensure that you have a k8s-cluster running. Try:\ttask garden:set-kubeconfig"
+      - sh: "{{ .KUBECTL_CMD }} get crd gitrepositories.source.toolkit.fluxcd.io >/dev/null 2>&1"
+        msg: "Flux CRDs are not installed. Install Flux first and retry."
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/flux-tier-1-tier-2.yaml"
+      - "{{ .KUBECTL_CMD }} -n flux-system wait --for=condition=Ready gitrepository/showroom-tier-sync --timeout=180s"
+      - "{{ .KUBECTL_CMD }} -n flux-system wait --for=condition=Ready kustomization/showroom-tier-1-tier-2 --timeout=180s"
+
+  reconcile:
+    desc: Trigger immediate Flux reconciliation for tier-1 and tier-2.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - "{{ .KUBECTL_CMD }} -n flux-system annotate --overwrite kustomization/showroom-tier-1-tier-2 reconcile.fluxcd.io/requestedAt=\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+      - "{{ .KUBECTL_CMD }} -n flux-system get kustomization showroom-tier-1-tier-2 -o wide"
+
+  status:
+    desc: Show Flux status for tier-1 and tier-2 sync.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - "{{ .KUBECTL_CMD }} -n flux-system get gitrepository showroom-tier-sync -o wide"
+      - "{{ .KUBECTL_CMD }} -n flux-system get kustomization showroom-tier-1-tier-2 -o wide"
+
+  uninstall:
+    desc: Remove Flux GitRepository and Kustomization for tier-1 and tier-2.
+    deps:
+      - task: tools:install-kubectl
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/flux-tier-1-tier-2.yaml --ignore-not-found"

@@ -1,0 +1,25 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: showroom-tier-sync
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/apeirora/audit-log-poc-for-otel.git
+  ref:
+    branch: showroom
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: showroom-tier-1-tier-2
+  namespace: flux-system
+spec:
+  interval: 1m
+  prune: true
+  wait: true
+  timeout: 3m
+  sourceRef:
+    kind: GitRepository
+    name: showroom-tier-sync
+  path: ./showroom/flux/tier-1-tier-2
