@@ -37,6 +37,8 @@ includes:
   flux:
     desc: Flux GitOps tasks for tier-1 and tier-2.
     taskfile: ./tasks/flux.yaml
+    vars:
+      FLUX_GIT_BRANCH: '{{ .FLUX_GIT_BRANCH | default "showroom" }}'
 
   dice:
     desc: Install and manage the sample application (dice-java).
@@ -70,7 +72,7 @@ tasks:
       - task: dice:install
 
   deploy-gitops:
-    desc: Install setup and let Flux reconcile tier-1 and tier-2 from git.
+    desc: Install setup and let Flux reconcile tier-1 and tier-2 from git (Git ref.branch = FLUX_GIT_BRANCH, default showroom; use your PR branch for GitOps against a PR).
     cmds:
       - task: garden:set-kubeconfig
       - task: cluster:install

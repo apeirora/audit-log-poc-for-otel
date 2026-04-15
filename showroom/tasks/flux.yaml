@@ -2,6 +2,9 @@ version: "3"
 
 description: Taskfile for Flux reconciliation of tier-1 and tier-2.
 
+vars:
+  FLUX_GIT_BRANCH: '{{ default "showroom" (env "FLUX_GIT_BRANCH") }}'
+
 includes:
   tools:
     taskfile: ./tools.yaml
@@ -12,7 +15,7 @@ includes:
 
 tasks:
   install:
-    desc: Install Flux GitRepository and Kustomization for tier-1 and tier-2.
+    desc: Install Flux GitRepository and Kustomization for tier-1 and tier-2. Set FLUX_GIT_BRANCH to your PR branch (or GITHUB_HEAD_REF in CI); defaults to showroom. Kustomize path stays showroom/flux/tier-1-tier-2.
     deps:
       - task: tools:install-kubectl
       - task: cluster:install
@@ -24,9 +27,27 @@ tasks:
       - sh: "{{ .KUBECTL_CMD }} get crd gitrepositories.source.toolkit.fluxcd.io >/dev/null 2>&1"
         msg: "Flux CRDs are not installed. Install Flux first and retry."
     cmds:
+      - 'echo "Flux GitRepository ref.branch={{ .FLUX_GIT_BRANCH }}"'
       - "{{ .KUBECTL_CMD }} apply -f kubectl/flux-tier-1-tier-2.yaml"
+      - '{{ .KUBECTL_CMD }} -n flux-system patch gitrepository showroom-tier-sync --type merge -p "{\"spec\":{\"ref\":{\"branch\":\"{{ .FLUX_GIT_BRANCH }}\"}}}"'
       - "{{ .KUBECTL_CMD }} -n flux-system wait --for=condition=Ready gitrepository/showroom-tier-sync --timeout=180s"
       - "{{ .KUBECTL_CMD }} -n flux-system wait --for=condition=Ready kustomization/showroom-tier-1-tier-2 --timeout=180s"
+
+  reconcile-unix:
+    internal: true
+    platforms: [linux, darwin]
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - '{{ .KUBECTL_CMD }} -n flux-system annotate --overwrite kustomization/showroom-tier-1-tier-2 reconcile.fluxcd.io/requestedAt="$(date -u +%Y-%m-%dT%H:%M:%SZ)"'
+
+  reconcile-win:
+    internal: true
+    platforms: [windows]
+    requires:
+      vars: [KUBECTL_CMD]
+    cmds:
+      - powershell -NoProfile -Command "& { & '{{ .KUBECTL_CMD }}' -n flux-system annotate --overwrite kustomization/showroom-tier-1-tier-2 ('reconcile.fluxcd.io/requestedAt=' + (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')) }"
 
   reconcile:
     desc: Trigger immediate Flux reconciliation for tier-1 and tier-2.
@@ -35,7 +56,10 @@ tasks:
     requires:
       vars: [KUBECTL_CMD]
     cmds:
-      - "{{ .KUBECTL_CMD }} -n flux-system annotate --overwrite kustomization/showroom-tier-1-tier-2 reconcile.fluxcd.io/requestedAt=\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\""
+      - task: reconcile-unix
+        platforms: [linux, darwin]
+      - task: reconcile-win
+        platforms: [windows]
       - "{{ .KUBECTL_CMD }} -n flux-system get kustomization showroom-tier-1-tier-2 -o wide"
 
   status:

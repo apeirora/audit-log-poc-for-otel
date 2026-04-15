@@ -1,3 +1,4 @@
+# spec.ref.branch is the Git default in-repo; task showroom flux:install patches it to FLUX_GIT_BRANCH (CLI, .env, or CI).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
