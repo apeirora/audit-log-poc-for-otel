@@ -9,3 +9,4 @@
 - [Monitoring Stack Setup Guide](./monitoring.md)
 - [Pros and cons of using OTel Collector agent with local persistence](./collector-agent-with-persistence.md)
 - [Technology Guideline: Reliable Audit Logging with OpenTelemetry](./ideal-setup.md)
+- [Tier-1 Audit Log Processing and Security Proposals](./tier1-log-processing-proposals.md)
