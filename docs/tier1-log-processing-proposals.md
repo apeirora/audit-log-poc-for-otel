@@ -1,4 +1,4 @@
-# Audit Log Processing and Security Proposals
+# Tier-1 Audit Log Processing and Security Proposals
 
 This document summarizes proposed designs for Tier-1 audit log processing, hashing, transport security between SDK and OpenTelemetry
 Collector, and hash-chain usage, along with expected return codes and required fields.
@@ -9,14 +9,14 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 1.1 Single Log Processor (Sync)
 
-**Positives**:
+Positives:
 
 - **Strong delivery signal per log**: app waits for send attempt result.
 - **Easier to reason about ordering**: log-by-log flow.
 - **Fast failure visibility**: network/sink issues seen immediately.
 - **Lower in-memory queue pressure** in normal conditions.
 
-**Negatives**:
+Negatives:
 
 - **Higher request latency**: app path blocked by export.
 - **Throughput can drop** under sink slowness or outage.
@@ -26,14 +26,14 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 1.2 Single Log Processor (Async)
 
-**Positives**:
+Positives:
 
 - **Low app impact**: returns quickly (often 202), better request latency.
 - **Better resilience to temporary sink issues**: store then retry.
 - **Decouples app traffic spikes from sink performance.**
 - **Simpler payload semantics than batch**: one log = one unit.
 
-**Negatives**:
+Negatives:
 
 - **Weaker immediate delivery guarantee**: accepted != delivered yet.
 - **Requires memory/storage sizing and backpressure policy.**
@@ -43,7 +43,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 1.3 Batch Log Processor (Async)
 
-**Positives**:
+Positives:
 
 - **Best throughput and network efficiency**: amortized overhead per batch.
 - **Lower sink/API cost** vs per-log sends.
@@ -51,7 +51,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - **Natural fit for async retry and backoff strategies.**
 - **Can support partial success handling**: per-log status map in response.
 
-**Negatives**:
+Negatives:
 
 - **Added delivery latency**: wait for batch fill or flush interval.
 - **More complex failure handling**: partial success, requeue subset.
@@ -63,15 +63,15 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ## 2. Hashing Solutions
 
-### 2.1 Option A: Sign in Tier-1, Verify in Tier-2
+### 2.1 Option A: Hash in Tier-1, Verify in Tier-2
 
-**Flow**:
+Flow:
 
-- Tier-1 creates signature for each log.
-- Tier-2 receives log plus signature.
+- Tier-1 creates hash or signature for each log.
+- Tier-2 receives log plus hash.
 - Tier-2 recomputes and verifies integrity.
 
-**Positives**:
+Positives:
 
 - **End-to-end integrity from source**: proves log was not changed after Tier-1 created it.
 - **Stronger trust model**: Tier-2 cannot silently alter content without detection.
@@ -79,23 +79,23 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - **Earlier tamper detection** across transport, queueing, and Tier-2 ingress.
 - **Cleaner forensic story**: “source asserted this exact payload at this time.”
 
-**Negatives**:
+Negatives:
 
 - **Higher Tier-1 cost**: CPU plus key management on app-side pipeline.
-- **Rollout complexity**: every Tier-1 sender must implement canonical signing exactly.
+- **Rollout complexity**: every Tier-1 sender must implement canonical hashing exactly.
 - **Schema/canonicalization drift risk**: tiny format differences break validation.
 - **Secret exposure surface increases** if signing keys are distributed broadly.
-- **Migration harder** when changing signing algorithm or version across many clients.
+- **Migration harder** when changing hash algorithm or version across many clients.
 
 ### 2.2 Option B: Hash in Tier-2, Return Hash to Tier-1 for Verify
 
-**Flow**:
+Flow:
 
 - Tier-1 sends raw log.
 - Tier-2 computes hash and returns it as a receipt.
 - Tier-1 compares or accepts hash to check integrity.
 
-**Positives**:
+Positives:
 
 - **Simpler Tier-1**: less crypto and configuration burden on producers.
 - **Centralized crypto policy**: one place to manage algorithm, version, and key policy.
@@ -103,7 +103,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - **Consistent canonicalization**: single implementation reduces mismatch bugs.
 - **Operationally easier** for large fleets of senders.
 
-**Negatives**:
+Negatives:
 
 - **Weaker trust boundary**: Tier-2 is hashing what it received or processed, not what source originally committed to.
 - **Does not prove absence of in–Tier-2 mutation before hashing** (unless pipeline is tightly controlled).
@@ -117,25 +117,25 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 3.1 TLS (Server-Auth TLS, One-Way TLS)
 
-**What it secures**:
+What it secures:
 
 - **Encryption in transit.**
 - **Integrity in transit.**
 - **Server authentication**: client verifies collector certificate.
 
-**Implementation effort**:
+Implementation effort:
 
 - **SDK**: low–medium (set HTTPS endpoint, trust CA or certificate).
 - **Collector**: low–medium (server certificate and key configuration).
 - **Usually straightforward** with OTLP/HTTP or OTLP/gRPC.
 
-**Advantages**:
+Advantages:
 
 - **Big security gain with moderate complexity.**
 - **Standard enterprise pattern.**
 - **Prevents passive sniffing and most MITM** when certificate validation is correct.
 
-**Disadvantages**:
+Disadvantages:
 
 - **Does not authenticate client identity by certificate.**
 - **Certificate lifecycle management required** (renewal, rotation, trust chain).
@@ -143,25 +143,25 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 3.2 mTLS (Mutual TLS)
 
-**What it secures**:
+What it secures:
 
 - Everything TLS provides, plus:
 - **Strong client authentication** via client certificate.
 - **Better endpoint-to-endpoint trust.**
 
-**Implementation effort**:
+Implementation effort:
 
 - **SDK**: medium–high (client certificate and key distribution plus rotation).
 - **Collector**: medium–high (require and validate client certificates).
 - **PKI operations are the hard part**, not the code.
 
-**Advantages**:
+Advantages:
 
 - **Strongest transport-level identity.**
 - **Great for zero-trust or service-to-service environments.**
 - **Reduces credential replay risk** vs static tokens.
 
-**Disadvantages**:
+Disadvantages:
 
 - **Operationally heavy** (PKI, issuance, revocation, rotation).
 - **Harder debugging** during certificate failures.
@@ -169,24 +169,24 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 3.3 TLS + Token/Auth Header (API Key, Bearer Token)
 
-**What it secures**:
+What it secures:
 
 - **TLS secures channel.**
 - **Token secures application-level client authentication and authorization.**
 
-**Implementation effort**:
+Implementation effort:
 
 - **SDK**: low–medium (add headers or metadata in exporter).
 - **Collector**: medium (auth extensions or processors, validation backend).
 - **Often easier than mTLS operationally.**
 
-**Advantages**:
+Advantages:
 
 - **Easier secret distribution** than client certificate PKI.
 - **Fine-grained authorization policies** are possible.
 - **Works well with SaaS collectors or gateways.**
 
-**Disadvantages**:
+Disadvantages:
 
 - **Secret leakage risk** (tokens in environment, logs, or config).
 - **Rotation discipline needed.**
@@ -194,23 +194,23 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 3.4 TLS + OAuth2/OIDC (Short-Lived Tokens)
 
-**What it secures**:
+What it secures:
 
 - Same as TLS plus token, but with **managed, short-lived credentials**.
 
-**Implementation effort**:
+Implementation effort:
 
 - **SDK**: medium–high (token acquisition and refresh flow).
 - **Collector**: medium–high (JWT/OIDC validation and trust configuration).
 - **More moving parts** than static token.
 
-**Advantages**:
+Advantages:
 
 - **Better credential hygiene** via short-lived tokens.
 - **Centralized identity and policy.**
 - **Good for enterprise IAM integration.**
 
-**Disadvantages**:
+Disadvantages:
 
 - **More failure modes** (IdP downtime, token refresh issues).
 - **Higher implementation and operations complexity.**
@@ -222,7 +222,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 4.1 With Hash Chain
 
-**Advantages**:
+Advantages:
 
 - **Detects record deletion**: missing link breaks chain.
 - **Detects reordering or insertion**: sequence integrity is enforced.
@@ -231,7 +231,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - **Enables periodic signed checkpoints** (chain tip or Merkle root) for external anchoring.
 - **Raises insider attack difficulty** in collector or storage.
 
-**Disadvantages**:
+Disadvantages:
 
 - **More implementation complexity** (stateful `prev_hash` management).
 - **Harder horizontal scaling** if ordering or partitioning is not designed well.
@@ -244,7 +244,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ### 4.2 Without Hash Chain
 
-**Advantages**:
+Advantages:
 
 - **Much simpler design and rollout.**
 - **Easy parallel ingestion and scaling.**
@@ -252,7 +252,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - **Lower operational complexity and debugging burden.**
 - **Still provides per-record integrity** if each record is signed or hashed.
 
-**Disadvantages**:
+Disadvantages:
 
 - **Cannot reliably detect deletion** of valid signed records.
 - **Weak protection against reordering attacks.**
@@ -264,25 +264,22 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ## 5. Return Codes
 
-**Per-request outcomes**:
+Per-request outcomes:
 
 - **200** – Sent now.
 - **202** – Stored for later.
 - **503** – Not stored, cannot accept (buffer full), include `Retry-After`.
-- **429** – Too Many Requests, only if you intentionally expose quota or rate-limit semantics.
-
-**Error conditions**:
-
 - **400 Bad Request** – invalid payload or schema.
 - **401 / 403** – authentication or authorization failure.
 - **413 Payload Too Large** – single log or batch too big.
+- **429** – Too Many Requests, only if you intentionally expose quota or rate-limit semantics.
 - **500 Internal Server Error** – unexpected internal failure (not a capacity policy case).
 
 ---
 
 ## 6. Fields Needed
 
-**Core record fields**:
+Core record fields:
 
 - `timestamp` – event time.
 - `observed_timestamp` – when SDK observed it.
@@ -299,7 +296,7 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - `hash` – content hash of canonical log.
 - `signature` or `hmac`.
 
-**Additional fields (depending on implementation)**:
+Additional fields (depending on implementation):
 
 - `tenant_id` or `service_name`
 - `sequence_no` – for hash-chain ordering.
@@ -321,12 +318,12 @@ Collector, and hash-chain usage, along with expected return codes and required f
 - `sink_timestamp` – if delivered to Tier-2 now.
 - `reason` – required when status is not 200, for example `storage_full` or `retry_scheduled`.
 
-**If 202**:
+If 202:
 
 - `retry_after` – or retry hint.
 - `queue_position` or `queued_at` – optional but useful.
 
-**If 503 or 429**:
+If 503 or 429:
 
 - `retry_after` – highly recommended.
 
@@ -340,8 +337,9 @@ Collector, and hash-chain usage, along with expected return codes and required f
 
 ---
 
-## 8. Log Processing Architecture Diagram
+## 8. Tier-1 Log Processing Architecture Diagram
 
-The following diagram illustrates the overall architecture, including single and batch processors, retry mechanisms, and memory storage.
+The following diagram illustrates the overall Tier-1 architecture, including single and batch processors, retry mechanisms, and memory
+storage.
 
-![Audit log processing architecture](./assets/tier-1.jpg)
+![Tier-1 log processing architecture](./assets/tier-1.jpg)
