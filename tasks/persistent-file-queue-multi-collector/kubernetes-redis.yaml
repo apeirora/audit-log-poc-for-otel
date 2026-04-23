@@ -1,0 +1,358 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otel-demo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: otel-demo
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    protected-mode no
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: otel-demo
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: otel-demo
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--save", "", "--appendonly", "no"]
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-config
+              mountPath: /usr/local/etc/redis/redis.conf
+              subPath: redis.conf
+      volumes:
+        - name: redis-config
+          configMap:
+            name: redis-config
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: standard
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-1
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      redis_storage/c1:
+        endpoint: redis:6379
+        db: 1
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c1
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c1
+          block_on_overflow: true
+
+    service:
+      extensions: [redis_storage/c1]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-2
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      redis_storage/c2:
+        endpoint: redis:6379
+        db: 2
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c2
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c2
+          block_on_overflow: true
+
+    service:
+      extensions: [redis_storage/c2]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config-3
+  namespace: otel-demo
+data:
+  config.yaml: |
+    extensions:
+      redis_storage/c3:
+        endpoint: redis:6379
+        db: 3
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    exporters:
+      otlphttp:
+        endpoint: http://127.0.0.1:0
+        timeout: 10s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c3
+
+      otlphttp/block:
+        endpoint: http://127.0.0.1:0
+        timeout: 2s
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 0s
+        sending_queue:
+          enabled: true
+          storage: redis_storage/c3
+          block_on_overflow: true
+
+    service:
+      extensions: [redis_storage/c3]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp]
+        logs:
+          receivers: [otlp]
+          processors: []
+          exporters: [otlphttp/block]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol1
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol1
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol1
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol1
+  template:
+    metadata:
+      labels:
+        app: otelcol1
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7.4-alpine
+          command: ["sh", "-c", "until redis-cli -h redis -p 6379 PING; do echo waiting for redis; sleep 2; done"]
+      containers:
+        - name: otelcol
+          image: apeirora/opentelemetry-collector-contrib:fixRedisStart
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: otel-config-1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol2
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol2
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol2
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol2
+  template:
+    metadata:
+      labels:
+        app: otelcol2
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7.4-alpine
+          command: ["sh", "-c", "until redis-cli -h redis -p 6379 PING; do echo waiting for redis; sleep 2; done"]
+      containers:
+        - name: otelcol
+          image: apeirora/opentelemetry-collector-contrib:fixRedisStart
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: otel-config-2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol3
+  namespace: otel-demo
+spec:
+  selector:
+    app: otelcol3
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol3
+  namespace: otel-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcol3
+  template:
+    metadata:
+      labels:
+        app: otelcol3
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: redis:7.4-alpine
+          command: ["sh", "-c", "until redis-cli -h redis -p 6379 PING; do echo waiting for redis; sleep 2; done"]
+      containers:
+        - name: otelcol
+          image: apeirora/opentelemetry-collector-contrib:fixRedisStart
+          args: ["--config=/etc/otelcol/config.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otelcol/config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: otel-config-3
