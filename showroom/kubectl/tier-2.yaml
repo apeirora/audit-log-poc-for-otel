@@ -7,12 +7,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: otelcol-agent
+  namespace: tier-2
 ---
 # ConfigMap containing the OTel Collector Agent configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: otelcol-agent-config
+  namespace: tier-2
 data:
   config.yaml: |
     extensions:
@@ -122,6 +124,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: otelcol-agent
+  namespace: tier-2
   labels:
     app: otelcol-agent
     component: otel-collector
@@ -268,6 +271,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: otelcol-agent
+  namespace: tier-2
   labels:
     app: otelcol-agent
     component: otel-collector
@@ -291,6 +295,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: otelcol-agent-metrics
+  namespace: tier-2
   labels:
     app: otelcol-agent
     component: otel-collector

@@ -34,6 +34,12 @@ includes:
     desc: OCM tasks.
     taskfile: ./tasks/ocm.yaml
 
+  flux:
+    desc: Flux GitOps tasks for tier-1 and tier-2.
+    taskfile: ./tasks/flux.yaml
+    vars:
+      FLUX_GIT_BRANCH: '{{ .FLUX_GIT_BRANCH | default "showroom" }}'
+
   dice:
     desc: Install and manage the sample application (dice-java).
     taskfile: ./tasks/tier-1.yaml
@@ -64,6 +70,15 @@ tasks:
       - task: monitoring:install
       - task: otelcol-agent:install
       - task: dice:install
+
+  deploy-gitops:
+    desc: Install setup and let Flux reconcile tier-1 and tier-2 from git (Git ref.branch = FLUX_GIT_BRANCH, default showroom; use your PR branch for GitOps against a PR).
+    cmds:
+      - task: garden:set-kubeconfig
+      - task: cluster:install
+      - task: secrets:apply
+      - task: monitoring:install
+      - task: flux:install
 
   clean:
     desc: Uninstall the complete setup, client applications (tier-1), OTel Collector agent (tier-2) and monitoring stack (tier-3)
