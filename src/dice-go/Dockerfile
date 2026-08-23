@@ -1,5 +1,5 @@
 # --- Build Stage ---
-FROM golang:1.26-alpine AS builder
+FROM golang:1.27-alpine AS builder
 # build the application
 WORKDIR /usr/src/app/
 # let's create separate layers for dependencies and source code
