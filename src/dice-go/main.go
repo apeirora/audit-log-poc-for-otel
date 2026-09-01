@@ -110,7 +110,7 @@ func rolldice(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < factor; i++ {
 			rec := olog.Record{}
 			rec.SetSeverity(olog.SeverityInfo)
-			rec.SetBody(olog.StringValue(fmt.Sprintf("dice: %d, user: %s - bulk log message #%d", roll, player, 1+i)))
+			rec.SetBody(attribute.StringValue(fmt.Sprintf("dice: %d, user: %s - bulk log message #%d", roll, player, 1+i)))
 			logger.Emit(context.Background(), rec)
 			time.Sleep(10 * time.Millisecond)
 		}
@@ -211,8 +211,8 @@ func setupOTelSDK(ctx context.Context) (shutdown func(context.Context) error, er
 
 	rec := olog.Record{}
 	rec.SetSeverity(olog.SeverityInfo)
-	rec.SetBody(olog.StringValue("test log message: dice-go service started"))
-	rec.AddAttributes(olog.KeyValueFromAttribute(attribute.String("AUDIT-key-2", "KeyValueFromAttribute")))
+	rec.SetBody(attribute.StringValue("test log message: dice-go service started"))
+	rec.AddAttributes(attribute.String("AUDIT-key-2", "KeyValueFromAttribute"))
 	logger.Emit(ctx, rec)
 
 	return shutdown, err
