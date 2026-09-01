@@ -47,10 +47,24 @@
 	<properties>
 		<java.version>25</java.version>
 		<opentelemetry.version>1.59.0</opentelemetry.version>
+		<otel.version>1.55.0-SNAPSHOT</otel.version>
 	</properties>
 
 	<dependencies>
-		<dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-exporter-otlp-common</artifactId>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/src/opentelemetry-exporter-otlp-common-${otel.version}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-sdk-logs</artifactId>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/src/opentelemetry-sdk-logs-${otel.version}.jar</systemPath>
+    </dependency>
+
+    <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
@@ -62,10 +76,30 @@
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-sdk</artifactId>
+			<exclusions>
+        <exclusion>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp-common</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-logs</artifactId>
+        </exclusion>
+    </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
+			<exclusions>
+        <exclusion>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp-common</artifactId>
+        </exclusion>
+        <exclusion>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-logs</artifactId>
+        </exclusion>
+    </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
@@ -75,6 +109,14 @@
 			<groupId>io.opentelemetry.semconv</groupId>
 			<artifactId>opentelemetry-semconv</artifactId>
 			<version>1.39.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
 	</dependencies>
 
