@@ -62,8 +62,8 @@ func run() (err error) {
 			func() {
 				rec := olog.Record{}
 				rec.SetSeverity(olog.SeverityInfo)
-				rec.SetBody(olog.StringValue("test"))
-				rec.AddAttributes(olog.KeyValueFromAttribute(attribute.String("log-count", strconv.Itoa(i))))
+				rec.SetBody(attribute.StringValue("test"))
+				rec.AddAttributes(attribute.String("log-count", strconv.Itoa(i)))
 				logger.Emit(context.Background(), rec)
 				time.Sleep(10 * time.Millisecond)
 			}()

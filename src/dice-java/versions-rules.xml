@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset>
+  <ignoreVersions>
+    <!-- Development versions -->
+    <ignoreVersion type="regex">(?i).*[\.-]Dev-?\d+</ignoreVersion>
+    <!-- Alpha versions -->
+    <ignoreVersion type="regex">(?i).*[\.-]Alpha\d+</ignoreVersion>
+    <!-- Beta versions -->
+    <ignoreVersion type="regex">(?i).*[\.-]Beta-?\d+</ignoreVersion>
+    <!-- Milestone versions -->
+    <ignoreVersion type="regex">(?i).*-M\d+</ignoreVersion>
+    <!-- Release Candidate versions -->
+    <ignoreVersion type="regex">(?i).*-RC[\.-]?\d*</ignoreVersion>
+    <!-- Corporate version formats -->
+    <ignoreVersion type="regex">.*\.(C|M)R\d*</ignoreVersion>
+    <!-- Specific build versions -->
+    <ignoreVersion type="regex">.*-(ij253|jbossorg|atlassian|jboss|mars)-\d+</ignoreVersion>
+    <!-- Non-existent/preview versions -->
+    <ignoreVersion type="regex">.*-(does-not-exist|nf-execution|preview|ce|ccs)</ignoreVersion>
+    <!-- Internal versions -->
+    <ignoreVersion type="regex">.*-internal\d+</ignoreVersion>
+    <!-- Special versions -->
+    <ignoreVersion type="regex">.*_special_\d+</ignoreVersion>
+    <!-- Date and time versions (yyyymmdd.hhmmss) -->
+    <ignoreVersion type="regex">\d{8}\.\d{6}</ignoreVersion>
+    <!-- Date only versions (yyyymmdd) -->
+    <ignoreVersion type="regex">\d{8}</ignoreVersion>
+    <!-- Timestamp versions -->
+    <ignoreVersion type="regex">\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}.*</ignoreVersion>
+  </ignoreVersions>
+</ruleset>
