@@ -244,9 +244,9 @@ func createClient(svcAddr string) (*grpc.ClientConn, error) {
 
 func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb.ListRecommendationsRequest) (*pb.ListRecommendationsResponse, error) {
 	rec := log.Record{}
-	rec.SetBody(log.StringValue("ListRecommendations request"))
+	rec.SetBody(attribute.StringValue("ListRecommendations request"))
 	rec.AddAttributes(
-		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", req.GetProductIds())),
+		attribute.StringSlice("product_ids", req.GetProductIds()),
 	)
 	rec.SetEventName("AUDIT_RECOMMENDATION_LIST_REQUEST") // We can set a custom event name for AUDIT purposes
 
@@ -263,9 +263,9 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	}
 
 	rec = log.Record{}
-	rec.SetBody(log.StringValue("ListRecommendations product catalog query"))
+	rec.SetBody(attribute.StringValue("ListRecommendations product catalog query"))
 	rec.AddAttributes(
-		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", allProductIDs)),
+		attribute.StringSlice("product_ids", allProductIDs),
 	)
 	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
@@ -290,9 +290,9 @@ func (s *recommendationService) ListRecommendations(ctx context.Context, req *pb
 	}
 
 	rec = log.Record{}
-	rec.SetBody(log.StringValue("ListRecommendations response"))
+	rec.SetBody(attribute.StringValue("ListRecommendations response"))
 	rec.AddAttributes(
-		log.KeyValueFromAttribute(attribute.StringSlice("product_ids", filtered)),
+		attribute.StringSlice("product_ids", filtered),
 	)
 	logger.Emit(ctx, rec) // Does not return an error, so we don't know if the AUDIT log was successful
 
