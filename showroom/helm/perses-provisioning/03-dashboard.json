@@ -1,0 +1,1298 @@
+﻿{
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "otel-metrics",
+    "project": "otel-pipeline"
+  },
+  "spec": {
+    "display": {
+      "name": "OTel Audit Logging Pipeline - Stakeholder View"
+    },
+    "duration": "1h",
+    "refreshInterval": "15s",
+    "variables": [],
+    "layouts": [
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Executive Summary",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": { "$ref": "#/spec/panels/total_logs_processed" }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": { "$ref": "#/spec/panels/data_integrity_pct" }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": { "$ref": "#/spec/panels/total_failures" }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 4,
+              "content": { "$ref": "#/spec/panels/pipeline_uptime" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "End-to-End Pipeline Flow (logs/sec)",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 8,
+              "content": { "$ref": "#/spec/panels/e2e_flow_rate" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Tier-1: Application Sidecar Collector",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier1_received" }
+            },
+            {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier1_sent" }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier1_failed" }
+            },
+            {
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier1_queue" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Tier-2: DaemonSet Collector Agents",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 5,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_received" }
+            },
+            {
+              "x": 5,
+              "y": 0,
+              "width": 5,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_sent" }
+            },
+            {
+              "x": 10,
+              "y": 0,
+              "width": 5,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_failed" }
+            },
+            {
+              "x": 15,
+              "y": 0,
+              "width": 5,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_queue" }
+            },
+            {
+              "x": 20,
+              "y": 0,
+              "width": 4,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_batch_size" }
+            },
+            {
+              "x": 0,
+              "y": 5,
+              "width": 24,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier2_batch_timeout" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Tier-3: Log Sink (Final Destination)",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier3_received" }
+            },
+            {
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier3_failed" }
+            },
+            {
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 5,
+              "content": { "$ref": "#/spec/panels/tier3_refused" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "Data Integrity: Loss Detection",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "content": { "$ref": "#/spec/panels/integrity_comparison" }
+            },
+            {
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "content": { "$ref": "#/spec/panels/loss_over_time" }
+            }
+          ]
+        }
+      },
+      {
+        "kind": "Grid",
+        "spec": {
+          "display": {
+            "title": "System Health & Resources",
+            "collapse": {
+              "open": true
+            }
+          },
+          "items": [
+            {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": { "$ref": "#/spec/panels/memory_usage" }
+            },
+            {
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": { "$ref": "#/spec/panels/cpu_usage" }
+            },
+            {
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "content": { "$ref": "#/spec/panels/collector_uptime" }
+            }
+          ]
+        }
+      }
+    ],
+    "panels": {
+      "total_logs_processed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Total Logs Processed",
+            "description": "Total audit logs received at final destination (Tier-3)"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#3b82f6",
+                "width": 2
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "data_integrity_pct": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Data Integrity",
+            "description": "End-to-end delivery: Tier-3 received / Tier-1 received (over last 1h)"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "percent"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#ef4444", "value": 0 },
+                  { "color": "#f59e0b", "value": 95 },
+                  { "color": "#22c55e", "value": 99 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "clamp_max(100 * (sum(increase(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}[1h])) or vector(0)) / clamp_min(sum(increase(otelcol_receiver_accepted_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}[1h])) or vector(1), 1), 100)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "total_failures": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Total Failures",
+            "description": "Failed log exports across all tiers"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#f59e0b", "value": 1 },
+                  { "color": "#ef4444", "value": 10 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum(otelcol_exporter_send_failed_log_records_total) or vector(0)) + (sum(otelcol_receiver_refused_log_records_total) or vector(0)) + (sum(otelcol_receiver_failed_log_records_total) or vector(0))",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "pipeline_uptime": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Pipeline Uptime",
+            "description": "Longest running collector uptime"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "seconds"
+              },
+              "sparkline": {
+                "color": "#22c55e",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "max(otelcol_process_uptime_seconds_total) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "e2e_flow_rate": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "End-to-End Log Flow Rate",
+            "description": "Log flow rate across all pipeline stages"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "logs/sec"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(rate(otelcol_receiver_accepted_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}[5m])) or vector(0)",
+                    "seriesNameFormat": "â‘  Tier-1 Received (from App)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(rate(otelcol_receiver_accepted_log_records_total{namespace=\"tier-2\"}[5m])) or vector(0)",
+                    "seriesNameFormat": "â‘¡ Tier-2 Received (from Tier-1)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(rate(otelcol_exporter_sent_log_records_total{namespace=\"tier-2\", exporter=\"otlp\"}[5m])) or vector(0)",
+                    "seriesNameFormat": "â‘¢ Tier-2 Sent (to Tier-3)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(rate(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}[5m])) or vector(0)",
+                    "seriesNameFormat": "â‘£ Tier-3 Received (Final)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier1_received": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Logs Received",
+            "description": "Logs received from application"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#22c55e",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier1_sent": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Logs Sent",
+            "description": "Logs exported to Tier-2"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#3b82f6",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_exporter_sent_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\", exporter=~\"otlp$|otlp/.*\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier1_failed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Export Failures",
+            "description": "Failed log exports"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#ef4444", "value": 1 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum(otelcol_exporter_send_failed_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(0)) + (sum(otelcol_receiver_refused_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(0)) + (sum(otelcol_receiver_failed_log_records_total{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(0))",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier1_queue": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Queue Utilization",
+            "description": "Exporter queue usage as % of capacity"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#f59e0b", "value": 50 },
+                  { "color": "#ef4444", "value": 80 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "100 * (sum(otelcol_exporter_queue_size{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(0)) / clamp_min(sum(otelcol_exporter_queue_capacity{namespace=\"tier-1\", job=\"kubernetes-pods\"}) or vector(1), 1)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_received": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Logs Received",
+            "description": "Logs received from Tier-1 sidecars"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#a855f7",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-2\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_sent": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Logs Sent",
+            "description": "Logs sent to Tier-3 sink"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#f59e0b",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_exporter_sent_log_records_total{namespace=\"tier-2\", exporter=\"otlp\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_failed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Export Failures",
+            "description": "Failed exports to Tier-3"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#ef4444", "value": 1 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum(otelcol_exporter_send_failed_log_records_total{namespace=\"tier-2\"}) or vector(0)) + (sum(otelcol_receiver_refused_log_records_total{namespace=\"tier-2\"}) or vector(0)) + (sum(otelcol_receiver_failed_log_records_total{namespace=\"tier-2\"}) or vector(0))",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_queue": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Queue Utilization",
+            "description": "Export queue usage as % of capacity (with persistence)"
+          },
+          "plugin": {
+            "kind": "GaugeChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "percent"
+              },
+              "max": 100,
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#f59e0b", "value": 50 },
+                  { "color": "#ef4444", "value": 80 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "100 * (sum(otelcol_exporter_queue_size{namespace=\"tier-2\"}) or vector(0)) / clamp_min(sum(otelcol_exporter_queue_capacity{namespace=\"tier-2\"}) or vector(1), 1)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_batch_size": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Avg Batch Size",
+            "description": "Average batch processor send size"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "sparkline": {
+                "color": "#06b6d4",
+                "width": 1
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_processor_batch_batch_send_size_sum{namespace=\"tier-2\"}) / clamp_min(sum(otelcol_processor_batch_batch_send_size_count{namespace=\"tier-2\"}), 1) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier2_batch_timeout": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Batch Timeout Triggers",
+            "description": "Batches flushed by timeout (not reaching batch_size). High values may indicate low traffic or oversized batch config."
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "timeouts/sec"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (namespace) (rate(otelcol_processor_batch_timeout_trigger_send_total[5m]))",
+                    "seriesNameFormat": "by-namespace",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier3_received": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Logs Received (Final)",
+            "description": "Total logs received at final destination"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal",
+                "shortValues": true
+              },
+              "sparkline": {
+                "color": "#10b981",
+                "width": 2
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier3_failed": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Receive Failures",
+            "description": "Failed to receive logs"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#ef4444", "value": 1 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_failed_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "tier3_refused": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Refused Logs",
+            "description": "Logs refused by receiver"
+          },
+          "plugin": {
+            "kind": "StatChart",
+            "spec": {
+              "calculation": "last",
+              "format": {
+                "unit": "decimal"
+              },
+              "thresholds": {
+                "steps": [
+                  { "color": "#22c55e", "value": 0 },
+                  { "color": "#ef4444", "value": 1 }
+                ]
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_refused_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "integrity_comparison": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Pipeline Integrity: Received vs Sent",
+            "description": "Compare logs at each pipeline stage - gaps indicate data loss"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "total logs"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-2\"}) or vector(0)",
+                    "seriesNameFormat": "Tier-2 Received",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_exporter_sent_log_records_total{namespace=\"tier-2\", exporter=\"otlp\"}) or vector(0)",
+                    "seriesNameFormat": "Tier-2 Sent",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}) or vector(0)",
+                    "seriesNameFormat": "Tier-3 Received",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "loss_over_time": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Data Loss Detection",
+            "description": "Difference between sent and received - should be zero for lossless delivery"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "logs difference"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum(increase(otelcol_exporter_sent_log_records_total{namespace=\"tier-2\", exporter=\"otlp\"}[5m])) or vector(0)) - (sum(increase(otelcol_receiver_accepted_log_records_total{namespace=\"tier-3\", job=\"kubernetes-pods\"}[5m])) or vector(0))",
+                    "seriesNameFormat": "Tier-2â†’Tier-3 Delta (should be ~0)",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "(sum(increase(otelcol_receiver_accepted_log_records_total{namespace=\"tier-2\"}[5m])) or vector(0)) - (sum(increase(otelcol_exporter_sent_log_records_total{namespace=\"tier-2\", exporter=\"otlp\"}[5m])) or vector(0))",
+                    "seriesNameFormat": "Tier-2 In-Flight/Queued",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "memory_usage": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Memory Usage (RSS)",
+            "description": "Collector process memory by tier"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "bytes",
+                "format": {
+                  "unit": "bytes"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (namespace) (otelcol_process_memory_rss_bytes)",
+                    "seriesNameFormat": "by-namespace",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "cpu_usage": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "CPU Usage",
+            "description": "Collector CPU usage rate by tier"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "CPU seconds/sec"
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "sum by (namespace) (rate(otelcol_process_cpu_seconds_total[5m]))",
+                    "seriesNameFormat": "by-namespace",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "collector_uptime": {
+        "kind": "Panel",
+        "spec": {
+          "display": {
+            "name": "Collector Uptime",
+            "description": "Uptime per collector instance"
+          },
+          "plugin": {
+            "kind": "TimeSeriesChart",
+            "spec": {
+              "legend": {
+                "mode": "list",
+                "position": "bottom"
+              },
+              "yAxis": {
+                "label": "seconds",
+                "format": {
+                  "unit": "seconds"
+                }
+              }
+            }
+          },
+          "queries": [
+            {
+              "kind": "TimeSeriesQuery",
+              "spec": {
+                "plugin": {
+                  "kind": "PrometheusTimeSeriesQuery",
+                  "spec": {
+                    "query": "otelcol_process_uptime_seconds_total",
+                    "seriesNameFormat": "collector-instance",
+                    "datasource": {
+                      "kind": "PrometheusDatasource",
+                      "name": "prometheus"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
