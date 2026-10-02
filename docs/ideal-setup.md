@@ -173,7 +173,7 @@ Operational Notes:
 - Use node-local filesystem (cluster node persistent path) to minimize latency; weigh trade-offs vs. network-attached volumes.
 - `max_elapsed_time: 0` combined with `storage: file_storage` enables automatic recovery after sink outages without restarting the Collector
   - retries continue indefinitely and buffered records survive restarts. This only holds as long as disk capacity is sufficient; monitor
-  disk usage and alert before it fills.
+    disk usage and alert before it fills.
 
 ## 3. Final Storage Sink Tier Guidelines
 
