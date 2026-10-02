@@ -30,7 +30,7 @@ We need an exporter that can read from the persistence queue. Options:
 1. **Modify existing fanout** to read from the queue.
 2. **Create a new fanout** with queue-reading capabilities.
 
-An fanout instance will forward logs to chosen extensions for the audit log pipeline. To guarantee delivery of logs from exporter → sink:
+A fanout instance will forward logs to configured exporters in the audit log pipeline. To guarantee delivery of logs from exporter → sink:
 
 - If the exporter supports **persistence queues**, it will ensure delivery and send back an acknowledgment (ACK).
 - If the exporter does **not** support persistence queues, we need to implement a retry mechanism in the fanout. At least once we will
@@ -54,7 +54,7 @@ service:
 
 ### Notes / Unknowns / Ideas
 
-- Maybe we can implment kafka extension, so user dont have to configure it itself
+- Maybe we can implement a Kafka extension, so users don't have to configure it themselves.
 
 - Is it acceptable for the sink to receive duplicate logs?
 
@@ -62,12 +62,11 @@ service:
 
 - Do all exporters confirm successful log delivery?
 
-- We need to send auditlogs in reciver to some persistance memory to avoid losing them. As is we lose them in receiver, sdk will not get
-  ack, and will try to send them again later.
+- We need to send audit logs in the receiver to some persistent memory to avoid losing them. As is, we lose them in the receiver; the SDK will not get an ACK and will try to send them again later.
 
 - Can we leverage existing connectors like routingConnector?
 
-- How do different exporters handle reliability? Which guarantee log delivery? Which implements persistence que?
+- How do different exporters handle reliability? Which guarantee log delivery? Which implement a persistent queue?
 
 ### Pros
 

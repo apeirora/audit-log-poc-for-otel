@@ -94,15 +94,15 @@ monitoring at each component boundary for reliability assessment.
 
 ## 6. OPEN POINTS
 
-Otel SDK & Collector Version Compatibility: Need to validate if all required features and data formats are supported. API Rate Limits &
-Back-pressure: How will surges and API slowdowns/throttling be gracefully handled? Data Privacy & Security: Ensure logging data is
-sanitized/encrypted as required before egress. Collector Failure Modes: What happens to logs if Otel Collector crashes or network partition
-occurs? Lossy Operations in Processors: Need clear bounds on filtering/batching impacts to log completeness.
+1. **OTel SDK & Collector Version Compatibility:** Validate that all required features and data formats are supported across versions.
+2. **API Rate Limits & Back-pressure:** Define how surges and API slowdowns/throttling are handled gracefully.
+3. **Data Privacy & Security:** Ensure logging data is sanitized/encrypted as required before egress.
+4. **Collector Failure Modes:** Determine what happens to logs if the OTel Collector crashes or a network partition occurs.
+5. **Lossy Operations in Processors:** Establish clear bounds on filtering/batching impacts to log completeness.
 
 ## 7. CONCLUSION AND NEXT STEPS
 
-This POC will validate the comprehensive logging flow’s reliability and highlights findings if there are any loss of logs as per the
-delivery gurantee.
+This POC validates the end-to-end logging flow’s reliability and documents any record loss relative to the at-least-once delivery guarantee.
 
 Next steps include: Building and deploying test harnesses for each stage. Executing validation and stress tests. Analyzing end-to-end
 message integrity/loss metrics. Tuning collector/processors for optimal throughput and minimal loss. Compiling a findings and

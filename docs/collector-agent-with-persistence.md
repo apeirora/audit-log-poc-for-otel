@@ -9,7 +9,7 @@
 
 ## Cons
 
-- Node file system is less reliable than distributed storage. If the node fails, all persisted data may be lost. Additionally, snapshotting
+- Node-local storage is lost if the node fails, since data is not replicated; distributed storage survives single-node failure. Additionally, snapshotting
   capabilities with node file systems are uncertain.
 - Limited to vertical scaling only. Large persistence requirements necessitate nodes with substantial disk space. Distributed storage allows
   horizontal scaling by adding nodes to the storage cluster.

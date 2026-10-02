@@ -191,9 +191,6 @@ recommended short-term focus.
 
 ### Prioritized Actions
 
-This short list is a near-term priority selected from the larger proposals above. It is intended to deliver quick wins that significantly
-reduce unexplained drops and improve operator visibility.
-
 1. Align timeouts (docs), ensure retry - especially when connection loss/establishment is involved. Might require code changes in some
    dependencies (gRPC/http libraries) or in their usage. See OTLP Go issue [#6588][6588] for an example.
 2. Focus on Client SDK persistency (+ retry). E.g. introduce persistent queue option in popular SDKs

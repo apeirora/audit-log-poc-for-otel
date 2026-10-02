@@ -204,9 +204,7 @@ Loss Prevention Layers:
 
 ## Monitoring & Alerting
 
-Monitoring of the involved components of the data delivery stack is critical, as it will unveil upcoming threats of data loss early and can
-be used to trigger remediation actions before data loss occurs. In a distributed system, where delivery can never be 100% guaranteed,
-monitoring is crucial to get at least close to 100%.
+Monitoring catches queue saturation before it crosses into data loss — the metrics below are the minimum set.
 
 Track and alert on:
 
