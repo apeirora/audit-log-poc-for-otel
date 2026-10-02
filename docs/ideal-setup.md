@@ -151,6 +151,10 @@ exporters:
       storage: file_storage
     retry_on_failure:
       enabled: true
+      max_elapsed_time: 0   # 0 = retry indefinitely; never discard audit records
+      initial_interval: 5s
+      max_interval: 30s
+      multiplier: 1.5
 
 service:
   # See: https://opentelemetry.io/docs/collector/configuration/#service
@@ -167,6 +171,7 @@ Operational Notes:
 - Monitor queue depth; only decommission a node when its persistent queue is empty.
 - Health check endpoint must be scraped; failing health triggers remediation.
 - Use node-local filesystem (cluster node persistent path) to minimize latency; weigh trade-offs vs. network-attached volumes.
+- `max_elapsed_time: 0` combined with `storage: file_storage` enables automatic recovery after sink outages without restarting the Collector — retries continue indefinitely and buffered records survive restarts. This only holds as long as disk capacity is sufficient; monitor disk usage and alert before it fills.
 
 ## 3. Final Storage Sink Tier Guidelines
 
