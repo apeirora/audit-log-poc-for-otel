@@ -2,8 +2,8 @@
 
 ## Overview
 
-We have implemented a resilient observability pipeline using the OpenTelemetry Collector, designed to improve delivery durability of telemetry
-data through disk-backed queues and Kafka. This setup supports both durability and recovery under adverse conditions.
+We have implemented a resilient observability pipeline using the OpenTelemetry Collector, designed to improve delivery durability of
+telemetry data through disk-backed queues and Kafka. This setup supports both durability and recovery under adverse conditions.
 
 ## Stack Architecture
 

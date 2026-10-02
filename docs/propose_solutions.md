@@ -62,7 +62,8 @@ service:
 
 - Do all exporters confirm successful log delivery?
 
-- We need to send audit logs in the receiver to some persistent memory to avoid losing them. As is, we lose them in the receiver; the SDK will not get an ACK and will try to send them again later.
+- We need to send audit logs in the receiver to some persistent memory to avoid losing them. As is, we lose them in the receiver; the SDK
+  will not get an ACK and will try to send them again later.
 
 - Can we leverage existing connectors like routingConnector?
 

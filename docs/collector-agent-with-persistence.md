@@ -9,8 +9,8 @@
 
 ## Cons
 
-- Node-local storage is lost if the node fails, since data is not replicated; distributed storage survives single-node failure. Additionally, snapshotting
-  capabilities with node file systems are uncertain.
+- Node-local storage is lost if the node fails, since data is not replicated; distributed storage survives single-node failure.
+  Additionally, snapshotting capabilities with node file systems are uncertain.
 - Limited to vertical scaling only. Large persistence requirements necessitate nodes with substantial disk space. Distributed storage allows
   horizontal scaling by adding nodes to the storage cluster.
 - When the agent is unavailable (during rolling upgrades), applications will drop data by default. However, the retry mechanism can be
