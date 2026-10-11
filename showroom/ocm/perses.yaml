@@ -1,0 +1,27 @@
+components:
+  - name: apeirora.eu/perses/perses
+    version: 0.53.1
+    provider:
+      name: SAP SE (Apeiro Reference Architecture)
+    resources:
+      - name: chart
+        version: 0.21.0
+        type: helmChart
+        access:
+          type: helm
+          helmChart: perses:0.21.0
+          helmRepository: https://perses.github.io/helm-charts
+      - name: image
+        version: 0.53.1
+        type: ociImage
+        access:
+          imageReference: docker.io/persesdev/perses:v0.53.1
+          type: ociArtifact
+    sources:
+      - name: src
+        version: 0.53.1
+        type: filesystem
+        access:
+          commit: 2b65a98ba3febd6342d5d99c1b498c6ff7ae08f2
+          repoUrl: https://github.com/perses/perses
+          type: gitHub

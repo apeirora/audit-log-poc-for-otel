@@ -11,7 +11,7 @@
 .idea/
 
 # where tasks store binary tools (e.g. kind, kubectl, etc.)
-/.tools/
+**/.tools/
 
 # where you can store your temporary local files
 /work_dir/
@@ -20,5 +20,14 @@
 # java build files
 **/target/
 
+# environment file with secret password
+**/.env
+
+# local kubectl secrets (copy from showroom/kubectl/secrets.example.yaml)
+showroom/kubectl/secrets.local.yaml
+showroom/kubectl/secrets.env
+showroom/kubectl/htpasswd.secret
+
 # potentially generated file
 /src/file-sink/received-logs.txt
+

@@ -1,0 +1,27 @@
+components:
+  - name: apeirora.eu/prometheus/prometheus
+    version: 3.11.0
+    provider:
+      name: SAP SE (Apeiro Reference Architecture)
+    resources:
+      - name: chart
+        version: 28.16.0
+        type: helmChart
+        access:
+          type: helm
+          helmChart: prometheus:28.16.0
+          helmRepository: https://prometheus-community.github.io/helm-charts
+      - name: image
+        version: 3.11.0
+        type: ociImage
+        access:
+          imageReference: quay.io/prometheus/prometheus:v3.11.0
+          type: ociArtifact
+    sources:
+      - name: src
+        version: 3.11.0
+        type: filesystem
+        access:
+          commit: d7cd96cb98943d845fbfa42cb28d33961c8ce819
+          repoUrl: https://github.com/prometheus/prometheus
+          type: gitHub

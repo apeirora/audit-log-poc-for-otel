@@ -1,0 +1,33 @@
+service:
+  type: LoadBalancer
+
+config:
+  security:
+    readonly: false
+    enable_auth: false
+  provisioning:
+    folders:
+      - /etc/perses/provisioning
+    interval: 1m
+  frontend:
+    important_dashboards:
+      - project: otel-pipeline
+        dashboard: otel-metrics
+
+sidecar:
+  enabled: true
+  label: "perses.dev/resource"
+  labelValue: "true"
+  allNamespaces: false
+
+extraObjects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: perses-provisioning-otel
+      labels:
+        perses.dev/resource: "true"
+    data:
+      01-project.json: ""
+      02-datasource.json: ""
+      03-dashboard.json: ""

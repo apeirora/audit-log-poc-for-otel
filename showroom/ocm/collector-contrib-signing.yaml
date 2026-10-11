@@ -1,0 +1,12 @@
+components:
+  - name: apeirora.eu/otel/collector-contrib-signing
+    version: 0.145.0
+    provider:
+      name: SAP SE (Apeiro Reference Architecture)
+    resources:
+      - name: image
+        version: 0.145.0
+        type: ociImage
+        access:
+          imageReference: ghcr.io/apeirora/otelcol-contrib:signlogsinsideprocesor-0fbeec707ed4
+          type: ociArtifact

@@ -1,0 +1,264 @@
+# Deploy `dice-java` with a per-pod OpenTelemetry Collector sidecar
+# - Deployment with 1 replica
+# - Each pod runs the application container and an otelcol sidecar
+# - ConfigMap contains the otelcol config
+#
+# Apply namespace secrets before this manifest: task secrets:apply (kubectl/secrets.env), or see secrets.example.yaml.
+#   dice-java-openbao-token (key: token)
+#   otel-otlp-client-auth (keys: username, password) — must match tier-2 otel-otlp-ingest-htpasswd line
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dice-java-otelcol-config
+data:
+  config.yaml: |
+    extensions:
+      basicauth/client:
+        client_auth:
+          username: ${env:OTEL_OTLP_EXPORTER_USERNAME}
+          password: ${env:OTEL_OTLP_EXPORTER_PASSWORD}
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      transform/fixlogtime:
+        log_statements:
+          - context: log
+            statements:
+              - set(time_unix_nano, observed_time_unix_nano) where time_unix_nano == 0
+      certificatehash:
+        hash_algorithm: SHA256
+        sign_content: body
+        k8s_secret:
+          name: dice-java-openbao-tls
+          namespace: tier-1
+          cert_key: cert
+          key_key: key
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+
+    exporters:
+      otlphttp:
+        endpoint: http://otelcol-agent.tier-2.svc.cluster.local:4318
+        tls:
+          insecure: true
+        auth:
+          authenticator: basicauth/client
+      debug:
+
+    service:
+      extensions: [basicauth/client]
+      pipelines:
+        logs:
+          receivers: [otlp]
+          processors: [transform/fixlogtime, certificatehash, batch]
+          exporters: [otlphttp, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp, debug]
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp, debug]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dice-java-cert-sync
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dice-java-cert-sync
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dice-java-cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: dice-java-cert-sync
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dice-java-cert-sync
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: otelcol-agent-secret-reader
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["dice-java-openbao-tls"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: otelcol-agent-secret-reader
+subjects:
+  - kind: ServiceAccount
+    name: otelcol-agent
+    namespace: tier-2
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: otelcol-agent-secret-reader
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dice-java
+  labels:
+    app: dice-java
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dice-java
+  template:
+    metadata:
+      labels:
+        app: dice-java
+    spec:
+      serviceAccountName: dice-java-cert-sync
+      initContainers:
+        - name: fetch-openbao-certs
+          image: alpine:3.21
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              apk add --no-cache curl jq
+              RESPONSE="$(curl -sS --fail --show-error \
+                -H "X-Vault-Token: ${OPENBAO_TOKEN}" \
+                -H "X-Vault-Namespace: ${OPENBAO_NAMESPACE}" \
+                -H "X-Vault-Request: true" \
+                "${OPENBAO_ADDR}/v1/${OPENBAO_CERT_PATH}")"
+              echo "${RESPONSE}" | jq -er '.data.data.cert' > /etc/dice-java/certs/cert
+              echo "${RESPONSE}" | jq -er '.data.data.key' > /etc/dice-java/certs/key
+          env:
+            - name: OPENBAO_ADDR
+              value: "https://openbao.cc-d2.showroom.apeirora.eu"
+            - name: OPENBAO_NAMESPACE
+              value: "otel/"
+            - name: OPENBAO_CERT_PATH
+              value: "kv/data/secret"
+            - name: OPENBAO_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dice-java-openbao-token
+                  key: token
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+        - name: sync-k8s-tls-secret
+          image: bitnami/kubectl:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              kubectl create secret generic dice-java-openbao-tls \
+                --from-file=cert=/etc/dice-java/certs/cert \
+                --from-file=key=/etc/dice-java/certs/key \
+                --dry-run=client -o yaml \
+                | kubectl apply -f -
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+      containers:
+        - name: dice-java
+          image: ghcr.io/apeirora/audit-log-poc-for-otel/dice-java:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REST_PORT
+              value: "8082"
+            # application should send OTLP to the sidecar on localhost
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_GRPC
+              value: "http://127.0.0.1:4317"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT_HTTP
+              value: "http://127.0.0.1:4318"
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+          ports:
+            - containerPort: 8082
+          volumeMounts:
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+          resources:
+            limits:
+              memory: 256Mi
+              cpu: 200m
+            requests:
+              memory: 128Mi
+              cpu: 100m
+        - name: otel-collector
+          image: ghcr.io/apeirora/otelcol-contrib:signlogsinsideprocesor-0fbeec707ed4
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config=/etc/otelcol-contrib/config.yaml"
+          env:
+            - name: OTEL_OTLP_EXPORTER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: otel-otlp-client-auth
+                  key: username
+            - name: OTEL_OTLP_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: otel-otlp-client-auth
+                  key: password
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: otlp-http
+              containerPort: 4318
+              protocol: TCP
+          volumeMounts:
+            - name: otelcol-config
+              mountPath: /etc/otelcol-contrib
+              readOnly: true
+            - name: dice-java-certs
+              mountPath: /etc/dice-java/certs
+              readOnly: true
+      volumes:
+        - name: otelcol-config
+          configMap:
+            name: dice-java-otelcol-config
+            items:
+              - key: config.yaml
+                path: config.yaml
+        - name: dice-java-certs
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dice-java
+  labels:
+    app: dice-java
+spec:
+  selector:
+    app: dice-java
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

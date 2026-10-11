@@ -1,0 +1,11 @@
+﻿{
+  "kind": "Project",
+  "metadata": {
+    "name": "otel-pipeline"
+  },
+  "spec": {
+    "display": {
+      "name": "OTel Pipeline"
+    }
+  }
+}
