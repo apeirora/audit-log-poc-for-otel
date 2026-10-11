@@ -7,7 +7,6 @@ import io.opentelemetry.api.logs.Severity;
 import java.util.Random;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,8 +29,9 @@ public class DiceController {
 
   public DiceController(
       @Value("${LOG_MESSAGES_PER_REQUEST:1}") int logMessagesPerRequest,
-      @Qualifier("otelLoggerProvider") @Autowired LoggerProvider loggerProvider) {
+      /*@Qualifier("otelLoggerProvider")*/ @Autowired LoggerProvider loggerProvider) {
     log.debug("DiceController initialized with logMessagesPerRequest={}", logMessagesPerRequest);
+    log.info("Using LoggerProvider implementation: {}", loggerProvider.getClass().getName());
     // LoggerProvider loggerProvider = GlobalOpenTelemetry.get().getLogsBridge(); // actually
     // returns LoggerProvider.noop()
     this.otelLogger = loggerProvider.loggerBuilder("AUDIT_JAVA_SERVICE").build();

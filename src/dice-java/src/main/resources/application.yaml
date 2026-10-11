@@ -1,6 +1,6 @@
 spring:
   application:
-    name: demo
+    name: dice-java
 server:
   address: 0.0.0.0
   port: 8082
