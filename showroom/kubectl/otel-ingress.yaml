@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otelcol-agent-otlp
+  namespace: tier-2
+  annotations:
+    dns.gardener.cloud/class: garden
+    dns.gardener.cloud/dnsnames: otlp.ingress.otel-audit-log.msp06.shoot.gardener.cc-one.showroom.apeirora.eu
+    dns.gardener.cloud/ttl: "600"
+    cert.gardener.cloud/purpose: managed
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - otlp.ingress.otel-audit-log.msp06.shoot.gardener.cc-one.showroom.apeirora.eu
+      secretName: otlp-certificate
+  rules:
+    - host: otlp.ingress.otel-audit-log.msp06.shoot.gardener.cc-one.showroom.apeirora.eu
+      http:
+        paths:
+          - path: /v1/logs
+            pathType: Prefix
+            backend:
+              service:
+                name: otelcol-agent
+                port:
+                  number: 4318
+          - path: /v1/traces
+            pathType: Prefix
+            backend:
+              service:
+                name: otelcol-agent
+                port:
+                  number: 4318
+          - path: /v1/metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: otelcol-agent
+                port:
+                  number: 4318

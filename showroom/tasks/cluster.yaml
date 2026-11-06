@@ -1,0 +1,35 @@
+version: "3"
+
+description:
+
+includes:
+  tools:
+    taskfile: ./tools.yaml
+    internal: true
+
+tasks:
+  install:
+    desc: Create kubernetes cluster resources (namespaces, roles, bindings).
+    requires:
+      vars: [KUBECTL_CMD]
+    deps:
+      - task: tools:install-kubectl
+    status:
+      - "{{ .KUBECTL_CMD }} get ns | grep tier- >/dev/null 2>&1"
+      - "{{ .KUBECTL_CMD }} get ClusterRole | grep otelcol-agent >/dev/null 2>&1"
+      - "{{ .KUBECTL_CMD }} get ClusterRoleBinding | grep otelcol-agent >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} apply -f kubectl/cluster.yaml"
+
+  uninstall:
+    desc: Delete (namespaces, roles, bindings).
+    requires:
+      vars: [KUBECTL_CMD]
+    deps:
+      - task: tools:install-kubectl
+    status:
+      - "! {{ .KUBECTL_CMD }} get ns | grep tier- >/dev/null 2>&1"
+      - "! {{ .KUBECTL_CMD }} get ClusterRole | grep otelcol-agent >/dev/null 2>&1"
+      - "! {{ .KUBECTL_CMD }} get ClusterRoleBinding | grep otelcol-agent >/dev/null 2>&1"
+    cmds:
+      - "{{ .KUBECTL_CMD }} delete -f kubectl/cluster.yaml --ignore-not-found"
