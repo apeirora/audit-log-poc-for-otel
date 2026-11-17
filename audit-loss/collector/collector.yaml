@@ -1,0 +1,54 @@
+# Main and secondary. COLLECTOR_NAME is main or secondary.
+# Verify runs in front of this process and only forwards records whose HMAC matches.
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  db_storage:
+    driver: sqlite
+    datasource: "file:///var/lib/otel/queue/queue.db?_pragma=busy_timeout(10000)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)"
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4319
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 64
+    spike_limit_mib: 16
+  attributes/collector:
+    actions:
+      - key: demo.collector
+        action: upsert
+        value: ${env:COLLECTOR_NAME}
+
+exporters:
+  otlphttp/sink:
+    endpoint: http://toxic:4419
+    encoding: json
+    compression: none
+    timeout: 5s
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
+      storage: db_storage
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 60s
+
+service:
+  extensions: [health_check, db_storage]
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/collector]
+      exporters: [otlphttp/sink]

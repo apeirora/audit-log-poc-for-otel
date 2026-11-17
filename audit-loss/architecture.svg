@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1080" viewBox="0 0 2100 1080" font-family="Segoe UI, system-ui, sans-serif">
+  <title>Audit log demo</title>
+  <rect width="2100" height="1080" fill="#fafaf9"/>
+  <defs>
+    <marker id="data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1c1917"/>
+    </marker>
+    <marker id="ctrl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#57534e"/>
+    </marker>
+    <marker id="health" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#0f766e"/>
+    </marker>
+  </defs>
+
+  <text x="24" y="32" font-size="22" font-weight="600" fill="#1c1917">Audit log demo</text>
+  <line x1="230" y1="26" x2="260" y2="26" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <text x="268" y="30" font-size="13" fill="#1c1917">log</text>
+  <line x1="310" y1="26" x2="340" y2="26" stroke="#57534e" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <text x="348" y="30" font-size="13" fill="#57534e">control</text>
+  <line x1="420" y1="26" x2="450" y2="26" stroke="#0f766e" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#health)"/>
+  <text x="458" y="30" font-size="13" fill="#0f766e">health</text>
+  <text x="540" y="30" font-size="13" fill="#57534e">ports are container listen ports, host publish in parentheses</text>
+
+  <g>
+    <rect x="16" y="48" width="214" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="123" y="72" text-anchor="middle" font-size="14" font-weight="600">Browser</text>
+    <text x="123" y="92" text-anchor="middle" font-size="12" fill="#57534e">GET /</text>
+    <text x="123" y="108" text-anchor="middle" font-size="12" fill="#57534e">GET /api/scenarios</text>
+    <text x="123" y="124" text-anchor="middle" font-size="12" fill="#57534e">POST /api/scenarios/{name}</text>
+    <text x="123" y="140" text-anchor="middle" font-size="12" fill="#57534e">GET /api/stats</text>
+  </g>
+  <line x1="230" y1="106" x2="246" y2="106" stroke="#57534e" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <g>
+    <rect x="250" y="48" width="150" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="325" y="90" text-anchor="middle" font-size="14" font-weight="600">audit-ui</text>
+    <text x="325" y="112" text-anchor="middle" font-size="12" fill="#57534e">listen :8080</text>
+    <text x="325" y="130" text-anchor="middle" font-size="12" fill="#57534e">host :18083</text>
+  </g>
+
+  <path d="M 325 48 L 325 40 L 1253 40" fill="none" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="530" y1="40" x2="530" y2="48" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <line x1="771" y1="40" x2="771" y2="48" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <line x1="1007" y1="40" x2="1007" y2="48" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <line x1="1253" y1="40" x2="1253" y2="48" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+
+  <g>
+    <rect x="420" y="48" width="220" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="530" y="76" text-anchor="middle" font-size="13" font-weight="600">spammer :8080</text>
+    <text x="530" y="96" text-anchor="middle" font-size="12" fill="#57534e">host :18080</text>
+    <text x="530" y="116" text-anchor="middle" font-size="12" fill="#57534e">POST /run, POST /continue</text>
+    <text x="530" y="134" text-anchor="middle" font-size="12" fill="#57534e">GET /last-run</text>
+  </g>
+  <g>
+    <rect x="656" y="48" width="230" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="771" y="76" text-anchor="middle" font-size="13" font-weight="600">toxic control :8090</text>
+    <text x="771" y="96" text-anchor="middle" font-size="12" fill="#57534e">host :18081</text>
+    <text x="771" y="116" text-anchor="middle" font-size="12" fill="#57534e">POST /faults/{link}</text>
+    <text x="771" y="134" text-anchor="middle" font-size="12" fill="#57534e">DELETE /faults/{link}</text>
+  </g>
+  <g>
+    <rect x="902" y="48" width="210" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="1007" y="76" text-anchor="middle" font-size="13" font-weight="600">sink :8080</text>
+    <text x="1007" y="96" text-anchor="middle" font-size="12" fill="#57534e">host :18082</text>
+    <text x="1007" y="116" text-anchor="middle" font-size="12" fill="#57534e">GET /stats?run_id</text>
+    <text x="1007" y="134" text-anchor="middle" font-size="12" fill="#57534e">POST /admin/delay</text>
+  </g>
+  <g>
+    <rect x="1128" y="48" width="250" height="116" rx="8" fill="#ffffff" stroke="#44403c"/>
+    <text x="1253" y="76" text-anchor="middle" font-size="13" font-weight="600">docker.sock</text>
+    <text x="1253" y="98" text-anchor="middle" font-size="12" fill="#57534e">stop, start, kill, inspect</text>
+    <text x="1253" y="118" text-anchor="middle" font-size="12" fill="#57534e">main, secondary</text>
+    <text x="1253" y="136" text-anchor="middle" font-size="12" fill="#57534e">sidecar, app</text>
+  </g>
+  <g>
+    <rect x="1394" y="48" width="682" height="116" rx="8" fill="#fef2f2" stroke="#b91c1c"/>
+    <text x="1410" y="72" font-size="13" font-weight="600" fill="#7f1d1d">toxic faults, same set on to-main, to-secondary, to-sink</text>
+    <text x="1410" y="96" font-size="12" fill="#b91c1c">blackhole, stall, reset, latency, jitter, drop %</text>
+    <text x="1410" y="116" font-size="12" fill="#b91c1c">status, bandwidth, truncate, max bytes, flip signature</text>
+    <text x="1410" y="140" font-size="12" fill="#b91c1c">5s timeout is the collector exporter, not toxic</text>
+  </g>
+
+  <path d="M 325 164 L 325 170 L 1070 170" fill="none" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="200" y1="170" x2="200" y2="214" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#health)"/>
+  <line x1="1070" y1="170" x2="1070" y2="240" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#health)"/>
+  <line x1="906" y1="170" x2="906" y2="500" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="906" y1="500" x2="1070" y2="500" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="1070" y1="500" x2="1070" y2="622" stroke="#0f766e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#health)"/>
+  <text x="916" y="490" font-size="12" fill="#0f766e">GET :13133</text>
+
+  <rect x="16" y="214" width="660" height="370" rx="12" fill="#f5f5f4" stroke="#a8a29e" stroke-dasharray="6 4"/>
+  <text x="32" y="236" font-size="12" fill="#57534e">sidecar container shares the spammer network namespace</text>
+  <text x="32" y="254" font-size="12" fill="#57534e">app posts only to 127.0.0.1 · health GET log-spammer:13133 (host :13133)</text>
+
+  <g>
+    <rect x="36" y="276" width="180" height="160" rx="8" fill="#ecfdf3" stroke="#166534"/>
+    <text x="126" y="308" text-anchor="middle" font-size="14" font-weight="600" fill="#14532d">log-spammer</text>
+    <text x="126" y="330" text-anchor="middle" font-size="12" fill="#166534">OTLP JSON /v1/logs</text>
+    <text x="126" y="348" text-anchor="middle" font-size="12" fill="#166534">counts sent</text>
+    <text x="126" y="366" text-anchor="middle" font-size="12" fill="#166534">counts HTTP rejects</text>
+    <text x="126" y="384" text-anchor="middle" font-size="12" fill="#166534">sets demo.inject</text>
+  </g>
+  <line x1="216" y1="356" x2="240" y2="356" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <g>
+    <rect x="244" y="276" width="180" height="160" rx="8" fill="#eff6ff" stroke="#1d4ed8"/>
+    <text x="334" y="308" text-anchor="middle" font-size="14" font-weight="600" fill="#1e3a8a">edge sign</text>
+    <text x="334" y="330" text-anchor="middle" font-size="12" fill="#1d4ed8">:4318</text>
+    <text x="334" y="348" text-anchor="middle" font-size="12" fill="#1d4ed8">HMAC-SHA256</text>
+    <text x="334" y="366" text-anchor="middle" font-size="12" fill="#1d4ed8">bad JSON returns 400</text>
+    <text x="334" y="384" text-anchor="middle" font-size="12" fill="#1d4ed8">flips bad_signature</text>
+  </g>
+  <line x1="424" y1="356" x2="448" y2="356" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <g>
+    <rect x="452" y="268" width="204" height="270" rx="8" fill="#fff7ed" stroke="#c2410c"/>
+    <text x="554" y="296" text-anchor="middle" font-size="14" font-weight="600" fill="#9a3412">sidecar otelcol</text>
+    <text x="554" y="318" text-anchor="middle" font-size="12" fill="#c2410c">:4319</text>
+    <text x="554" y="338" text-anchor="middle" font-size="12" fill="#c2410c">SQLite disk queue</text>
+    <text x="554" y="356" text-anchor="middle" font-size="12" fill="#c2410c">retry up to 30s</text>
+    <text x="554" y="374" text-anchor="middle" font-size="12" fill="#c2410c">dispatch 127.0.0.1:14318</text>
+    <text x="554" y="392" text-anchor="middle" font-size="12" fill="#c2410c">failover connector</text>
+    <text x="554" y="410" text-anchor="middle" font-size="12" fill="#c2410c">main first, timeout 2s</text>
+    <text x="554" y="428" text-anchor="middle" font-size="12" fill="#c2410c">no queue, no retry</text>
+    <text x="554" y="446" text-anchor="middle" font-size="12" fill="#c2410c">tries main every 15s</text>
+  </g>
+
+  <g>
+    <rect x="700" y="278" width="184" height="100" rx="8" fill="#fef2f2" stroke="#b91c1c"/>
+    <text x="792" y="308" text-anchor="middle" font-size="14" font-weight="600" fill="#7f1d1d">toxic to-main</text>
+    <text x="792" y="330" text-anchor="middle" font-size="12" fill="#b91c1c">:4417</text>
+    <text x="792" y="350" text-anchor="middle" font-size="12" fill="#b91c1c">same faults</text>
+  </g>
+  <line x1="884" y1="328" x2="916" y2="328" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+
+  <g>
+    <rect x="920" y="240" width="300" height="176" rx="8" fill="#fff7ed" stroke="#c2410c"/>
+    <text x="1070" y="266" text-anchor="middle" font-size="14" font-weight="600" fill="#9a3412">main collector</text>
+    <text x="1070" y="286" text-anchor="middle" font-size="12" fill="#c2410c">listen :4318</text>
+    <text x="1070" y="304" text-anchor="middle" font-size="12" fill="#c2410c">drop bad HMAC</text>
+    <text x="1070" y="322" text-anchor="middle" font-size="12" fill="#c2410c">drop missing attributes</text>
+    <text x="1070" y="340" text-anchor="middle" font-size="12" fill="#c2410c">empty batch returns 200</text>
+    <text x="1070" y="358" text-anchor="middle" font-size="12" fill="#c2410c">demo.collector = main</text>
+    <text x="1070" y="376" text-anchor="middle" font-size="12" fill="#c2410c">disk queue, retry 60s</text>
+    <text x="1070" y="394" text-anchor="middle" font-size="12" fill="#c2410c">health :13133 (host :13134)</text>
+  </g>
+
+  <g>
+    <rect x="700" y="648" width="184" height="124" rx="8" fill="#fef2f2" stroke="#b91c1c"/>
+    <text x="792" y="678" text-anchor="middle" font-size="14" font-weight="600" fill="#7f1d1d">toxic to-secondary</text>
+    <text x="792" y="700" text-anchor="middle" font-size="12" fill="#b91c1c">:4418</text>
+    <text x="792" y="720" text-anchor="middle" font-size="12" fill="#b91c1c">same faults</text>
+    <text x="792" y="740" text-anchor="middle" font-size="12" fill="#b91c1c">traffic only on failover</text>
+  </g>
+  <line x1="884" y1="710" x2="916" y2="710" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+
+  <g>
+    <rect x="920" y="622" width="300" height="176" rx="8" fill="#fff7ed" stroke="#c2410c"/>
+    <text x="1070" y="648" text-anchor="middle" font-size="14" font-weight="600" fill="#9a3412">secondary collector</text>
+    <text x="1070" y="668" text-anchor="middle" font-size="12" fill="#c2410c">listen :4318</text>
+    <text x="1070" y="686" text-anchor="middle" font-size="12" fill="#c2410c">drop bad HMAC</text>
+    <text x="1070" y="704" text-anchor="middle" font-size="12" fill="#c2410c">drop missing attributes</text>
+    <text x="1070" y="722" text-anchor="middle" font-size="12" fill="#c2410c">empty batch returns 200</text>
+    <text x="1070" y="740" text-anchor="middle" font-size="12" fill="#c2410c">demo.collector = secondary</text>
+    <text x="1070" y="758" text-anchor="middle" font-size="12" fill="#c2410c">disk queue, retry 60s</text>
+    <text x="1070" y="776" text-anchor="middle" font-size="12" fill="#c2410c">health :13133 (host :13135)</text>
+  </g>
+
+  <path d="M 656 360 C 678 360, 686 328, 696 328" fill="none" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <text x="668" y="316" font-size="12" fill="#1c1917">main</text>
+  <path d="M 656 470 C 678 560, 686 710, 696 710" fill="none" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <text x="500" y="560" font-size="12" fill="#1c1917">if main fails</text>
+
+  <g>
+    <rect x="1568" y="468" width="180" height="116" rx="8" fill="#fef2f2" stroke="#b91c1c"/>
+    <text x="1658" y="506" text-anchor="middle" font-size="14" font-weight="600" fill="#7f1d1d">toxic to-sink</text>
+    <text x="1658" y="528" text-anchor="middle" font-size="12" fill="#b91c1c">:4419</text>
+    <text x="1658" y="550" text-anchor="middle" font-size="12" fill="#b91c1c">same faults</text>
+  </g>
+  <path d="M 1220 328 C 1360 328, 1480 490, 1564 510" fill="none" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <text x="1280" y="316" font-size="12" fill="#1c1917">timeout 5s</text>
+  <path d="M 1220 710 C 1360 710, 1480 570, 1564 542" fill="none" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+  <text x="1280" y="698" font-size="12" fill="#1c1917">timeout 5s</text>
+  <line x1="1748" y1="526" x2="1772" y2="526" stroke="#1c1917" stroke-width="2" marker-end="url(#data)"/>
+
+  <g>
+    <rect x="1776" y="400" width="252" height="220" rx="8" fill="#f5f3ff" stroke="#6d28d9"/>
+    <text x="1902" y="436" text-anchor="middle" font-size="15" font-weight="600" fill="#4c1d95">audit-sink</text>
+    <text x="1902" y="460" text-anchor="middle" font-size="12" fill="#6d28d9">:8080 (host :18082)</text>
+    <text x="1902" y="482" text-anchor="middle" font-size="12" fill="#6d28d9">POST /v1/logs</text>
+    <text x="1902" y="504" text-anchor="middle" font-size="12" fill="#6d28d9">one file per sequence</text>
+    <text x="1902" y="526" text-anchor="middle" font-size="12" fill="#6d28d9">received = files</text>
+    <text x="1902" y="548" text-anchor="middle" font-size="12" fill="#6d28d9">slow and stall sleep here</text>
+    <text x="1902" y="570" text-anchor="middle" font-size="12" fill="#6d28d9">POST /rejected direct</text>
+  </g>
+
+  <path d="M 980 240 L 980 208 L 1902 208 L 1902 396" fill="none" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <text x="1280" y="196" font-size="12" fill="#57534e">POST /rejected, skips toxic</text>
+  <path d="M 1070 798 L 1070 950 L 2064 950 L 2064 510 L 2032 510" fill="none" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <text x="1280" y="938" font-size="12" fill="#57534e">POST /rejected, skips toxic</text>
+
+  <path d="M 1902 620 L 1902 1024 L 126 1024 L 126 436" fill="none" stroke="#57534e" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ctrl)"/>
+  <text x="620" y="1012" font-size="12" fill="#57534e">on GET /stats, sink GET /last-run copies sent, rejected, started, finished</text>
+</svg>
