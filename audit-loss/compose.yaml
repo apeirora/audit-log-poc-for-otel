@@ -1,0 +1,175 @@
+services:
+  log-spammer:
+    container_name: audit-spammer
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: spammer
+    environment:
+      LISTEN: :8080
+      OTLP_URL: http://127.0.0.1:4318/v1/logs
+    ports:
+      - "18080:8080"
+      - "13133:13133"
+    healthcheck:
+      test: ["CMD", "/spammer", "-healthcheck", "http://127.0.0.1:8080/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  otel-collector-audit-sidecar:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: collector
+    network_mode: service:log-spammer
+    depends_on:
+      log-spammer:
+        condition: service_started
+    environment:
+      ROLE: sidecar
+      KEY_FILE: /etc/auditlog/keys/dev_hmac_key.txt
+      LISTEN: :4318
+      UPSTREAM: http://127.0.0.1:4319
+    volumes:
+      - sidecar-queue:/var/lib/otel/queue
+      - ./keys/dev_hmac_key.txt:/etc/auditlog/keys/dev_hmac_key.txt:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:13133/"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  toxic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: toxic
+    environment:
+      LISTEN: :8090
+      LINK_TO_MAIN: :4417
+      LINK_TO_SECONDARY: :4418
+      LINK_TO_SINK: :4419
+      UPSTREAM_TO_MAIN: http://otel-collector-audit-main:4318
+      UPSTREAM_TO_SECONDARY: http://otel-collector-audit-secondary:4318
+      UPSTREAM_TO_SINK: http://audit-sink:8080
+    ports:
+      - "18081:8090"
+    healthcheck:
+      test: ["CMD", "/toxic", "-healthcheck", "http://127.0.0.1:8090/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  otel-collector-audit-main:
+    container_name: audit-main
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: collector
+    depends_on:
+      toxic:
+        condition: service_started
+      audit-sink:
+        condition: service_started
+    environment:
+      ROLE: collector
+      COLLECTOR_NAME: main
+      KEY_FILE: /etc/auditlog/keys/dev_hmac_key.txt
+      SINK_URL: http://audit-sink:8080
+      LISTEN: :4318
+      UPSTREAM: http://127.0.0.1:4319
+    ports:
+      - "13134:13133"
+    volumes:
+      - main-queue:/var/lib/otel/queue
+      - ./keys/dev_hmac_key.txt:/etc/auditlog/keys/dev_hmac_key.txt:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:13133/"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  otel-collector-audit-secondary:
+    container_name: audit-secondary
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: collector
+    depends_on:
+      toxic:
+        condition: service_started
+      audit-sink:
+        condition: service_started
+    environment:
+      ROLE: collector
+      COLLECTOR_NAME: secondary
+      KEY_FILE: /etc/auditlog/keys/dev_hmac_key.txt
+      SINK_URL: http://audit-sink:8080
+      LISTEN: :4318
+      UPSTREAM: http://127.0.0.1:4319
+    ports:
+      - "13135:13133"
+    volumes:
+      - secondary-queue:/var/lib/otel/queue
+      - ./keys/dev_hmac_key.txt:/etc/auditlog/keys/dev_hmac_key.txt:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:13133/"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  audit-sink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sink
+    environment:
+      LISTEN: :8080
+      SINK_DIR: /data
+      SPAMMER_URL: http://log-spammer:8080
+      DRAIN: 2s
+    ports:
+      - "18082:8080"
+    volumes:
+      - sink-data:/data
+    healthcheck:
+      test: ["CMD", "/sink", "-healthcheck", "http://127.0.0.1:8080/health"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  audit-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ui
+    environment:
+      LISTEN: :8080
+      SPAMMER_URL: http://log-spammer:8080
+      TOXIC_URL: http://toxic:8090
+      SINK_URL: http://audit-sink:8080
+      MAIN_CONTAINER: audit-main
+      SECONDARY_CONTAINER: audit-secondary
+      SPAMMER_CONTAINER: audit-spammer
+      SIDECAR_CONTAINER: audit-loss-otel-collector-audit-sidecar-1
+      MAIN_HEALTH: http://otel-collector-audit-main:13133/
+      SECONDARY_HEALTH: http://otel-collector-audit-secondary:13133/
+      SIDECAR_HEALTH: http://log-spammer:13133/
+    ports:
+      - "18083:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      log-spammer:
+        condition: service_started
+      toxic:
+        condition: service_started
+      audit-sink:
+        condition: service_started
+
+volumes:
+  sidecar-queue:
+  main-queue:
+  secondary-queue:
+  sink-data:
